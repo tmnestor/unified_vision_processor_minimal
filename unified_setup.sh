@@ -72,14 +72,18 @@ else
 fi
 
 # Set up PYTHONPATH for package access (no pip install needed)
-# Append to existing PYTHONPATH to avoid overwriting other paths
+# Append to existing PYTHONPATH to avoid overwriting other paths, but avoid duplicates
+CURRENT_DIR="$(pwd)"
 if [ -z "$PYTHONPATH" ]; then
-    export PYTHONPATH="$(pwd)"
-    echo "✅ Set PYTHONPATH to: $(pwd)"
-else
-    export PYTHONPATH="$(pwd):$PYTHONPATH"
-    echo "✅ Added project to PYTHONPATH: $(pwd)"
+    export PYTHONPATH="$CURRENT_DIR"
+    echo "✅ Set PYTHONPATH to: $CURRENT_DIR"
+elif [[ ":$PYTHONPATH:" != *":$CURRENT_DIR:"* ]]; then
+    export PYTHONPATH="$CURRENT_DIR:$PYTHONPATH"
+    echo "✅ Added project to PYTHONPATH: $CURRENT_DIR"
     echo "   Full PYTHONPATH: $PYTHONPATH"
+else
+    echo "✅ Project already in PYTHONPATH: $CURRENT_DIR"
+    echo "   Current PYTHONPATH: $PYTHONPATH"
 fi
 
 # Load .env file if it exists (for model paths and configuration)
