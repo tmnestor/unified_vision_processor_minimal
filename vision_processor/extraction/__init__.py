@@ -8,6 +8,6 @@ from .universal_key_value_parser import UniversalKeyValueParser
 
 __all__ = [
     "ExtractionResult",
-    "SimpleExtractionManager", 
+    "SimpleExtractionManager",
     "UniversalKeyValueParser",
 ]
