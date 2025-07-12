@@ -12,9 +12,14 @@ from ..models.base_model import BaseVisionModel, DeviceConfig
 
 if TYPE_CHECKING:
     from .simple_config import SimpleConfig
-    from .unified_config import ModelType, UnifiedConfig
-else:
-    from .unified_config import ModelType
+
+# Define ModelType enum locally since we don't have unified_config
+from enum import Enum
+
+class ModelType(Enum):
+    """Supported model types."""
+    INTERNVL3 = "internvl3"
+    LLAMA32_VISION = "llama32_vision"
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +233,7 @@ class ModelFactory:
     def _apply_optimizations(
         cls,
         model: BaseVisionModel,
-        config: Optional["UnifiedConfig"],
+        config: Optional["SimpleConfig"],
     ) -> None:
         """Apply post-creation optimizations to the model."""
         try:
@@ -249,7 +254,7 @@ class ModelFactory:
     def _apply_cuda_optimizations(
         cls,
         model: BaseVisionModel,
-        _config: Optional["UnifiedConfig"],
+        _config: Optional["SimpleConfig"],
     ) -> None:
         """Apply CUDA-specific optimizations."""
         import torch
@@ -286,7 +291,7 @@ class ModelFactory:
     def _apply_mps_optimizations(
         cls,
         model: BaseVisionModel,
-        _config: Optional["UnifiedConfig"],
+        _config: Optional["SimpleConfig"],
     ) -> None:
         """Apply MPS (Apple Silicon) optimizations."""
         # MPS optimizations for Mac M1 development
@@ -302,7 +307,7 @@ class ModelFactory:
     def _apply_cpu_optimizations(
         cls,
         model: BaseVisionModel,
-        _config: Optional["UnifiedConfig"],
+        _config: Optional["SimpleConfig"],
     ) -> None:
         """Apply CPU-specific optimizations."""
         try:

@@ -1,25 +1,25 @@
-"""Unified Vision Document Processing Architecture
+"""Simplified Vision Document Processing System
 
-A comprehensive system for processing Australian tax documents using both InternVL3 and Llama-3.2-Vision models.
-Integrates advanced computer vision capabilities with robust document processing pipelines.
+A streamlined system for processing documents using InternVL3 and Llama-3.2-Vision models.
+Single-step processing with .env configuration and YAML-driven key extraction.
 
 Key Features:
-- Model-agnostic processing with Llama 7-step pipeline foundation
-- Australian Tax Office (ATO) compliance validation
-- Multi-GPU optimization and single V100 production deployment
-- 11 specialized document type handlers
-- 4-component confidence scoring system
-- Graceful degradation with intelligent fallbacks
+- Single-step processing pipeline
+- .env configuration management
+- Universal KEY-VALUE extraction
+- Model-agnostic interface (InternVL3, Llama-3.2-Vision)
+- YAML-driven key schema
+- Rich CLI with typer framework
 """
 
 __version__ = "0.1.0"
 __author__ = "Developer"
 
 # Core imports for easy access
-from .config.unified_config import UnifiedConfig
-from .extraction.hybrid_extraction_manager import UnifiedExtractionManager
+from .config.simple_config import SimpleConfig
+from .extraction.simple_extraction_manager import SimpleExtractionManager
 
 __all__ = [
-    "UnifiedConfig",
-    "UnifiedExtractionManager",
+    "SimpleConfig",
+    "SimpleExtractionManager",
 ]
