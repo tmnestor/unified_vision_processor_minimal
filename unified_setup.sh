@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# unified_setup.sh - Unified Vision Processor Setup Script
+# unified_setup.sh - Simplified Vision Processor Setup Script
 # Usage: source unified_setup.sh [working_directory] [conda_env_name]
 #
-# This script sets up the unified vision processor environment for:
+# This script sets up the simplified vision processor environment for:
 # - Mac M1 (local development)
 # - 2x H200 GPU system (development/training) 
 # - Single V100 GPU (production target)
+# - Simplified single-step processing with .env configuration
 
 # Set permissions for SSH and Kaggle (if they exist)
 [ -f "/home/jovyan/.ssh/id_ed25519" ] && chmod 600 /home/jovyan/.ssh/id_ed25519
@@ -22,7 +23,7 @@ CONDA_ENV=${2:-$DEFAULT_ENV}
 
 # Print header
 echo "========================================================"
-echo "🔬 Unified Vision Document Processing Architecture"
+echo "🔬 Simplified Vision Document Processing System"
 echo "🚀 Setting up environment: $CONDA_ENV"
 echo "========================================================"
 
@@ -71,7 +72,7 @@ else
 fi
 
 # Set up PYTHONPATH for package access (no pip install needed)
-export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+export PYTHONPATH="$(pwd)"
 echo "✅ Added project to PYTHONPATH: $(pwd)"
 
 # Load .env file if it exists (for model paths and configuration)
@@ -88,12 +89,13 @@ else
     echo "⚠️ No .env file found"
     echo "   Create one with your model paths and configuration:"
     echo "   cat >> .env << 'EOF'"
-    echo "   # Model paths"
-    echo "   VISION_INTERNVL_MODEL_PATH=/path/to/InternVL3-8B"
-    echo "   VISION_LLAMA_MODEL_PATH=/path/to/Llama-3.2-11B-Vision"
-    echo "   # Configuration"
+    echo "   # Model configuration"
     echo "   VISION_MODEL_TYPE=internvl3"
-    echo "   VISION_PROCESSING_PIPELINE=7step"
+    echo "   VISION_MODEL_PATH=/path/to/InternVL3-8B"
+    echo "   VISION_DEVICE_CONFIG=auto"
+    echo "   VISION_OUTPUT_FORMAT=yaml"
+    echo "   VISION_ENABLE_QUANTIZATION=true"
+    echo "   VISION_OFFLINE_MODE=true"
     echo "   EOF"
 fi
 
@@ -108,30 +110,30 @@ if command -v nvidia-smi >/dev/null 2>&1; then
     
     if [ "$GPU_COUNT" -gt 1 ]; then
         echo "   💡 Multi-GPU setup detected - optimized for development"
-        echo "      Recommended: VISION_MULTI_GPU_DEV=true"
+        echo "      Recommended: VISION_ENABLE_MULTI_GPU=true"
     elif [ "$GPU_MEMORY" -lt 20000 ]; then
         echo "   💡 Single GPU with limited memory - optimized for production"
-        echo "      Recommended: VISION_ENABLE_8BIT_QUANTIZATION=true"
+        echo "      Recommended: VISION_ENABLE_QUANTIZATION=true"
     fi
 else
     echo "   CPU-only environment detected"
     echo "   💡 Consider using Mac M1 for code editing, GPU system for training"
 fi
 
-# Set up useful aliases for unified vision processor
-alias uvp-process='python -m vision_processor.cli.unified_cli process'
-alias uvp-batch='python -m vision_processor.cli.unified_cli batch'
-alias uvp-compare='python -m vision_processor.cli.unified_cli compare'
-alias uvp-evaluate='python -m vision_processor.cli.unified_cli evaluate'
-alias uvp-help='python -m vision_processor.cli.unified_cli --help'
+# Set up useful aliases for simplified vision processor
+alias svp-extract='python -m vision_processor.cli.simple_extract_cli extract'
+alias svp-batch='python -m vision_processor.cli.simple_extract_cli batch'
+alias svp-compare='python -m vision_processor.cli.simple_extract_cli compare'
+alias svp-config='python -m vision_processor.cli.simple_extract_cli config-info'
+alias svp-help='python -m vision_processor.cli.simple_extract_cli --help'
 
 echo ""
 echo "✅ Set up CLI shortcuts:"
-echo "   - uvp-process:  Process single document"
-echo "   - uvp-batch:    Batch process directory"
-echo "   - uvp-compare:  Compare models"
-echo "   - uvp-evaluate: SROIE evaluation"
-echo "   - uvp-help:     Show help"
+echo "   - svp-extract:  Extract from single document"
+echo "   - svp-batch:    Batch process directory"
+echo "   - svp-compare:  Compare models"
+echo "   - svp-config:   Show configuration"
+echo "   - svp-help:     Show help"
 
 # Verify installation
 echo ""
@@ -149,7 +151,8 @@ fi
 echo "   📦 Checking dependencies:"
 python -c "import torch; print(f'   ✅ PyTorch: {torch.__version__}')" 2>/dev/null || echo "   ❌ PyTorch not available"
 python -c "import transformers; print(f'   ✅ Transformers: {transformers.__version__}')" 2>/dev/null || echo "   ❌ Transformers not available"
-python -c "import cv2; print(f'   ✅ OpenCV: {cv2.__version__}')" 2>/dev/null || echo "   ❌ OpenCV not available"
+python -c "import typer; print(f'   ✅ Typer: {typer.__version__}')" 2>/dev/null || echo "   ❌ Typer not available"
+python -c "import yaml; print('   ✅ PyYAML: available')" 2>/dev/null || echo "   ❌ PyYAML not available"
 
 # Check CUDA availability
 if python -c "import torch; print(f'   ✅ CUDA available: {torch.cuda.is_available()}')" 2>/dev/null; then
@@ -160,14 +163,17 @@ fi
 
 echo ""
 echo "🎯 Quick Start:"
-echo "   # Process a single document"
-echo "   uvp-process datasets/image25.png --model internvl3"
+echo "   # Extract from a single document"
+echo "   svp-extract datasets/image25.png --model internvl3"
 echo ""
 echo "   # Batch process directory"
-echo "   uvp-batch datasets/ --model internvl3 --output results/"
+echo "   svp-batch datasets/ --output-dir results/ --model internvl3"
 echo ""
-echo "   # Compare models"
-echo "   uvp-compare datasets/ ground_truth/ --models internvl3,llama32_vision"
+echo "   # Compare models on single document"
+echo "   svp-compare datasets/image25.png --models internvl3,llama32_vision"
+echo ""
+echo "   # Show current configuration"
+echo "   svp-config"
 echo ""
 echo "📋 Current Environment:"
 echo "   - Working directory: $(pwd)"
@@ -177,8 +183,12 @@ echo "   - PYTHONPATH: $PYTHONPATH"
 
 echo ""
 echo "========================================================"
-echo "🚀 Unified Vision Processor Ready!"
+echo "🚀 Simplified Vision Processor Ready!"
 echo "========================================================"
 echo "Remember to run with 'source' to preserve environment:"
 echo "source unified_setup.sh [directory] [environment]"
+echo ""
+echo "Test the setup with:"
+echo "svp-config  # Show configuration"
+echo "python test_simple_extraction.py  # Run tests"
 echo "========================================================"
