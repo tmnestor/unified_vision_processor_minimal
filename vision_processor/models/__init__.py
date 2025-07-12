@@ -9,7 +9,6 @@ from .base_model import (
     DeviceConfig,
     ModelCapabilities,
     ModelResponse,
-    ModelType,
 )
 from .model_utils import (
     DeviceManager,
@@ -35,7 +34,6 @@ except ImportError:
 __all__ = [
     # Base model components
     "BaseVisionModel",
-    "ModelType",
     "DeviceConfig",
     "ModelResponse",
     "ModelCapabilities",
