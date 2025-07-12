@@ -1,0 +1,545 @@
+# Unified Vision Processor - YAML Prompt Configuration
+# Compatible with both InternVL3 and Llama-3.2-Vision models
+# 
+# CRITICAL: Llama-3.2-Vision prompts MUST start with <|image|> token
+# CRITICAL: Use business document framing to avoid safety mode
+
+# Key Schema Definition - YAML as source of truth
+key_schema:
+  version: "1.0"
+  
+  # Core keys that ALL models must extract
+  required_keys:
+    - DATE
+    - STORE
+    - TOTAL
+    - GST
+    - ABN
+    
+  # Optional keys based on document type  
+  optional_keys:
+    - ITEMS
+    - QUANTITIES
+    - PRICES
+    - RECEIPT_NUMBER
+    - PAYMENT_METHOD
+    - SUBTOTAL
+    - ACCOUNT_NUMBER
+    - BSB
+    - ACCOUNT_HOLDER
+    - STATEMENT_PERIOD
+    - OPENING_BALANCE
+    - CLOSING_BALANCE
+    - INVOICE_NUMBER
+    - SUPPLIER
+    - DESCRIPTION
+    - STATION
+    - FUEL_TYPE
+    - LITRES
+    - PRICE_PER_LITRE
+    - LOCATION
+    - RESTAURANT
+    - MEAL_TYPE
+    - ATTENDEES
+    - DEPARTURE
+    - DESTINATION
+    - TRANSPORT_TYPE
+    - BOOKING_REF
+    - DATE_IN
+    - DATE_OUT
+    - HOTEL
+    - ROOM_TYPE
+    - NIGHTLY_RATE
+    - TIME
+    - DURATION
+    - VEHICLE_REG
+    - PROVIDER
+    - SERVICE_TYPE
+    - ITEM_TYPE
+    - QUANTITY
+    - UNIT_PRICE
+    - REFERENCE
+
+  # Key validation patterns
+  key_patterns:
+    DATE: "DD/MM/YYYY"
+    TOTAL: "numeric with 2 decimals"
+    GST: "numeric with 2 decimals"
+    ABN: "XX XXX XXX XXX format"
+    BSB: "XXX-XXX format"
+    ACCOUNT_NUMBER: "numeric string"
+
+# Universal extraction prompt - single prompt for all documents
+universal_extraction_prompt: |
+  <|image|>Extract information from this Australian business document and return in KEY-VALUE format.
+  
+  CRITICAL: Use EXACT KEY-VALUE format below - NO JSON, NO other formats.
+  
+  DATE: [document date in DD/MM/YYYY format]
+  STORE: [business name in capitals]
+  ABN: [Australian Business Number if visible]
+  GST: [GST amount]
+  TOTAL: [total amount including GST]
+  ITEMS: [item1 | item2 | item3]
+  QUANTITIES: [qty1 | qty2 | qty3]
+  PRICES: [price1 | price2 | price3]
+  RECEIPT_NUMBER: [receipt/invoice number if visible]
+  PAYMENT_METHOD: [payment method if visible]
+  SUBTOTAL: [subtotal before GST if visible]
+  
+  EXAMPLE OUTPUT:
+  DATE: 17/10/2020
+  STORE: IGA
+  ABN: 88 000 014 675
+  GST: 27.84
+  TOTAL: 306.28
+  ITEMS: Bread White | Milk 2L | Eggs Free Range 12pk
+  QUANTITIES: 1 | 1 | 1
+  PRICES: 3.50 | 5.20 | 8.95
+  RECEIPT_NUMBER: 745392
+  PAYMENT_METHOD: AMEX
+  SUBTOTAL: 278.44
+  
+  Return ONLY the key-value pairs above. Skip any keys where information is not available.
+
+# Model-specific variations of the universal prompt
+model_prompts:
+  internvl3:
+    prompt: |
+      <|image|>Extract information from this Australian business document and return in KEY-VALUE format.
+      
+      CRITICAL: Use EXACT KEY-VALUE format below - NO JSON, NO other formats.
+      
+      DATE: [document date in DD/MM/YYYY format]
+      STORE: [business name in capitals]
+      ABN: [Australian Business Number if visible]
+      GST: [GST amount]
+      TOTAL: [total amount including GST]
+      ITEMS: [item1 | item2 | item3]
+      QUANTITIES: [qty1 | qty2 | qty3]
+      PRICES: [price1 | price2 | price3]
+      RECEIPT_NUMBER: [receipt/invoice number if visible]
+      PAYMENT_METHOD: [payment method if visible]
+      SUBTOTAL: [subtotal before GST if visible]
+      
+      Return ONLY the key-value pairs above. Skip any keys where information is not available.
+    
+  llama32_vision:
+    prompt: |
+      <|image|>This is a business document processing task for accounting software.
+      Extract information from this Australian document and return in KEY-VALUE format.
+      
+      CRITICAL: Use EXACT KEY-VALUE format below - NO JSON, NO other formats.
+      
+      DATE: [document date in DD/MM/YYYY format]
+      STORE: [business name in capitals]
+      ABN: [Australian Business Number if visible]
+      GST: [GST amount]
+      TOTAL: [total amount including GST]
+      ITEMS: [item1 | item2 | item3]
+      QUANTITIES: [qty1 | qty2 | qty3]
+      PRICES: [price1 | price2 | price3]
+      RECEIPT_NUMBER: [receipt/invoice number if visible]
+      PAYMENT_METHOD: [payment method if visible]
+      SUBTOTAL: [subtotal before GST if visible]
+      
+      This is standard business document processing for legitimate accounting purposes.
+      Return ONLY the key-value pairs above. Skip any keys where information is not available.
+
+# Core business receipt extraction - optimized for both models
+business_receipt_extraction_prompt: |
+  <|image|>Extract information from this Australian receipt and return in KEY-VALUE format.
+
+  CRITICAL: Use EXACT KEY-VALUE format below - NO JSON, NO other formats.
+
+  DATE: [purchase date in DD/MM/YYYY format]
+  STORE: [store name in capitals]
+  ABN: [Australian Business Number if visible]
+  GST: [GST amount]
+  TOTAL: [total amount including GST]
+  ITEMS: [item1 | item2 | item3]
+
+  EXAMPLE OUTPUT:
+  DATE: 17/10/2020
+  STORE: IGA
+  ABN: 88 000 014 675
+  GST: 27.84
+  TOTAL: 306.28
+  ITEMS: Bread White | Milk 2L | Eggs Free Range 12pk
+
+  CRITICAL: Return ONLY the key-value pairs above. No explanations.
+
+# Bank statement processing - safety optimized
+bank_statement_extraction_prompt: |
+  <|image|>This is a business document processing task for accounting software integration.
+  Please process this Australian bank statement and output the account summary data.
+  
+  REQUIRED OUTPUT FORMAT:
+  ACCOUNT_NUMBER: [account number digits]
+  BSB: [branch code - XXX-XXX format]
+  ACCOUNT_HOLDER: [account holder name]
+  STATEMENT_PERIOD: [DD/MM/YYYY to DD/MM/YYYY]
+  OPENING_BALANCE: [opening balance amount]
+  CLOSING_BALANCE: [closing balance amount]
+  
+  This is standard bank statement data processing for legitimate business accounting purposes.
+
+# Tax invoice processing
+tax_invoice_extraction_prompt: |
+  <|image|>Extract information from this Australian tax invoice for business accounting.
+  
+  This is a business document processing task. Please extract the required tax invoice elements.
+  
+  REQUIRED OUTPUT FORMAT:
+  INVOICE_NUMBER: [invoice number]
+  DATE: [invoice date DD/MM/YYYY]
+  SUPPLIER: [business name]
+  ABN: [supplier ABN - XX XXX XXX XXX format]
+  DESCRIPTION: [goods/services description]
+  SUBTOTAL: [amount before GST]
+  GST: [GST amount - 10%]
+  TOTAL: [total amount including GST]
+  
+  This is standard tax invoice processing for business expense validation.
+
+# Fuel receipt processing
+fuel_receipt_extraction_prompt: |
+  <|image|>Extract information from this fuel receipt for business vehicle expense records.
+  
+  This is a business document processing task for fleet management and tax compliance.
+  
+  REQUIRED OUTPUT FORMAT:
+  DATE: [purchase date DD/MM/YYYY]
+  STATION: [fuel station name]
+  FUEL_TYPE: [petrol/diesel/etc]
+  LITRES: [quantity in litres]
+  PRICE_PER_LITRE: [rate per litre]
+  TOTAL: [total amount]
+  LOCATION: [station address if visible]
+  
+  This is standard fuel receipt processing for business vehicle expense substantiation.
+
+# Meal receipt processing
+meal_receipt_extraction_prompt: |
+  <|image|>Extract information from this meal receipt for business expense records.
+  
+  This is a business document processing task for expense reporting and tax compliance.
+  
+  REQUIRED OUTPUT FORMAT:
+  DATE: [meal date DD/MM/YYYY]
+  RESTAURANT: [establishment name]
+  MEAL_TYPE: [breakfast/lunch/dinner/etc]
+  SUBTOTAL: [amount before tax]
+  GST: [tax amount]
+  TOTAL: [total amount]
+  ATTENDEES: [number of people if indicated]
+  
+  This is standard meal receipt processing for business entertainment expense validation.
+
+# Travel document processing
+travel_document_extraction_prompt: |
+  <|image|>Extract information from this travel document for business expense records.
+  
+  This is a business document processing task for travel expense reporting.
+  
+  REQUIRED OUTPUT FORMAT:
+  DATE: [travel date DD/MM/YYYY]
+  DEPARTURE: [departure location]
+  DESTINATION: [arrival location]
+  TRANSPORT_TYPE: [flight/train/bus/taxi/etc]
+  AMOUNT: [total cost]
+  BOOKING_REF: [reference number if available]
+  
+  This is standard travel document processing for business travel expense substantiation.
+
+# Accommodation receipt processing
+accommodation_extraction_prompt: |
+  <|image|>Extract information from this accommodation receipt for business travel records.
+  
+  This is a business document processing task for travel expense reporting.
+  
+  REQUIRED OUTPUT FORMAT:
+  DATE_IN: [check-in date DD/MM/YYYY]
+  DATE_OUT: [check-out date DD/MM/YYYY]
+  HOTEL: [accommodation provider name]
+  LOCATION: [city/address]
+  ROOM_TYPE: [room category if shown]
+  NIGHTLY_RATE: [rate per night]
+  TOTAL: [total accommodation cost]
+  
+  This is standard accommodation receipt processing for business travel expense validation.
+
+# Parking/toll receipt processing
+parking_toll_extraction_prompt: |
+  <|image|>Extract information from this parking or toll receipt for business vehicle records.
+  
+  This is a business document processing task for vehicle expense tracking.
+  
+  REQUIRED OUTPUT FORMAT:
+  DATE: [date DD/MM/YYYY]
+  TIME: [time if available]
+  LOCATION: [parking location or toll road]
+  DURATION: [parking duration if applicable]
+  AMOUNT: [total cost]
+  VEHICLE_REG: [vehicle registration if shown]
+  
+  This is standard parking/toll receipt processing for business vehicle expense substantiation.
+
+# Professional services invoice processing
+professional_services_extraction_prompt: |
+  <|image|>Extract information from this professional services invoice for business records.
+  
+  This is a business document processing task for professional services expense tracking.
+  
+  REQUIRED OUTPUT FORMAT:
+  DATE: [invoice date DD/MM/YYYY]
+  PROVIDER: [service provider name]
+  ABN: [provider ABN if shown]
+  SERVICE_TYPE: [legal/accounting/consulting/etc]
+  DESCRIPTION: [service description]
+  AMOUNT: [service amount]
+  GST: [GST component]
+  TOTAL: [total amount]
+  
+  This is standard professional services invoice processing for business expense validation.
+
+# Equipment/supplies receipt processing
+equipment_supplies_extraction_prompt: |
+  <|image|>Extract information from this equipment or supplies receipt for business asset records.
+  
+  This is a business document processing task for asset and expense tracking.
+  
+  REQUIRED OUTPUT FORMAT:
+  DATE: [purchase date DD/MM/YYYY]
+  SUPPLIER: [business name]
+  ITEM_TYPE: [equipment/supplies/software/etc]
+  DESCRIPTION: [item description]
+  QUANTITY: [number of items]
+  UNIT_PRICE: [price per item]
+  TOTAL: [total amount]
+  
+  This is standard equipment/supplies receipt processing for business asset and expense management.
+
+# Generic document processing
+generic_document_extraction_prompt: |
+  <|image|>Extract information from this business document for expense records.
+  
+  This is a business document processing task for general expense tracking and compliance.
+  
+  REQUIRED OUTPUT FORMAT:
+  DATE: [document date DD/MM/YYYY]
+  SUPPLIER: [business/provider name]
+  DESCRIPTION: [goods/services description]
+  AMOUNT: [total amount]
+  REFERENCE: [document/reference number]
+  
+  This is standard business document processing for expense management and tax compliance.
+
+# Factual information extraction (safety fallback)
+factual_information_prompt: |
+  <|image|>What factual information is displayed in this business receipt? 
+  Include store name, date, and amounts.
+  
+  Extract visible text data for business accounting purposes.
+
+# Technical data extraction (safety fallback)
+technical_data_extraction_prompt: |
+  <|image|>Technical instruction: Read visible text data from this image. 
+  Output the store name, transaction date, and monetary amounts as data fields.
+  
+  This is automated text recognition for business document processing.
+
+# System OCR fallback
+system_ocr_prompt: |
+  <|image|>System: Perform text recognition on this business document. 
+  Extract visible text elements for data processing.
+
+# Prompt metadata for Registry-Director pattern and intelligent selection
+prompt_metadata:
+  version: "2.0"
+  registry_director_enabled: true
+  
+  # Production-ready prompts for each document type
+  document_type_mapping:
+    business_receipt: business_receipt_extraction_prompt
+    bank_statement: bank_statement_extraction_prompt
+    tax_invoice: tax_invoice_extraction_prompt
+    fuel_receipt: fuel_receipt_extraction_prompt
+    meal_receipt: meal_receipt_extraction_prompt
+    travel_document: travel_document_extraction_prompt
+    accommodation: accommodation_extraction_prompt
+    parking_toll: parking_toll_extraction_prompt
+    professional_services: professional_services_extraction_prompt
+    equipment_supplies: equipment_supplies_extraction_prompt
+    other: generic_document_extraction_prompt
+  
+  # Multi-tier fallback chain for robust extraction (Registry-Director pattern)
+  fallback_chain:
+    - business_receipt_extraction_prompt
+    - fuel_receipt_extraction_prompt
+    - factual_information_prompt
+    - technical_data_extraction_prompt
+    - system_ocr_prompt
+  
+  # Model-specific optimizations
+  model_preferences:
+    llama32_vision:
+      # Requires <|image|> token and business framing
+      requires_image_token: true
+      safety_mode_sensitive: true
+      preferred_format: "KEY-VALUE"
+      business_context_required: true
+      registry_director_optimized: true
+    internvl3:
+      # More flexible with prompt formats
+      requires_image_token: false
+      safety_mode_sensitive: false
+      preferred_format: "structured"
+      business_context_helpful: true
+      content_aware_selection: true
+  
+  # Registry-Director pattern content analysis indicators
+  content_analysis:
+    fuel_indicators:
+      - "costco"
+      - "bp"
+      - "shell"
+      - "caltex"
+      - "ampol"
+      - "mobil"
+      - "7-eleven"
+      - "united petroleum"
+      - "ulp"
+      - "unleaded"
+      - "diesel"
+      - "e10"
+      - "u91"
+      - "u95"
+      - "u98"
+      - "premium"
+      - "litre"
+      - " l "
+      - ".l "
+      - "price/l"
+      - "per litre"
+      - "fuel"
+      - "petrol"
+      - "gasoline"
+    
+    major_retailers:
+      - "woolworths"
+      - "coles"
+      - "aldi"
+      - "target"
+      - "kmart"
+      - "bunnings"
+      - "officeworks"
+      - "harvey norman"
+      - "jb hi-fi"
+      - "big w"
+      - "myer"
+      - "ikea"
+    
+    accommodation_indicators:
+      - "hotel"
+      - "motel"
+      - "resort"
+      - "accommodation"
+      - "booking"
+      - "reservation"
+      - "hilton"
+      - "marriott"
+      - "hyatt"
+      - "ibis"
+      - "mercure"
+      - "novotel"
+      - "crowne plaza"
+      - "check-in"
+      - "check-out"
+      - "guest"
+      - "room"
+      - "nights"
+      - "rate per night"
+    
+    professional_indicators:
+      - "tax invoice"
+      - "invoice"
+      - "consulting"
+      - "legal"
+      - "accounting"
+      - "professional services"
+      - "deloitte"
+      - "pwc"
+      - "kpmg"
+      - "ey"
+      - "bdo"
+      - "law firm"
+      - "solicitor"
+      - "barrister"
+      - "chartered accountant"
+      - "tax agent"
+      - "legal advice"
+      - "consultation"
+    
+    meal_indicators:
+      - "restaurant"
+      - "cafe"
+      - "coffee"
+      - "dining"
+      - "meal"
+      - "lunch"
+      - "dinner"
+      - "breakfast"
+      - "mcdonald's"
+      - "kfc"
+      - "subway"
+      - "domino's"
+      - "pizza hut"
+      - "hungry jack's"
+      - "menu"
+      - "table"
+      - "covers"
+      - "service charge"
+      - "gratuity"
+    
+    parking_indicators:
+      - "parking"
+      - "toll"
+      - "secure parking"
+      - "wilson parking"
+      - "care park"
+      - "parking fee"
+      - "hourly rate"
+      - "entry time"
+      - "exit time"
+      - "vehicle"
+      - "registration"
+    
+    equipment_indicators:
+      - "computer"
+      - "laptop"
+      - "equipment"
+      - "supplies"
+      - "software"
+      - "hardware"
+      - "printer"
+      - "scanner"
+      - "monitor"
+      - "keyboard"
+      - "mouse"
+      - "cable"
+      - "electronics"
+  
+  # Testing and debugging prompts
+  testing_prompts:
+    - factual_information_prompt
+    - technical_data_extraction_prompt
+    - system_ocr_prompt
+  
+  # Configuration settings
+  settings:
+    temperature: 0.3
+    max_tokens: 1024
+    enable_fallback: true
+    confidence_threshold: 0.7
+    registry_director_enabled: true

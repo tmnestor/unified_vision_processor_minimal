@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Bash(python test:*)",
+      "Bash(KMP_DUPLICATE_LIB_OK=TRUE conda run -n unified_vision_processor python test_pipeline.py)",
+      "Bash(KMP_DUPLICATE_LIB_OK=TRUE conda run -n unified_vision_processor python test_offline_config.py)",
+      "Bash(KMP_DUPLICATE_LIB_OK=TRUE conda run -n unified_vision_processor python test_offline_default.py)",
+      "Bash(KMP_DUPLICATE_LIB_OK=TRUE conda run -n unified_vision_processor python test_internvl_model.py)",
+      "Bash(find:*)",
+      "Bash(conda activate:*)",
+      "Bash(export KMP_DUPLICATE_LIB_OK=TRUE)",
+      "Bash(ruff format:*)",
+      "Bash(git add:*)",
+      "Bash(ls:*)",
+      "Bash(rg:*)",
+      "Bash(ruff check:*)",
+      "Bash(git commit:*)",
+      "Bash(python:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(pytest:*)",
+      "Bash(source:*)"
+    ],
+    "deny": []
+  }
+}

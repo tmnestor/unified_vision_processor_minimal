@@ -1,0 +1,26 @@
+# Core dependencies for unified vision document processing
+transformers==4.45.2  # Fixed version for Llama-3.2-Vision compatibility
+typer>=0.9.0
+rich>=13.0.0
+torch>=2.0.0
+torchvision
+accelerate  # Required for MPS/device mapping support
+bitsandbytes  # Required for 8-bit quantization on V100 16GB
+sentencepiece  # Required for tokenizer
+protobuf  # Required for model loading
+python-dotenv  # Required for .env file loading
+
+# Data processing and analysis
+numpy
+pandas
+pillow
+matplotlib
+tqdm
+pyyaml
+scikit-learn
+
+# Development and testing (optional)
+pytest>=7.0.0
+pytest-cov>=4.0.0
+ruff>=0.1.0
+mypy>=1.0.0
