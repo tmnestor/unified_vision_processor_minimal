@@ -157,7 +157,7 @@ class SimpleExtractionManager:
 
         # Step 3: Parse KEY-VALUE response
         print("📝 Parsing response...")
-        print(f"🔍 DEBUG - Raw model response (first 500 chars):")
+        print("🔍 DEBUG - Raw model response (first 500 chars):")
         print(f"'{response.raw_text[:500]}...'")
         extracted_data = self.parser.parse(response.raw_text)
 
