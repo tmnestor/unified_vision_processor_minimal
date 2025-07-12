@@ -8,8 +8,8 @@ import torch
 import yaml
 from rich.console import Console
 
-from ..config.simple_config import SimpleConfig
 from ..config.model_factory import ModelFactory
+from ..config.simple_config import SimpleConfig
 from .universal_key_value_parser import UniversalKeyValueParser
 
 console = Console()
