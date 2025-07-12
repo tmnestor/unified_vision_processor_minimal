@@ -9,7 +9,7 @@ import yaml
 from rich.console import Console
 
 from ..config.simple_config import SimpleConfig
-from ..models.model_factory import ModelFactory
+from ..config.model_factory import ModelFactory
 from .universal_key_value_parser import UniversalKeyValueParser
 
 console = Console()
