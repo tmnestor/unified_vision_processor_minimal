@@ -49,14 +49,9 @@ def extract(
         # Load configuration
         config = SimpleConfig(config_file if config_file != ".env" else None)
 
-        # Apply CLI overrides
-        if model:
-            config.model_type = model
-            console.print(f"🔄 Overriding model type to: {model}")
-
-        if output_format:
-            config.output_format = output_format
-            console.print(f"🔄 Overriding output format to: {output_format}")
+        # Apply CLI overrides using update_from_cli method
+        if model or output_format:
+            config.update_from_cli(model=model, output_format=output_format)
 
         # Validate configuration
         if not config.validate():
@@ -133,7 +128,7 @@ def compare(
 
             # Create config with model override
             config = SimpleConfig(config_file if config_file != ".env" else None)
-            config.model_type = model_name
+            config.update_from_cli(model=model_name)
 
             # Validate configuration
             if not config.validate():
@@ -237,8 +232,7 @@ def batch(
         config = SimpleConfig(config_file if config_file != ".env" else None)
 
         if model:
-            config.model_type = model
-            console.print(f"🔄 Overriding model type to: {model}")
+            config.update_from_cli(model=model)
 
         # Find image files
         image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
