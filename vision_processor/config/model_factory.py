@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 # Define ModelType enum locally since we don't have unified_config
 from enum import Enum
 
+
 class ModelType(Enum):
     """Supported model types."""
     INTERNVL3 = "internvl3"
