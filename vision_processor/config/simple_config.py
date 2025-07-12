@@ -23,7 +23,14 @@ class SimpleConfig:
 
         # Model settings
         self.model_type = os.getenv("VISION_MODEL_TYPE", "internvl3")
-        self.model_path = os.getenv("VISION_MODEL_PATH", "/path/to/models")
+        
+        # Try model-specific path first, then fall back to generic path
+        if self.model_type == "internvl3":
+            self.model_path = os.getenv("VISION_INTERNVL_MODEL_PATH") or os.getenv("VISION_MODEL_PATH", "/path/to/models")
+        elif self.model_type == "llama32_vision":
+            self.model_path = os.getenv("VISION_LLAMA_MODEL_PATH") or os.getenv("VISION_MODEL_PATH", "/path/to/models")
+        else:
+            self.model_path = os.getenv("VISION_MODEL_PATH", "/path/to/models")
 
         # GPU and memory settings
         self.device_config = os.getenv("VISION_DEVICE_CONFIG", "auto")
@@ -132,7 +139,15 @@ class SimpleConfig:
         """
         if "model" in kwargs and kwargs["model"]:
             self.model_type = kwargs["model"]
+            # Update model path based on new model type
+            if self.model_type == "internvl3":
+                self.model_path = os.getenv("VISION_INTERNVL_MODEL_PATH") or os.getenv("VISION_MODEL_PATH", "/path/to/models")
+            elif self.model_type == "llama32_vision":
+                self.model_path = os.getenv("VISION_LLAMA_MODEL_PATH") or os.getenv("VISION_MODEL_PATH", "/path/to/models")
+            else:
+                self.model_path = os.getenv("VISION_MODEL_PATH", "/path/to/models")
             print(f"🔄 Overriding model type to: {self.model_type}")
+            print(f"🔄 Using model path: {self.model_path}")
 
         if "output_format" in kwargs and kwargs["output_format"]:
             self.output_format = kwargs["output_format"]
