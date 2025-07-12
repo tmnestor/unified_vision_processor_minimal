@@ -72,8 +72,15 @@ else
 fi
 
 # Set up PYTHONPATH for package access (no pip install needed)
-export PYTHONPATH="$(pwd)"
-echo "✅ Added project to PYTHONPATH: $(pwd)"
+# Append to existing PYTHONPATH to avoid overwriting other paths
+if [ -z "$PYTHONPATH" ]; then
+    export PYTHONPATH="$(pwd)"
+    echo "✅ Set PYTHONPATH to: $(pwd)"
+else
+    export PYTHONPATH="$(pwd):$PYTHONPATH"
+    echo "✅ Added project to PYTHONPATH: $(pwd)"
+    echo "   Full PYTHONPATH: $PYTHONPATH"
+fi
 
 # Load .env file if it exists (for model paths and configuration)
 if [ -f ".env" ]; then
@@ -96,6 +103,8 @@ else
     echo "   VISION_OUTPUT_FORMAT=yaml"
     echo "   VISION_ENABLE_QUANTIZATION=true"
     echo "   VISION_OFFLINE_MODE=true"
+    echo "   # Optional: export PYTHONPATH for persistence"
+    echo "   export PYTHONPATH=$(pwd):\\\$PYTHONPATH"
     echo "   EOF"
 fi
 
