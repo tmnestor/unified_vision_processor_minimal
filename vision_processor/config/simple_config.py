@@ -142,7 +142,7 @@ class SimpleConfig:
             # Reload .env file to ensure we get the latest values
             from dotenv import load_dotenv
             load_dotenv(override=True)
-            
+
             # Update model path based on new model type
             if self.model_type == "internvl3":
                 internvl_path = os.getenv("VISION_INTERNVL_MODEL_PATH")
@@ -150,7 +150,7 @@ class SimpleConfig:
                 self.model_path = internvl_path or fallback_path
                 print(f"🔍 Debug: VISION_INTERNVL_MODEL_PATH = {internvl_path}")
             elif self.model_type == "llama32_vision":
-                llama_path = os.getenv("VISION_LLAMA_MODEL_PATH") 
+                llama_path = os.getenv("VISION_LLAMA_MODEL_PATH")
                 fallback_path = os.getenv("VISION_MODEL_PATH", "/path/to/models")
                 self.model_path = llama_path or fallback_path
                 print(f"🔍 Debug: VISION_LLAMA_MODEL_PATH = {llama_path}")
