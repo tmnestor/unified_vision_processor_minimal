@@ -23,7 +23,7 @@ class SimpleConfig:
 
         # Model settings
         self.model_type = os.getenv("VISION_MODEL_TYPE", "internvl3")
-        
+
         # Try model-specific path first, then fall back to generic path
         if self.model_type == "internvl3":
             self.model_path = os.getenv("VISION_INTERNVL_MODEL_PATH") or os.getenv("VISION_MODEL_PATH", "/path/to/models")
