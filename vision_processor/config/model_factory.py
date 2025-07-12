@@ -19,8 +19,10 @@ from enum import Enum
 
 class ModelType(Enum):
     """Supported model types."""
+
     INTERNVL3 = "internvl3"
     LLAMA32_VISION = "llama32_vision"
+
 
 logger = logging.getLogger(__name__)
 
