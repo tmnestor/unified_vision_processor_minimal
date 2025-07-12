@@ -139,11 +139,22 @@ class SimpleConfig:
         """
         if "model" in kwargs and kwargs["model"]:
             self.model_type = kwargs["model"]
+            # Reload .env file to ensure we get the latest values
+            from dotenv import load_dotenv
+            load_dotenv(override=True)
+            
             # Update model path based on new model type
             if self.model_type == "internvl3":
-                self.model_path = os.getenv("VISION_INTERNVL_MODEL_PATH") or os.getenv("VISION_MODEL_PATH", "/path/to/models")
+                internvl_path = os.getenv("VISION_INTERNVL_MODEL_PATH")
+                fallback_path = os.getenv("VISION_MODEL_PATH", "/path/to/models")
+                self.model_path = internvl_path or fallback_path
+                print(f"🔍 Debug: VISION_INTERNVL_MODEL_PATH = {internvl_path}")
             elif self.model_type == "llama32_vision":
-                self.model_path = os.getenv("VISION_LLAMA_MODEL_PATH") or os.getenv("VISION_MODEL_PATH", "/path/to/models")
+                llama_path = os.getenv("VISION_LLAMA_MODEL_PATH") 
+                fallback_path = os.getenv("VISION_MODEL_PATH", "/path/to/models")
+                self.model_path = llama_path or fallback_path
+                print(f"🔍 Debug: VISION_LLAMA_MODEL_PATH = {llama_path}")
+                print(f"🔍 Debug: VISION_MODEL_PATH = {os.getenv('VISION_MODEL_PATH')}")
             else:
                 self.model_path = os.getenv("VISION_MODEL_PATH", "/path/to/models")
             print(f"🔄 Overriding model type to: {self.model_type}")
