@@ -126,22 +126,17 @@ model_prompts:
     
   llama32_vision:
     prompt: |
-      <|image|>Extract information from this Australian receipt and return in structured format.
+      <|image|>Extract data from this receipt in KEY-VALUE format.
 
-      Extract all visible information in this exact format:
-      DATE: [purchase date in DD/MM/YYYY format]
-      STORE: [store name in capitals]
-      ABN: [Australian Business Number if visible]
+      Output format:
+      DATE: [date from receipt]
+      STORE: [store name]
       GST: [GST amount]
-      TOTAL: [total amount including GST]
-      ITEMS: [item1 | item2 | item3]
-      QUANTITIES: [qty1 | qty2 | qty3]
-      PRICES: [price1 | price2 | price3]
-      RECEIPT_NUMBER: [receipt/invoice number if visible]
-      PAYMENT_METHOD: [payment method if visible]
-      SUBTOTAL: [subtotal before GST if visible]
+      TOTAL: [total amount]
+      SUBTOTAL: [subtotal amount]
+      ITEMS: [item names separated by |]
 
-      Return only the structured data above.
+      Extract all visible text and format as KEY: VALUE pairs only.
 
 # Core business receipt extraction - optimized for both models
 business_receipt_extraction_prompt: |
