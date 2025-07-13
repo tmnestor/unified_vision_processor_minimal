@@ -126,12 +126,12 @@ model_prompts:
     
   llama32_vision:
     prompt: |
-      <|image|>Extract information from this Australian receipt and return in KEY-VALUE format.
+      <|image|>Extract information from this Australian receipt and return in structured format.
 
-      Use this exact format:
+      Extract all visible information in this exact format:
       DATE: [purchase date in DD/MM/YYYY format]
       STORE: [store name in capitals]
-      ABN: [Australian Business Number - XX XXX XXX XXX format]
+      ABN: [Australian Business Number if visible]
       GST: [GST amount]
       TOTAL: [total amount including GST]
       ITEMS: [item1 | item2 | item3]
@@ -141,27 +141,7 @@ model_prompts:
       PAYMENT_METHOD: [payment method if visible]
       SUBTOTAL: [subtotal before GST if visible]
 
-      Example:
-      DATE: 16/03/2023
-      STORE: WOOLWORTHS
-      ABN: 88 000 014 675
-      GST: 3.82
-      TOTAL: 42.08
-      ITEMS: Milk 2L | Bread Multigrain | Eggs Free Range 12pk
-      QUANTITIES: 1 | 2 | 1
-      PRICES: 4.50 | 8.00 | 7.60
-      RECEIPT_NUMBER: 745392
-      PAYMENT_METHOD: EFTPOS
-
-      FORMATTING REQUIREMENTS:
-      - Store names: Use ALL CAPITALS (WOOLWORTHS, COLES, ALDI)
-      - Dates: DD/MM/YYYY format (Australian standard)
-      - Use pipe (|) to separate multiple items in lists
-      - Extract ALL products from the receipt
-      - Ensure products, quantities, and prices lists have same length
-      - GST (Goods and Services Tax) is 10% in Australia
-
-      Return ONLY the key-value pairs above. No explanations.
+      Return only the structured data above.
 
 # Core business receipt extraction - optimized for both models
 business_receipt_extraction_prompt: |
