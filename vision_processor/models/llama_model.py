@@ -172,8 +172,11 @@ class LlamaVisionModel(BaseVisionModel):
             logger.info(f"Model loaded successfully on {self.device}")
 
             # Configure generation settings for stable inference (based on working implementation)
-            self.model.generation_config.max_length = 512  # Limit max generation
+            self.model.generation_config.max_new_tokens = 1024  # Use max_new_tokens instead of max_length
             self.model.generation_config.do_sample = False  # Deterministic for consistency
+            self.model.generation_config.temperature = None  # Disable temperature in deterministic mode
+            self.model.generation_config.top_p = None  # Disable top_p in deterministic mode
+            self.model.generation_config.top_k = None  # Disable top_k in deterministic mode
             self.model.config.use_cache = True  # Enable KV cache
 
             # Store metadata for inference
