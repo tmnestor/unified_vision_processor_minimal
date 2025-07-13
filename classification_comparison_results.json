@@ -1,0 +1,140 @@
+{
+  "internvl3": [
+    {
+      "image": "image14.png",
+      "document_type": "tax_invoice",
+      "confidence": 0.85,
+      "is_business_document": true,
+      "processing_time": 4.1126110553741455,
+      "classification_response": "tax_invoice",
+      "success": true
+    },
+    {
+      "image": "image1.png",
+      "document_type": "bank_statement",
+      "confidence": 0.85,
+      "is_business_document": true,
+      "processing_time": 0.08637714385986328,
+      "classification_response": "bank_statement",
+      "success": true
+    },
+    {
+      "image": "image10.png",
+      "document_type": "receipt",
+      "confidence": 0.75,
+      "is_business_document": true,
+      "processing_time": 0.11415600776672363,
+      "classification_response": "receipt",
+      "success": true
+    },
+    {
+      "image": "image25.png",
+      "document_type": "unknown",
+      "confidence": 0.5,
+      "is_business_document": false,
+      "processing_time": 0.1314373016357422,
+      "classification_response": "unknown",
+      "success": true
+    },
+    {
+      "image": "image50.png",
+      "document_type": "receipt",
+      "confidence": 0.75,
+      "is_business_document": true,
+      "processing_time": 0.11248612403869629,
+      "classification_response": "receipt",
+      "success": true
+    },
+    {
+      "image": "image75.png",
+      "document_type": "unknown",
+      "confidence": 0.5,
+      "is_business_document": false,
+      "processing_time": 0.12897372245788574,
+      "classification_response": "unknown",
+      "success": true
+    },
+    {
+      "image": "image100.png",
+      "document_type": "receipt",
+      "confidence": 0.75,
+      "is_business_document": true,
+      "processing_time": 0.11238670349121094,
+      "classification_response": "receipt",
+      "success": true
+    }
+  ],
+  "llama32_vision": [
+    {
+      "image": "image14.png",
+      "document_type": "tax_invoice",
+      "confidence": 0.85,
+      "is_business_document": true,
+      "processing_time": 34.97636675834656,
+      "classification_response": "<OCR/> SPOTLIGHT TAX INVOICE 11-07-2022 3:53PM QTY PRICE TOTAL $3.96 $4.53 $4.71 $3.79 $3.42 $4.71 $3.79 $3.42 TOTAL: $20.41 $2.04 $22.45 PAYMENT DETAILS APPROVED",
+      "success": true
+    },
+    {
+      "image": "image1.png",
+      "document_type": "bank_statement",
+      "confidence": 0.9,
+      "is_business_document": true,
+      "processing_time": 29.4180748462677,
+      "classification_response": "<OCR/> Bendigo Bank BANK STATEMENT Account Holder: James Taylor BSB: 634-277 Account Number: 549372241 Statement 01/05/2025 31/05/2025 Date Description 03/05/2025 04/05/2025 09/05/2025 10/05/2025 13/0...",
+      "success": true
+    },
+    {
+      "image": "image10.png",
+      "document_type": "receipt",
+      "confidence": 0.75,
+      "is_business_document": true,
+      "processing_time": 29.971024751663208,
+      "classification_response": "<OCR/> IGA 433 Main Sydney VIC 3604 (02) 4582 4811 DATE: 17.10.2020 TIME: 13:45 RECEIPT: #745392 QTY PRICE TOTAL $3.92 $7.38 $7.60 $13.48 $4.87 $28.55 $19.40 $6.04 $3.60 $3.92 $7.38 $7.60 $53.92 $14.6...",
+      "success": true
+    },
+    {
+      "image": "image25.png",
+      "document_type": "bank_statement",
+      "confidence": 0.95,
+      "is_business_document": true,
+      "processing_time": 29.50165295600891,
+      "classification_response": "Do not analyze text content. <OCR/> Australian Government Services Australia Disability Support Pension Statement John Jones TFN: X3X 78X 14X 50-914-56160 Date: 06/03/2023 70 King St Sydney NSW 2055 F...",
+      "success": true
+    },
+    {
+      "image": "image50.png",
+      "document_type": "receipt",
+      "confidence": 0.75,
+      "is_business_document": true,
+      "processing_time": 29.390626430511475,
+      "classification_response": "<OCR/> BUNNINGS 858 DATE: 14-09-2023 TIME: 6:14PM RECEIPT: #455405 QTY PRICE TOTAL $4.37 $4.47 $3.41 $7.95 $2.76 $2.82 $3.67 $4.14 $3.36 $4.94 $5.64 $20.32 $4.37 $4.47 $3.41 $31.80 $2.76 $2.82 $3.67 $...",
+      "success": true
+    },
+    {
+      "image": "image75.png",
+      "document_type": "bank_statement",
+      "confidence": 0.95,
+      "is_business_document": true,
+      "processing_time": 29.832980155944824,
+      "classification_response": "No document structure or layout analysis. <OCR/> Australian Government Services Australia Disability Support Pension Statement 15-932-12588 13/09/2023 Taxpayer details: Name: Emma Brown TFN: X7X 220 X...",
+      "success": true
+    },
+    {
+      "image": "image100.png",
+      "document_type": "receipt",
+      "confidence": 0.75,
+      "is_business_document": true,
+      "processing_time": 29.928548097610474,
+      "classification_response": "<OCR/> BUNNINGS Date: 24/12/2021 Time: 4:54pm Receipt: #279804 Payment: AMEX $10.66 $4.19 $3.08 Coffee Pods Bread Coca-Cola 2L Pasta Sauce Toilet Paper Pasta Weet-Bix Ice Cream Orange Juice Batteries ...",
+      "success": true
+    }
+  ],
+  "comparison": {
+    "total_documents": 7,
+    "agreement_count": 5,
+    "disagreement_count": 2,
+    "internvl3_errors": 0,
+    "llama32_errors": 0,
+    "performance_summary": {}
+  }
+}
