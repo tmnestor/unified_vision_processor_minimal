@@ -76,3 +76,11 @@ datasets/*
 
 # Archive for legacy code and directories
 archive/*
+
+# Claude Code related files
+CLAUDE.md
+*claude*
+*CLAUDE*
+debug_llama_prompt.py
+test_*.py
+check_*.py
