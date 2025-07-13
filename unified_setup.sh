@@ -13,6 +13,30 @@
 [ -f "/home/jovyan/.ssh/id_ed25519" ] && chmod 600 /home/jovyan/.ssh/id_ed25519
 [ -f "/home/jovyan/nfs_share/tod/.kaggle/kaggle.json" ] && chmod 600 /home/jovyan/nfs_share/tod/.kaggle/kaggle.json
 
+# Configure git to use SSH instead of HTTPS for GitHub
+if [ -f "/home/jovyan/.ssh/id_ed25519" ]; then
+    echo "🔑 Setting up git SSH authentication..."
+    
+    # Set git remote to use SSH if currently using HTTPS
+    CURRENT_REMOTE=$(git remote get-url origin 2>/dev/null || echo "")
+    if [[ "$CURRENT_REMOTE" == https://github.com/* ]]; then
+        SSH_REMOTE=$(echo "$CURRENT_REMOTE" | sed 's|https://github.com/|git@github.com:|')
+        git remote set-url origin "$SSH_REMOTE"
+        echo "✅ Updated git remote from HTTPS to SSH: $SSH_REMOTE"
+    elif [[ "$CURRENT_REMOTE" == git@github.com:* ]]; then
+        echo "✅ Git already configured for SSH: $CURRENT_REMOTE"
+    fi
+    
+    # Test SSH connection
+    if ssh -T git@github.com -o StrictHostKeyChecking=no -o ConnectTimeout=10 2>&1 | grep -q "successfully authenticated"; then
+        echo "✅ SSH authentication to GitHub working"
+    else
+        echo "⚠️ SSH authentication test failed - you may need to add the SSH key to GitHub"
+        echo "   Add this key to GitHub: https://github.com/settings/ssh/new"
+        [ -f "/home/jovyan/.ssh/id_ed25519.pub" ] && echo "   Public key:" && cat /home/jovyan/.ssh/id_ed25519.pub
+    fi
+fi
+
 # Default configuration for unified vision processor
 DEFAULT_DIR="$HOME/nfs_share/tod/unified_vision_processor_minimal"
 DEFAULT_ENV="unified_vision_processor"
