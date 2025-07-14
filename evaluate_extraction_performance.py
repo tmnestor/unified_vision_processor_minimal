@@ -20,8 +20,8 @@ from rich.table import Table
 # Add current directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from vision_processor.config.model_factory import ModelFactory
 from vision_processor.config.simple_config import SimpleConfig
+from vision_processor.extraction.simple_extraction_manager import SimpleExtractionManager
 
 
 class ExtractionEvaluator:
@@ -51,21 +51,27 @@ class ExtractionEvaluator:
         # Load ground truth
         self.ground_truth = self._load_ground_truth()
 
-        # Key extraction patterns
-        self.key_patterns = {
-            "DATE": r"DATE:\s*([^\n\r|]+)",
-            "STORE": r"STORE:\s*([^\n\r|]+)",
-            "ABN": r"ABN:\s*([^\n\r|]+)",
-            "GST": r"GST:\s*\$?([0-9.]+)",
-            "TOTAL": r"TOTAL:\s*\$?([0-9.]+)",
-            "SUBTOTAL": r"SUBTOTAL:\s*\$?([0-9.]+)",
-            "ITEMS": r"ITEMS:\s*([^\n\r]+)",
-            "QUANTITIES": r"QUANTITIES:\s*([^\n\r]+)",
-            "PRICES": r"PRICES:\s*([^\n\r]+)",
-            "RECEIPT_NUMBER": r"RECEIPT(?:_NUMBER)?:\s*([^\n\r|]+)",
-            "PAYMENT_METHOD": r"PAYMENT(?:_METHOD)?:\s*([^\n\r|]+)",
-            "TIME": r"TIME:\s*([^\n\r|]+)",
-        }
+        # Standard extraction fields for comparison (matches ground truth CSV)
+        self.extraction_fields = [
+            "DATE",
+            "STORE",
+            "ABN",
+            "GST",
+            "TOTAL",
+            "SUBTOTAL",
+            "ITEMS",
+            "QUANTITIES",
+            "PRICES",
+            "RECEIPT_NUMBER",
+            "PAYMENT_METHOD",
+            "DOCUMENT_TYPE",
+            "ADDRESS",
+            "PHONE",
+            "TIME",
+            "CARD_NUMBER",
+            "AUTH_CODE",
+            "STATUS",
+        ]
 
     def _load_ground_truth(self) -> Dict[str, Dict[str, Any]]:
         """Load ground truth data from CSV."""
@@ -86,21 +92,6 @@ class ExtractionEvaluator:
 
         self.console.print(f"✅ Loaded ground truth for {len(ground_truth)} images")
         return ground_truth
-
-    def _extract_key_values(self, response_text: str) -> Dict[str, str]:
-        """Extract key-value pairs from model response using patterns."""
-        extracted = {}
-
-        for key, pattern in self.key_patterns.items():
-            match = re.search(pattern, response_text, re.IGNORECASE | re.MULTILINE)
-            if match:
-                value = match.group(1).strip()
-                # Clean common artifacts
-                value = re.sub(r"[<>]", "", value)  # Remove < >
-                value = re.sub(r"\s+", " ", value)  # Normalize whitespace
-                extracted[key] = value
-
-        return extracted
 
     def _calculate_field_accuracy(self, extracted: str, ground_truth: str, field_type: str) -> float:
         """Calculate accuracy for a specific field."""
@@ -150,8 +141,8 @@ class ExtractionEvaluator:
             else:
                 return 0.0
 
-    def _evaluate_single_image(self, model, image_file: str, prompt: str) -> Dict[str, Any]:
-        """Evaluate extraction for a single image."""
+    def _evaluate_single_image(self, manager: SimpleExtractionManager, image_file: str) -> Dict[str, Any]:
+        """Evaluate extraction for a single image using the working extraction manager."""
         image_path = self.images_dir / image_file
 
         if not image_path.exists():
@@ -161,54 +152,48 @@ class ExtractionEvaluator:
         gt_data = self.ground_truth.get(image_file, {})
 
         try:
-            # Extract using model
-            start_time = time.time()
-            response = model.process_image(str(image_path), prompt)
-            processing_time = time.time() - start_time
-
-            # Extract key-values from response
-            extracted_data = self._extract_key_values(response.raw_text)
+            # Extract using the working SimpleExtractionManager
+            result = manager.process_document(str(image_path))
+            extracted_data = result.extracted_fields
 
             # Calculate field-wise accuracy
             field_accuracies = {}
-            for field in self.key_patterns.keys():
+            for field in self.extraction_fields:
                 gt_value = gt_data.get(field, "")
                 ext_value = extracted_data.get(field, "")
                 field_accuracies[field] = self._calculate_field_accuracy(ext_value, gt_value, field)
 
             # Overall accuracy
-            total_fields = len([f for f in self.key_patterns.keys() if gt_data.get(f)])
+            total_fields = len([f for f in self.extraction_fields if gt_data.get(f)])
             overall_accuracy = (
                 sum(field_accuracies.values()) / len(field_accuracies) if field_accuracies else 0.0
             )
 
             return {
                 "image_file": image_file,
-                "processing_time": processing_time,
-                "response_length": len(response.raw_text),
+                "processing_time": result.processing_time,
+                "response_length": 0,  # Not directly available from result
                 "extracted_fields": len(extracted_data),
                 "total_gt_fields": total_fields,
                 "field_accuracies": field_accuracies,
                 "overall_accuracy": overall_accuracy,
-                "raw_response": response.raw_text[:500] + "...",
+                "raw_response": str(extracted_data),  # Show the extracted fields instead
                 "extracted_data": extracted_data,
                 "ground_truth": gt_data,
-                "confidence": getattr(response, "confidence", 0.0),
+                "confidence": result.model_confidence,
             }
 
         except Exception as e:
             return {"error": str(e), "image_file": image_file}
 
-    def evaluate_model(
-        self, model_type: str, prompt: str, test_images: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
-        """Evaluate a specific model on all test images."""
+    def evaluate_model(self, model_type: str, test_images: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Evaluate a specific model on all test images using working extraction manager."""
         self.console.print(f"\n🔬 Evaluating {model_type.upper()} model...")
 
-        # Setup model - use update_from_cli to properly set model type and path
+        # Setup extraction manager using the working SimpleConfig approach
         config = SimpleConfig()
         config.update_from_cli(model=model_type)
-        model = ModelFactory.create_model(config)
+        manager = SimpleExtractionManager(config)
 
         # Get test images
         if test_images is None:
@@ -227,7 +212,7 @@ class ExtractionEvaluator:
             for image_file in test_images:
                 progress.update(task, description=f"Processing {image_file}...")
 
-                result = self._evaluate_single_image(model, image_file, prompt)
+                result = self._evaluate_single_image(manager, image_file)
                 results.append(result)
 
                 if "processing_time" in result:
@@ -246,7 +231,7 @@ class ExtractionEvaluator:
 
             # Field-wise accuracy
             field_wise_accuracy = {}
-            for field in self.key_patterns.keys():
+            for field in self.extraction_fields:
                 field_scores = [r["field_accuracies"].get(field, 0.0) for r in successful_results]
                 field_wise_accuracy[field] = sum(field_scores) / len(field_scores)
 
@@ -272,21 +257,20 @@ class ExtractionEvaluator:
 
     def compare_models(
         self,
-        prompt: str,
         models: Optional[List[str]] = None,
         test_images: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        """Compare multiple models side by side."""
+        """Compare multiple models side by side using working extraction managers."""
         if models is None:
             models = ["internvl3", "llama32_vision"]
         self.console.print("🏁 Starting Model Comparison Evaluation")
-        self.console.print(f"📝 Prompt: {prompt[:100]}...")
+        self.console.print("📝 Using model-specific prompts from prompts.yaml")
 
         comparison_results = {}
 
         for model_type in models:
             try:
-                results = self.evaluate_model(model_type, prompt, test_images)
+                results = self.evaluate_model(model_type, test_images)
                 comparison_results[model_type] = results
 
                 # Save individual results
@@ -455,29 +439,9 @@ def main():
     # Create evaluator
     evaluator = ExtractionEvaluator(ground_truth_csv, images_dir)
 
-    # Evaluation prompt
-    prompt = """<|image|>Extract information from this Australian business document and return in KEY-VALUE format.
-
-CRITICAL: Use EXACT KEY-VALUE format below - NO JSON, NO other formats.
-
-DATE: [document date in DD/MM/YYYY format]
-STORE: [business name in capitals]
-ABN: [Australian Business Number if visible]
-GST: [GST amount]
-TOTAL: [total amount including GST]
-SUBTOTAL: [subtotal before GST if visible]
-ITEMS: [item1 | item2 | item3]
-QUANTITIES: [qty1 | qty2 | qty3]
-PRICES: [price1 | price2 | price3]
-RECEIPT_NUMBER: [receipt/invoice number if visible]
-PAYMENT_METHOD: [payment method if visible]
-TIME: [time if visible]
-
-Return ONLY the key-value pairs above. Skip any keys where information is not available."""
-
     try:
-        # Run comparison
-        results = evaluator.compare_models(prompt)
+        # Run comparison using working extraction managers
+        results = evaluator.compare_models()
 
         # Generate report
         evaluator.generate_report(results)

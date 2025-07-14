@@ -80,12 +80,19 @@ universal_extraction_prompt: |
   ABN: [Australian Business Number if visible]
   GST: [GST amount]
   TOTAL: [total amount including GST]
+  SUBTOTAL: [subtotal before GST if visible]
   ITEMS: [item1 | item2 | item3]
   QUANTITIES: [qty1 | qty2 | qty3]
   PRICES: [price1 | price2 | price3]
   RECEIPT_NUMBER: [receipt/invoice number if visible]
   PAYMENT_METHOD: [payment method if visible]
-  SUBTOTAL: [subtotal before GST if visible]
+  DOCUMENT_TYPE: [receipt type - RECEIPT or TAX INVOICE]
+  ADDRESS: [business address if visible]
+  PHONE: [business phone if visible]
+  TIME: [transaction time if visible]
+  CARD_NUMBER: [masked card number if visible]
+  AUTH_CODE: [authorization code if visible]
+  STATUS: [transaction status if visible]
   
   EXAMPLE OUTPUT:
   DATE: 17/10/2020
@@ -93,12 +100,19 @@ universal_extraction_prompt: |
   ABN: 88 000 014 675
   GST: 27.84
   TOTAL: 306.28
+  SUBTOTAL: 278.44
   ITEMS: Bread White | Milk 2L | Eggs Free Range 12pk
   QUANTITIES: 1 | 1 | 1
   PRICES: 3.50 | 5.20 | 8.95
   RECEIPT_NUMBER: 745392
   PAYMENT_METHOD: AMEX
-  SUBTOTAL: 278.44
+  DOCUMENT_TYPE: TAX INVOICE
+  ADDRESS: 123 Main St Sydney NSW 2000
+  PHONE: (02) 9999 8888
+  TIME: 14:30
+  CARD_NUMBER: XXXX-XXXX-XXXX-1234
+  AUTH_CODE: 123456
+  STATUS: APPROVED
   
   Return ONLY the key-value pairs above. Skip any keys where information is not available.
 
@@ -115,12 +129,19 @@ model_prompts:
       ABN: [Australian Business Number if visible]
       GST: [GST amount]
       TOTAL: [total amount including GST]
+      SUBTOTAL: [subtotal before GST if visible]
       ITEMS: [item1 | item2 | item3]
       QUANTITIES: [qty1 | qty2 | qty3]
       PRICES: [price1 | price2 | price3]
       RECEIPT_NUMBER: [receipt/invoice number if visible]
       PAYMENT_METHOD: [payment method if visible]
-      SUBTOTAL: [subtotal before GST if visible]
+      DOCUMENT_TYPE: [receipt type - RECEIPT or TAX INVOICE]
+      ADDRESS: [business address if visible]
+      PHONE: [business phone if visible]
+      TIME: [transaction time if visible]
+      CARD_NUMBER: [masked card number if visible]
+      AUTH_CODE: [authorization code if visible]
+      STATUS: [transaction status if visible]
       
       Return ONLY the key-value pairs above. Skip any keys where information is not available.
     
@@ -131,10 +152,22 @@ model_prompts:
       Output format:
       DATE: [date from receipt]
       STORE: [store name]
+      ABN: [ABN if visible]
       GST: [GST amount]
       TOTAL: [total amount]
       SUBTOTAL: [subtotal amount]
       ITEMS: [item names separated by |]
+      QUANTITIES: [quantities separated by |]
+      PRICES: [prices separated by |]
+      RECEIPT_NUMBER: [receipt number if visible]
+      PAYMENT_METHOD: [payment method if visible]
+      DOCUMENT_TYPE: [RECEIPT or TAX INVOICE]
+      ADDRESS: [address if visible]
+      PHONE: [phone if visible]
+      TIME: [time if visible]
+      CARD_NUMBER: [card number if visible]
+      AUTH_CODE: [auth code if visible]
+      STATUS: [status if visible]
 
       Extract all visible text and format as KEY: VALUE pairs only.
 
