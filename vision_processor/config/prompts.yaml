@@ -59,6 +59,12 @@ key_schema:
     - QUANTITY
     - UNIT_PRICE
     - REFERENCE
+    - DOCUMENT_TYPE
+    - ADDRESS
+    - PHONE
+    - CARD_NUMBER
+    - AUTH_CODE
+    - STATUS
 
   # Key validation patterns
   key_patterns:
