@@ -19,6 +19,7 @@ from transformers import (
     MllamaForConditionalGeneration,
 )
 
+from ..utils.repetition_control import UltraAggressiveRepetitionController
 from .base_model import BaseVisionModel, DeviceConfig, ModelCapabilities, ModelResponse
 from .model_utils import DeviceManager
 
@@ -34,7 +35,31 @@ class LlamaVisionModel(BaseVisionModel):
     - 7-step pipeline integration
     - Australian tax document processing
     - Production-ready inference
+    - Ultra-aggressive repetition control for Llama-3.2-Vision bugs
     """
+
+    def __init__(self, *args, **kwargs):
+        """Initialize LlamaVisionModel with repetition control."""
+        super().__init__(*args, **kwargs)
+
+        # Initialize ultra-aggressive repetition controller
+        # Extract configuration from kwargs
+        repetition_config = kwargs.get("repetition_control", {})
+        word_threshold = repetition_config.get("word_threshold", 0.15)
+        phrase_threshold = repetition_config.get("phrase_threshold", 2)
+
+        self.repetition_controller = UltraAggressiveRepetitionController(
+            word_threshold=word_threshold, phrase_threshold=phrase_threshold
+        )
+
+        # Store repetition control settings
+        self.repetition_enabled = repetition_config.get("enabled", True)
+        self.max_new_tokens_limit = repetition_config.get("max_new_tokens_limit", 384)
+
+        logger.info(
+            f"UltraAggressiveRepetitionController initialized - "
+            f"word_threshold={word_threshold}, phrase_threshold={phrase_threshold}"
+        )
 
     def _get_capabilities(self) -> ModelCapabilities:
         """Return Llama-3.2-Vision capabilities."""
@@ -302,50 +327,18 @@ class LlamaVisionModel(BaseVisionModel):
         return inputs
 
     def _clean_response(self, response: str) -> str:
-        """Clean response from repetitive text and artifacts."""
-        import re
+        """Clean response using ultra-aggressive repetition control."""
+        if not self.repetition_enabled:
+            # Fallback to basic cleaning if repetition control is disabled
+            import re
 
-        # Remove excessive repetition of ANY word repeated 3+ times consecutively
-        response = re.sub(r"\b(\w+)(\s+\1){2,}", r"\1", response, flags=re.IGNORECASE)
+            response = re.sub(r"\s+", " ", response)
+            if len(response) > 1000:
+                response = response[:1000] + "..."
+            return response.strip()
 
-        # Remove excessive repetition of longer phrases
-        response = re.sub(
-            r"\b((?:\w+\s+){1,3})(?:\1){2,}",
-            r"\1",
-            response,
-            flags=re.IGNORECASE,
-        )
-
-        # Remove excessive repetition of short tokens
-        response = re.sub(
-            r"\b(\w{1,5})\s+(?:\1\s+){4,}",
-            "",
-            response,
-            flags=re.IGNORECASE,
-        )
-
-        # Stop at common receipt endings
-        stop_patterns = [
-            r"Thank you.*$",
-            r"Visit.*costco\.au.*$",
-            r"Member #\d+.*$",
-            r"\d{2}/\d{2}/\d{4}.*Thank.*$",
-        ]
-
-        for pattern in stop_patterns:
-            match = re.search(pattern, response, re.IGNORECASE | re.DOTALL)
-            if match:
-                response = response[: match.start()].strip()
-                break
-
-        # Clean up excessive whitespace
-        response = re.sub(r"\s+", " ", response)
-
-        # Limit response length
-        if len(response) > 1000:
-            response = response[:1000] + "..."
-
-        return response.strip()
+        # Use the ultra-aggressive repetition controller
+        return self.repetition_controller.clean_response(response)
 
     def process_image(
         self,
@@ -378,9 +371,14 @@ class LlamaVisionModel(BaseVisionModel):
 
             # Generate with deterministic parameters to bypass safety mode
             # Use working implementation settings for OCR extraction
+            # Apply ultra-aggressive token limit to prevent repetition
+            max_tokens = kwargs.get("max_new_tokens", 1024)
+            if self.repetition_enabled:
+                max_tokens = min(max_tokens, self.max_new_tokens_limit)
+
             generation_kwargs = {
                 **inputs,
-                "max_new_tokens": kwargs.get("max_new_tokens", 1024),
+                "max_new_tokens": max_tokens,
                 "do_sample": False,  # Deterministic generation bypasses safety checks
                 "pad_token_id": self.processor.tokenizer.eos_token_id,
                 "eos_token_id": self.processor.tokenizer.eos_token_id,
@@ -619,10 +617,14 @@ Output document type only."""
             inputs = self._prepare_inputs(image, prompt)
 
             # Generate with CUDA-safe parameters (NO repetition_penalty)
-            # Use optimized settings for receipt extraction
+            # Use optimized settings for receipt extraction with ultra-aggressive repetition control
+            max_tokens = 1024
+            if self.repetition_enabled:
+                max_tokens = min(max_tokens, self.max_new_tokens_limit)
+
             generation_kwargs = {
                 **inputs,
-                "max_new_tokens": 1024,
+                "max_new_tokens": max_tokens,
                 "do_sample": False,
                 "pad_token_id": self.processor.tokenizer.eos_token_id,
                 "eos_token_id": self.processor.tokenizer.eos_token_id,

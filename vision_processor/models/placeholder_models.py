@@ -10,6 +10,7 @@ from pathlib import Path
 import torch
 from PIL import Image
 
+from ..utils.repetition_control import UltraAggressiveRepetitionController
 from .base_model import BaseVisionModel, ModelCapabilities, ModelResponse
 
 
@@ -100,6 +101,21 @@ class PlaceholderInternVLModel(BaseVisionModel):
 
 class PlaceholderLlamaVisionModel(BaseVisionModel):
     """Placeholder Llama Vision model for testing."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialize placeholder with repetition control."""
+        super().__init__(*args, **kwargs)
+
+        # Initialize repetition controller like real LlamaVisionModel
+        repetition_config = kwargs.get("repetition_control", {})
+        word_threshold = repetition_config.get("word_threshold", 0.15)
+        phrase_threshold = repetition_config.get("phrase_threshold", 2)
+
+        self.repetition_controller = UltraAggressiveRepetitionController(
+            word_threshold=word_threshold, phrase_threshold=phrase_threshold
+        )
+
+        self.repetition_enabled = repetition_config.get("enabled", True)
 
     def _get_capabilities(self) -> ModelCapabilities:
         """Return Llama-like capabilities."""

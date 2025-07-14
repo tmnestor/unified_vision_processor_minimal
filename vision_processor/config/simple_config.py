@@ -55,6 +55,20 @@ class SimpleConfig:
         self.output_format = os.getenv("VISION_OUTPUT_FORMAT", "table")
         self.log_level = os.getenv("VISION_LOG_LEVEL", "INFO")
 
+        # Repetition control settings (ultra-aggressive for Llama-3.2-Vision)
+        self.repetition_control_enabled = (
+            os.getenv("VISION_REPETITION_CONTROL_ENABLED", "true").lower() == "true"
+        )
+        self.repetition_word_threshold = float(
+            os.getenv("VISION_REPETITION_WORD_THRESHOLD", "0.15")
+        )  # 15% threshold - ultra-aggressive
+        self.repetition_phrase_threshold = int(
+            os.getenv("VISION_REPETITION_PHRASE_THRESHOLD", "2")
+        )  # 2 repetitions trigger cleaning
+        self.repetition_max_tokens_limit = int(
+            os.getenv("VISION_REPETITION_MAX_TOKENS_LIMIT", "384")
+        )  # Ultra-short token limit
+
         # Set offline mode for transformers
         if self.offline_mode:
             os.environ["TRANSFORMERS_OFFLINE"] = "1"
@@ -75,6 +89,11 @@ class SimpleConfig:
         print(f"  Offline Mode: {self.offline_mode}")
         print(f"  Output Format: {self.output_format}")
         print(f"  Log Level: {self.log_level}")
+        print("🧹 Repetition Control:")
+        print(f"  Enabled: {self.repetition_control_enabled}")
+        print(f"  Word Threshold: {self.repetition_word_threshold}")
+        print(f"  Phrase Threshold: {self.repetition_phrase_threshold}")
+        print(f"  Max Tokens Limit: {self.repetition_max_tokens_limit}")
 
     def validate(self) -> bool:
         """Validate configuration settings.
@@ -133,6 +152,12 @@ class SimpleConfig:
             "use_flash_attention": self.use_flash_attention,
             "trust_remote_code": self.trust_remote_code,
             "offline_mode": self.offline_mode,
+            "repetition_control": {
+                "enabled": self.repetition_control_enabled,
+                "word_threshold": self.repetition_word_threshold,
+                "phrase_threshold": self.repetition_phrase_threshold,
+                "max_new_tokens_limit": self.repetition_max_tokens_limit,
+            },
         }
 
     def update_from_cli(self, **kwargs):
