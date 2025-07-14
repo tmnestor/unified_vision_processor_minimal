@@ -207,7 +207,7 @@ class ExtractionEvaluator:
 
         # Setup model
         config = SimpleConfig()
-        config.model_type = model_type
+        config.switch_model(model_type)  # Properly switch model type and path
         model = ModelFactory.create_model(config)
 
         # Get test images
