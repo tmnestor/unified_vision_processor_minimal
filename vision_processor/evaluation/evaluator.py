@@ -1,14 +1,12 @@
-#!/usr/bin/env python3
-"""Evaluation Script for InternVL vs Llama-Vision Key-Value Extraction Performance.
+"""Evaluation Module for Vision Model Key-Value Extraction Performance.
 
-This script compares the extraction performance of both models against ground truth data
-and provides comprehensive metrics and analysis.
+This module provides comprehensive evaluation tools for comparing vision model
+performance on document extraction tasks.
 """
 
 import csv
 import json
 import re
-import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -17,11 +15,8 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-# Add current directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
-
-from vision_processor.config.simple_config import SimpleConfig
-from vision_processor.extraction.simple_extraction_manager import SimpleExtractionManager
+from ..config.simple_config import SimpleConfig
+from ..extraction.simple_extraction_manager import SimpleExtractionManager
 
 
 class ExtractionEvaluator:
@@ -481,4 +476,6 @@ def main():
 
 
 if __name__ == "__main__":
+    import sys
+
     sys.exit(main())
