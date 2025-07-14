@@ -205,9 +205,9 @@ class ExtractionEvaluator:
         """Evaluate a specific model on all test images."""
         self.console.print(f"\n🔬 Evaluating {model_type.upper()} model...")
 
-        # Setup model
+        # Setup model - use update_from_cli to properly set model type and path
         config = SimpleConfig()
-        config.switch_model(model_type)  # Properly switch model type and path
+        config.update_from_cli(model=model_type)
         model = ModelFactory.create_model(config)
 
         # Get test images
