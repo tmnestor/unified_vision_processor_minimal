@@ -85,3 +85,5 @@ debug_llama_prompt.py
 test_*.py
 check_*.py
 LLAMA_REPETITION_CUDA_BUG_ANALYSIS.md
+# Backup directory
+backup/

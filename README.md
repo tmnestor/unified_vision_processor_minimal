@@ -127,9 +127,8 @@ unified_vision_processor_minimal/
 ├── SIMPLIFIED_IMPLEMENTATION_SUMMARY.md  # Implementation details
 ├── ARCHIVE_SUMMARY.md                    # Legacy system summary
 ├── 
-└── # Backup
-    └── backup/                           # Archived files
-        └── BACKUP_INDEX.md               # Index of archived files
+└── # Documentation
+    └── (backup/ directory excluded from git)
 ```
 
 ## 🚀 Quick Start
@@ -336,7 +335,7 @@ The system is optimized for production deployment:
 
 ### Technical Documentation
 - **`evaluation_results/evaluation_report.md`** - Latest evaluation results
-- **`backup/BACKUP_INDEX.md`** - Archived files reference
+- **Local backup directory** - Archived development files (not tracked in git)
 - **`ARCHIVE_SUMMARY.md`** - Original complex system summary
 - **`LLAMA_PLACEHOLDER_ISSUE.md`** - Model loading diagnostics
 
