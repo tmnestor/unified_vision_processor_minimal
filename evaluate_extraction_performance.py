@@ -154,14 +154,23 @@ class ExtractionEvaluator:
         try:
             # Extract using the working SimpleExtractionManager
             result = manager.process_document(str(image_path))
+            self.console.print("🔍 DEBUG: Extraction completed, processing result...")
+
             extracted_data = result.extracted_fields
+            self.console.print(
+                f"🔍 DEBUG: Extracted {len(extracted_data)} fields: {list(extracted_data.keys())}"
+            )
 
             # Calculate field-wise accuracy
             field_accuracies = {}
             for field in self.extraction_fields:
                 gt_value = gt_data.get(field, "")
                 ext_value = extracted_data.get(field, "")
-                field_accuracies[field] = self._calculate_field_accuracy(ext_value, gt_value, field)
+                try:
+                    field_accuracies[field] = self._calculate_field_accuracy(ext_value, gt_value, field)
+                except Exception as field_error:
+                    self.console.print(f"🔍 DEBUG: Error calculating accuracy for {field}: {field_error}")
+                    field_accuracies[field] = 0.0
 
             # Overall accuracy
             total_fields = len([f for f in self.extraction_fields if gt_data.get(f)])
@@ -169,7 +178,9 @@ class ExtractionEvaluator:
                 sum(field_accuracies.values()) / len(field_accuracies) if field_accuracies else 0.0
             )
 
-            return {
+            self.console.print(f"🔍 DEBUG: Calculated overall accuracy: {overall_accuracy:.1%}")
+
+            result_dict = {
                 "image_file": image_file,
                 "processing_time": result.processing_time,
                 "response_length": 0,  # Not directly available from result
@@ -183,7 +194,14 @@ class ExtractionEvaluator:
                 "confidence": result.model_confidence,
             }
 
+            self.console.print("🔍 DEBUG: Successfully created result dict, returning...")
+            return result_dict
+
         except Exception as e:
+            self.console.print(f"🔍 DEBUG: Exception in _evaluate_single_image: {e}")
+            import traceback
+
+            self.console.print(f"🔍 DEBUG: Traceback: {traceback.format_exc()}")
             return {"error": str(e), "image_file": image_file}
 
     def evaluate_model(self, model_type: str, test_images: Optional[List[str]] = None) -> Dict[str, Any]:
