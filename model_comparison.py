@@ -129,30 +129,19 @@ class ExtractionConfigLoader:
         return textwrap.dedent("\n".join(lines)).strip()
 
     def generate_llama_safe_prompt(self) -> str:
-        """Generate ultra-simple Llama-safe prompt that bypasses safety mode"""
-        core_fields = self.get_core_fields()
+        """Generate the proven working Llama-safe prompt from CLAUDE.md"""
+        # Exact working pattern from CLAUDE.md that achieved 5/10 success
+        return """<|image|>Extract data from this receipt in KEY-VALUE format.
 
-        # Ultra-simple prompt pattern that worked in our tests
-        lines = [
-            "<|image|>Extract data from this receipt in KEY-VALUE format.",
-            "",
-            "Output format:",
-        ]
+Output format:
+DATE: [date from receipt]
+STORE: [store name]
+GST: [GST amount]
+TOTAL: [total amount]
+SUBTOTAL: [subtotal amount]
+ITEMS: [item names separated by |]
 
-        # Only include core fields with minimal descriptions
-        for field in core_fields:
-            field_name = field["name"]
-            if field_name == "DATE":
-                lines.append("DATE: [date from receipt]")
-            elif field_name == "STORE":
-                lines.append("STORE: [store name]")
-            elif field_name == "TOTAL":
-                lines.append("TOTAL: [total amount]")
-
-        lines.append("")
-        lines.append("Extract all visible text and format as KEY: VALUE pairs only.")
-
-        return "\n".join(lines)
+Extract all visible text and format as KEY: VALUE pairs only."""
 
     def get_field_config(self, field_name: str) -> Optional[Dict[str, Any]]:
         """Get configuration for a specific field"""
