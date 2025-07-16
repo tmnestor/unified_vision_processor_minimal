@@ -1142,11 +1142,22 @@ def run_model_comparison(
                         else config["extraction_prompt"]
                     )
 
+                    # Debug: Print prompt being used
+                    if i == 0:  # Only print for first image to avoid spam
+                        console.print(f"[dim]🔧 {model_name.upper()} PROMPT:[/dim]")
+                        truncated_prompt = prompt[:150] + ("..." if len(prompt) > 150 else "")
+                        console.print(f"[dim]'{truncated_prompt}'[/dim]")
+
                     raw_response = model_loaders[model_name].run_inference(
                         model, processor, prompt, image, config["max_new_tokens"]
                     )
                     inference_time = time.time() - inference_start
                     total_inference_time += inference_time
+
+                    # Debug: Print raw response to detect safety mode
+                    console.print(f"[dim]🔍 {img_name} RAW RESPONSE:[/dim]")
+                    truncated_response = raw_response[:200] + ("..." if len(raw_response) > 200 else "")
+                    console.print(f"[dim]'{truncated_response}'[/dim]")
 
                     cleaned_response = repetition_controller.clean_response(raw_response)
                     analysis = extraction_analyzer.analyze(cleaned_response, img_name)
