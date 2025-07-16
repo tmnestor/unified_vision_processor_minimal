@@ -129,19 +129,18 @@ class ExtractionConfigLoader:
         return textwrap.dedent("\n".join(lines)).strip()
 
     def generate_llama_safe_prompt(self) -> str:
-        """Generate the proven working Llama-safe prompt from CLAUDE.md"""
-        # Exact working pattern from CLAUDE.md that achieved 5/10 success
-        return """<|image|>Extract data from this receipt in KEY-VALUE format.
+        """Generate ultra-safe Llama prompt that bypasses safety mode"""
+        # Ultra-minimal approach to avoid safety triggers
+        return """<|image|>Extract data in KEY-VALUE format:
 
-Output format:
-DATE: [date from receipt]
+DATE: [date]
 STORE: [store name]
 GST: [GST amount]
 TOTAL: [total amount]
 SUBTOTAL: [subtotal amount]
-ITEMS: [item names separated by |]
+ITEMS: [items]
 
-Extract all visible text and format as KEY: VALUE pairs only."""
+Format as KEY: VALUE pairs only."""
 
     def get_field_config(self, field_name: str) -> Optional[Dict[str, Any]]:
         """Get configuration for a specific field"""
