@@ -86,3 +86,4 @@ check_*.py
 LLAMA_REPETITION_CUDA_BUG_ANALYSIS.md
 # Backup directory
 backup/
+.claude/
