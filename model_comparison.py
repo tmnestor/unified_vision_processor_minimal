@@ -39,6 +39,7 @@ import pandas as pd
 import seaborn as sns
 import torch
 import typer
+import yaml
 from PIL import Image
 from rich.console import Console
 from rich.progress import track
@@ -50,41 +51,263 @@ plt.switch_backend("Agg")  # Non-interactive backend for V100
 console = Console()
 
 # =============================================================================
+# EXTRACTION CONFIGURATION SYSTEM
+# =============================================================================
+
+
+class ExtractionConfigLoader:
+    """Loads and manages extraction configuration from YAML files"""
+
+    def __init__(self, config_path: str = "extraction_config.yaml"):
+        self.config_path = Path(config_path)
+        self.config = self._load_config()
+
+    def _load_config(self) -> Dict[str, Any]:
+        """Load configuration from YAML file"""
+        if not self.config_path.exists():
+            raise FileNotFoundError(f"Configuration file not found: {self.config_path}")
+
+        with self.config_path.open("r") as f:
+            return yaml.safe_load(f)
+
+    def get_all_fields(self) -> List[Dict[str, Any]]:
+        """Get all extraction fields (core + bonus)"""
+        all_fields = []
+        all_fields.extend(self.config["extraction_fields"]["core_fields"])
+        all_fields.extend(self.config["extraction_fields"]["bonus_fields"])
+        return all_fields
+
+    def get_core_fields(self) -> List[Dict[str, Any]]:
+        """Get only core fields (required for success)"""
+        return self.config["extraction_fields"]["core_fields"]
+
+    def get_bonus_fields(self) -> List[Dict[str, Any]]:
+        """Get only bonus fields (optional)"""
+        return self.config["extraction_fields"]["bonus_fields"]
+
+    def get_field_names(self) -> List[str]:
+        """Get list of all field names"""
+        return [field["name"] for field in self.get_all_fields()]
+
+    def get_core_field_names(self) -> List[str]:
+        """Get list of core field names"""
+        return [field["name"] for field in self.get_core_fields()]
+
+    def get_success_criteria(self) -> Dict[str, int]:
+        """Get success criteria configuration"""
+        return self.config["success_criteria"]
+
+    def get_expected_abn_images(self) -> List[str]:
+        """Get list of images expected to have ABN (for evaluation)"""
+        return self.config.get("evaluation", {}).get("expected_abn_images", [])
+
+    def generate_extraction_prompt(self) -> str:
+        """Generate extraction prompt dynamically from configuration"""
+        prompt_settings = self.config["prompt_settings"]
+        all_fields = self.get_all_fields()
+
+        # Build the prompt
+        lines = [
+            "<|image|>" + prompt_settings["instruction_prefix"],
+            "",
+            prompt_settings["output_format_header"],
+        ]
+
+        # Add each field to the format
+        for field in all_fields:
+            field_line = f"{field['name']}: [{field['description']}]"
+            if not field.get("required", True):
+                field_line += " or N/A if not found"
+            lines.append(field_line)
+
+        lines.append("")
+
+        # Add additional instructions
+        if "additional_instructions" in prompt_settings:
+            lines.append(prompt_settings["additional_instructions"])
+
+        return textwrap.dedent("\n".join(lines)).strip()
+
+    def get_field_config(self, field_name: str) -> Optional[Dict[str, Any]]:
+        """Get configuration for a specific field"""
+        for field in self.get_all_fields():
+            if field["name"] == field_name:
+                return field
+        return None
+
+    def is_core_field(self, field_name: str) -> bool:
+        """Check if a field is a core field"""
+        return field_name in self.get_core_field_names()
+
+    def get_validation_type(self, field_name: str) -> Optional[str]:
+        """Get validation type for a field"""
+        field_config = self.get_field_config(field_name)
+        return field_config.get("validation_type") if field_config else None
+
+    def get_fallback_patterns(self, field_name: str) -> List[str]:
+        """Get fallback regex patterns for a field"""
+        field_config = self.get_field_config(field_name)
+        return field_config.get("fallback_patterns", []) if field_config else []
+
+    def get_invalid_values(self, field_name: str) -> List[str]:
+        """Get list of invalid values for a field (like N/A, etc.)"""
+        field_config = self.get_field_config(field_name)
+        return field_config.get("invalid_values", []) if field_config else []
+
+    def get_validation_rules(self, field_name: str) -> List[str]:
+        """Get validation rules for a field"""
+        field_config = self.get_field_config(field_name)
+        return field_config.get("validation_rules", []) if field_config else []
+
+
+class ConfigurableFieldValidator:
+    """Validates extracted field values based on configuration"""
+
+    def __init__(self, config_loader: ExtractionConfigLoader):
+        self.config_loader = config_loader
+
+    def validate_field(self, field_name: str, field_value: str) -> bool:
+        """Validate a field value based on its configuration"""
+        if not field_value:
+            return False
+
+        field_config = self.config_loader.get_field_config(field_name)
+        if not field_config:
+            return False
+
+        validation_type = field_config.get("validation_type")
+
+        if validation_type == "australian_abn":
+            return self._validate_australian_abn(field_name, field_value)
+        elif validation_type == "australian_date":
+            return self._validate_australian_date(field_value)
+        elif validation_type == "australian_currency":
+            return self._validate_australian_currency(field_value)
+        elif validation_type == "text":
+            return self._validate_text(field_name, field_value)
+        elif validation_type == "text_list":
+            return self._validate_text_list(field_name, field_value)
+        else:
+            # Default validation - just check it's not empty or N/A
+            return self._validate_not_empty_or_na(field_name, field_value)
+
+    def _validate_australian_abn(self, field_name: str, abn_value: str) -> bool:
+        """Validate Australian Business Number"""
+        abn_clean = abn_value.strip().upper()
+
+        # Check for invalid values
+        invalid_values = self.config_loader.get_invalid_values(field_name)
+        if abn_clean in invalid_values:
+            return False
+
+        # Check if it's actually a valid 11-digit ABN pattern
+        digits_only = re.sub(r"[^\d]", "", abn_clean)
+        if len(digits_only) != 11:
+            return False
+
+        # Additional validation rules
+        validation_rules = self.config_loader.get_validation_rules(field_name)
+        if "no_all_zeros" in validation_rules and digits_only == "00000000000":
+            return False
+        if "no_repeating_pattern" in validation_rules and len(set(digits_only)) == 1:
+            return False
+
+        return True
+
+    def _validate_australian_date(self, date_value: str) -> bool:
+        """Validate Australian date format (DD/MM/YYYY)"""
+        date_clean = date_value.strip()
+        # Basic pattern check for Australian date formats
+        pattern = r"\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{1,2}\.\d{1,2}\.\d{2,4})\b"
+        return bool(re.search(pattern, date_clean))
+
+    def _validate_australian_currency(self, currency_value: str) -> bool:
+        """Validate Australian currency format"""
+        currency_clean = currency_value.strip()
+        # Basic pattern check for Australian currency
+        pattern = r"(\$\d+\.\d{2}|\$\d+|AUD\s*\d+\.\d{2})"
+        return bool(re.search(pattern, currency_clean))
+
+    def _validate_text(self, field_name: str, text_value: str) -> bool:
+        """Validate text field"""
+        return self._validate_not_empty_or_na(field_name, text_value)
+
+    def _validate_text_list(self, field_name: str, list_value: str) -> bool:
+        """Validate text list field (items separated by |)"""
+        return self._validate_not_empty_or_na(field_name, list_value)
+
+    def _validate_not_empty_or_na(self, field_name: str, value: str) -> bool:
+        """Basic validation - not empty and not N/A"""
+        value_clean = value.strip().upper()
+
+        # Check for invalid values
+        invalid_values = self.config_loader.get_invalid_values(field_name)
+        if not invalid_values:
+            # Default invalid values if none specified
+            invalid_values = ["N/A", "NA", "NOT AVAILABLE", "NOT FOUND", "NONE", "-"]
+
+        return value_clean not in invalid_values and len(value_clean) > 0
+
+
+# =============================================================================
 # CONFIGURATION
 # =============================================================================
 
-DEFAULT_CONFIG = {
-    "model_paths": {
-        "llama": "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision",
-        "internvl": "/home/jovyan/nfs_share/models/InternVL3-8B",
-    },
-    "extraction_prompt": textwrap.dedent("""
-        <|image|>Extract data from this Australian business document in KEY-VALUE format.
 
-        Output format:
-        STORE: [business name or N/A if not found]
-        ABN: [11-digit Australian Business Number or N/A if not found]
-        DATE: [date in DD/MM/YYYY format or N/A if not found]
-        TOTAL: [total amount in AUD or N/A if not found]
-        SUBTOTAL: [subtotal amount or N/A if not found]
-        GST: [GST amount or N/A if not found]
-        ITEMS: [item names separated by | or N/A if not found]
+def load_extraction_config(config_path: str = "extraction_config.yaml") -> Dict[str, Any]:
+    """Load extraction configuration from YAML file - FAIL FAST if config missing"""
+    try:
+        config_loader = ExtractionConfigLoader(config_path)
 
-        ABN is crucial - look for 11-digit numbers formatted as XX XXX XXX XXX or XXXXXXXXXXX. Use Australian date format (DD/MM/YYYY) and include currency symbols. For any field that cannot be found in the document, return "N/A". Extract all visible text and format as KEY: VALUE pairs only. Stop after completion.
-    """).strip(),
-    "test_images": [
-        ("image14.png", "TAX_INVOICE"),
-        ("image65.png", "TAX_INVOICE"),
-        ("image71.png", "TAX_INVOICE"),
-        ("image74.png", "TAX_INVOICE"),
-        ("image205.png", "FUEL_RECEIPT"),
-        ("image23.png", "TAX_INVOICE"),
-        ("image45.png", "TAX_INVOICE"),
-        ("image1.png", "BANK_STATEMENT"),
-        ("image39.png", "TAX_INVOICE"),
-        ("image76.png", "TAX_INVOICE"),
-    ],
-}
+        # Validate configuration immediately
+        if not config_loader.get_all_fields():
+            raise ValueError(f"No extraction fields found in {config_path}")
+
+        if not config_loader.get_core_fields():
+            raise ValueError(f"No core fields defined in {config_path}")
+
+        extraction_prompt = config_loader.generate_extraction_prompt()
+        if not extraction_prompt or len(extraction_prompt.strip()) < 50:
+            raise ValueError(f"Generated extraction prompt is too short or empty from {config_path}")
+
+        console.print(f"✅ Extraction configuration loaded from: {config_path}", style="green")
+        console.print(f"   Fields: {config_loader.get_field_names()}", style="dim")
+        console.print(f"   Core fields: {config_loader.get_core_field_names()}", style="dim")
+
+        return {
+            "model_paths": {
+                "llama": "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision",
+                "internvl": "/home/jovyan/nfs_share/models/InternVL3-8B",
+            },
+            "extraction_prompt": extraction_prompt,
+            "test_images": [
+                ("image14.png", "TAX_INVOICE"),
+                ("image65.png", "TAX_INVOICE"),
+                ("image71.png", "TAX_INVOICE"),
+                ("image74.png", "TAX_INVOICE"),
+                ("image205.png", "FUEL_RECEIPT"),
+                ("image23.png", "TAX_INVOICE"),
+                ("image45.png", "TAX_INVOICE"),
+                ("image1.png", "BANK_STATEMENT"),
+                ("image39.png", "TAX_INVOICE"),
+                ("image76.png", "TAX_INVOICE"),
+            ],
+            "config_loader": config_loader,
+        }
+    except FileNotFoundError:
+        console.print(f"❌ FATAL: Extraction configuration file not found: {config_path}", style="bold red")
+        console.print(f"💡 Expected location: {Path(config_path).absolute()}", style="yellow")
+        console.print("💡 Create the file using: extraction_config_loader.py", style="yellow")
+        raise typer.Exit(1) from None
+    except Exception as e:
+        console.print(f"❌ FATAL: Failed to load extraction configuration: {e}", style="bold red")
+        console.print(f"💡 Configuration file: {config_path}", style="yellow")
+        console.print("💡 Check YAML syntax and required fields", style="yellow")
+        raise typer.Exit(1) from None
+
+
+# Load default configuration
+DEFAULT_CONFIG = load_extraction_config()
 
 # =============================================================================
 # UTILITY CLASSES (From Notebook Cells 1-2)
@@ -189,141 +412,126 @@ class UltraAggressiveRepetitionController:
         return text
 
 
-class KeyValueExtractionAnalyzer:
-    """Analyzer for KEY-VALUE extraction results with realistic Australian business requirements"""
+class ConfigurableKeyValueExtractionAnalyzer:
+    """Analyzer for KEY-VALUE extraction results using configurable fields - FAIL FAST design"""
 
-    @staticmethod
-    def is_valid_abn(abn_value: str) -> bool:
-        """Check if extracted ABN value is actually a valid ABN (not N/A, placeholder, etc.)"""
-        if not abn_value:
-            return False
+    def __init__(self, config_loader: ExtractionConfigLoader):
+        if not config_loader:
+            raise ValueError(
+                "ConfigurableKeyValueExtractionAnalyzer requires a valid ExtractionConfigLoader"
+            )
 
-        abn_clean = abn_value.strip().upper()
+        self.config_loader = config_loader
+        self.validator = ConfigurableFieldValidator(config_loader)
 
-        # Check for explicit N/A or placeholder values
-        invalid_values = [
-            "N/A",
-            "NA",
-            "NOT AVAILABLE",
-            "NOT FOUND",
-            "NONE",
-            "-",
-            "UNKNOWN",
-            "NULL",
-            "EMPTY",
-            "NO ABN",
-            "NO NUMBER",
-            "MISSING",
-        ]
+        # Validate configuration at initialization
+        self._validate_config()
 
-        if abn_clean in invalid_values:
-            return False
+    def _validate_config(self):
+        """Validate configuration at startup - FAIL FAST if invalid"""
+        all_fields = self.config_loader.get_all_fields()
+        core_fields = self.config_loader.get_core_fields()
 
-        # Check if it's actually a valid 11-digit ABN pattern
-        # Remove spaces and check if it's 11 digits
-        digits_only = re.sub(r"[^\d]", "", abn_clean)
-        if len(digits_only) != 11:
-            return False
+        if not all_fields:
+            raise ValueError("No extraction fields configured")
 
-        # Additional check: make sure it's not all zeros or a repeating pattern
-        if digits_only == "00000000000" or len(set(digits_only)) == 1:
-            return False
+        if not core_fields:
+            raise ValueError("No core fields configured")
 
-        return True
+        # Validate each field has required properties
+        for field in all_fields:
+            if "name" not in field:
+                raise ValueError(f"Field missing 'name' property: {field}")
+            if "description" not in field:
+                raise ValueError(f"Field '{field['name']}' missing 'description' property")
+            if "validation_type" not in field:
+                raise ValueError(f"Field '{field['name']}' missing 'validation_type' property")
 
-    @staticmethod
-    def analyze(response: str, img_name: str) -> Dict[str, Any]:
-        """Analyze KEY-VALUE extraction results with Australian format but realistic success criteria"""
+        success_criteria = self.config_loader.get_success_criteria()
+        if "min_core_fields" not in success_criteria:
+            raise ValueError("Success criteria missing 'min_core_fields'")
+
+    def analyze(self, response: str, img_name: str) -> Dict[str, Any]:
+        """Analyze KEY-VALUE extraction results with configurable fields"""
         response_clean = response.strip()
 
-        is_structured = bool(
-            re.search(
-                r"(STORE:|ABN:|DATE:|TOTAL:|store_name:|abn:|date:|total:)", response_clean, re.IGNORECASE
-            )
-        )
+        # Get all configured fields
+        all_fields = self.config_loader.get_all_fields()
+        core_fields = self.config_loader.get_core_fields()
 
-        # Extract data from KEY-VALUE format
-        store_match = re.search(r'(?:STORE|store_name):\s*"?([^"\n]+)"?', response_clean, re.IGNORECASE)
-        abn_match = re.search(r'(?:ABN|abn):\s*"?([^"\n]+)"?', response_clean, re.IGNORECASE)
-        date_match = re.search(r'(?:DATE|date):\s*"?([^"\n]+)"?', response_clean, re.IGNORECASE)
-        total_match = re.search(
-            r'(?:TOTAL|total_amount|total):\s*"?([^"\n]+)"?', response_clean, re.IGNORECASE
-        )
+        # Check if response is structured (contains any field patterns)
+        field_patterns = [f"{field['name']}:" for field in all_fields]
+        pattern = "|".join(field_patterns)
+        is_structured = bool(re.search(pattern, response_clean, re.IGNORECASE))
 
-        # Check if extracted values are "N/A" and treat as not found
-        def is_valid_match(match):
-            if not match:
-                return False
-            value = match.group(1).strip()
-            return value.upper() != "N/A" and value != ""
+        # Extract and validate each field
+        field_results = {}
+        field_matches = {}
 
-        store_match = store_match if is_valid_match(store_match) else None
-        date_match = date_match if is_valid_match(date_match) else None
-        total_match = total_match if is_valid_match(total_match) else None
+        for field in all_fields:
+            field_name = field["name"]
+            field_detected, field_match = self._extract_and_validate_field(field, response_clean)
 
-        # FIXED ABN DETECTION: Check if extracted ABN is actually valid
-        has_abn = False
-        if abn_match:
-            abn_value = abn_match.group(1).strip()
-            has_abn = KeyValueExtractionAnalyzer.is_valid_abn(abn_value)
+            field_results[f"has_{field_name.lower()}"] = field_detected
+            field_matches[field_name.lower()] = field_match
 
-        # Fallback detection for non-structured responses
-        if not store_match:
-            store_match = re.search(
-                r"(spotlight|woolworths|coles|bunnings|officeworks|kmart|target|harvey norman|jb hi-fi)",
-                response_clean,
-                re.IGNORECASE,
-            )
+        # Calculate scores
+        core_field_names = [field["name"].lower() for field in core_fields]
+        core_scores = [field_results.get(f"has_{name}", False) for name in core_field_names]
+        all_scores = [field_results.get(key, False) for key in field_results.keys()]
 
-        # If no structured ABN found, try fallback patterns but validate them too
-        if not has_abn:
-            fallback_abn = re.search(r"\b(\d{2}\s*\d{3}\s*\d{3}\s*\d{3}|\d{11})\b", response_clean)
-            if fallback_abn:
-                has_abn = KeyValueExtractionAnalyzer.is_valid_abn(fallback_abn.group(1))
+        core_score = sum(core_scores)
+        extraction_score = sum(all_scores)
 
-            # Also look for "ABN:" prefix patterns
-            if not has_abn:
-                abn_prefix_match = re.search(
-                    r"(?:ABN|A\.B\.N\.?)\s*:?\s*(\d{2}\s*\d{3}\s*\d{3}\s*\d{3}|\d{11})",
-                    response_clean,
-                    re.IGNORECASE,
-                )
-                if abn_prefix_match:
-                    has_abn = KeyValueExtractionAnalyzer.is_valid_abn(abn_prefix_match.group(1))
+        # Success criteria from config
+        success_criteria = self.config_loader.get_success_criteria()
+        min_core_fields = success_criteria.get("min_core_fields", 2)
+        successful = core_score >= min_core_fields
 
-        if not date_match:
-            date_match = re.search(
-                r"\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{1,2}\.\d{1,2}\.\d{2,4})\b", response_clean
-            )
-
-        if not total_match:
-            total_match = re.search(r"(\$\d+\.\d{2}|\$\d+|AUD\s*\d+\.\d{2})", response_clean)
-
-        has_store = bool(store_match)
-        has_date = bool(date_match)
-        has_total = bool(total_match)
-
-        core_fields = [has_store, has_date, has_total]
-        all_fields = [has_store, has_abn, has_date, has_total]
-
-        extraction_score = sum(all_fields)
-        core_score = sum(core_fields)
-
-        # Success = at least 2/3 core fields (STORE, DATE, TOTAL)
-        successful = core_score >= 2
-
-        return {
+        # Build result dictionary
+        result = {
             "img_name": img_name,
             "response": response_clean,
             "is_structured": is_structured,
-            "has_store": has_store,
-            "has_abn": has_abn,
-            "has_date": has_date,
-            "has_total": has_total,
             "extraction_score": extraction_score,
             "core_score": core_score,
             "successful": successful,
         }
+
+        # Add individual field results
+        result.update(field_results)
+
+        return result
+
+    def _extract_and_validate_field(
+        self, field_config: Dict[str, Any], response: str
+    ) -> Tuple[bool, Optional[str]]:
+        """Extract and validate a specific field from the response"""
+        field_name = field_config["name"]
+
+        # Try structured extraction first
+        pattern = rf'(?:{field_name}|{field_name.lower()}):\s*"?([^"\n]+)"?'
+        match = re.search(pattern, response, re.IGNORECASE)
+
+        if match:
+            field_value = match.group(1).strip()
+            if self.validator and self.validator.validate_field(field_name, field_value):
+                return True, field_value
+
+        # Try fallback patterns if structured extraction failed
+        fallback_patterns = field_config.get("fallback_patterns", [])
+        for pattern in fallback_patterns:
+            fallback_match = re.search(pattern, response, re.IGNORECASE)
+            if fallback_match:
+                field_value = fallback_match.group(1).strip()
+                if self.validator and self.validator.validate_field(field_name, field_value):
+                    return True, field_value
+
+        return False, None
+
+
+# For backwards compatibility, alias the old class name
+KeyValueExtractionAnalyzer = ConfigurableKeyValueExtractionAnalyzer
 
 
 class DatasetManager:
@@ -824,26 +1032,32 @@ def run_model_comparison(
     max_tokens: int,
     quantization: bool,
     model_paths: Dict[str, str] = None,
+    config_path: str = "extraction_config.yaml",
 ):
     """Main model comparison execution"""
+
+    # Load extraction configuration
+    extraction_config = load_extraction_config(config_path)
+    config_loader = extraction_config.get("config_loader")
 
     # Initialize components
     memory_manager = MemoryManager()
     repetition_controller = UltraAggressiveRepetitionController()
-    extraction_analyzer = KeyValueExtractionAnalyzer()
+    extraction_analyzer = ConfigurableKeyValueExtractionAnalyzer(config_loader)
     dataset_manager = DatasetManager(datasets_path)
 
     # Use provided model paths or defaults
     if model_paths is None:
-        model_paths = DEFAULT_CONFIG["model_paths"]
+        model_paths = extraction_config["model_paths"]
 
     config = {
         "model_paths": model_paths,
-        "extraction_prompt": DEFAULT_CONFIG["extraction_prompt"],
+        "extraction_prompt": extraction_config["extraction_prompt"],
         "max_new_tokens": max_tokens,
         "enable_quantization": quantization,
         "test_models": models,
-        "test_images": DEFAULT_CONFIG["test_images"],
+        "test_images": extraction_config["test_images"],
+        "config_loader": config_loader,
     }
 
     console.print("🏆 UNIFIED VISION MODEL COMPARISON", style="bold blue")
@@ -1015,6 +1229,9 @@ def compare(
     quantization: bool = typer.Option(True, help="Enable 8-bit quantization for V100"),
     llama_path: str = typer.Option(None, help="Custom path to Llama model"),
     internvl_path: str = typer.Option(None, help="Custom path to InternVL model"),
+    config_path: str = typer.Option(
+        "extraction_config.yaml", help="Path to extraction configuration YAML file"
+    ),
 ):
     """Run comprehensive model comparison with analytics"""
 
@@ -1034,6 +1251,7 @@ def compare(
         max_tokens=max_tokens,
         quantization=quantization,
         model_paths=model_paths,
+        config_path=config_path,
     )
 
 
