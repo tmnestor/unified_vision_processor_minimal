@@ -128,6 +128,32 @@ class ExtractionConfigLoader:
 
         return textwrap.dedent("\n".join(lines)).strip()
 
+    def generate_llama_safe_prompt(self) -> str:
+        """Generate ultra-simple Llama-safe prompt that bypasses safety mode"""
+        core_fields = self.get_core_fields()
+
+        # Ultra-simple prompt pattern that worked in our tests
+        lines = [
+            "<|image|>Extract data from this receipt in KEY-VALUE format.",
+            "",
+            "Output format:",
+        ]
+
+        # Only include core fields with minimal descriptions
+        for field in core_fields:
+            field_name = field["name"]
+            if field_name == "DATE":
+                lines.append("DATE: [date from receipt]")
+            elif field_name == "STORE":
+                lines.append("STORE: [store name]")
+            elif field_name == "TOTAL":
+                lines.append("TOTAL: [total amount]")
+
+        lines.append("")
+        lines.append("Extract all visible text and format as KEY: VALUE pairs only.")
+
+        return "\n".join(lines)
+
     def get_field_config(self, field_name: str) -> Optional[Dict[str, Any]]:
         """Get configuration for a specific field"""
         for field in self.get_all_fields():
@@ -267,8 +293,13 @@ def load_extraction_config(config_path: str = "extraction_config.yaml") -> Dict[
             raise ValueError(f"No core fields defined in {config_path}")
 
         extraction_prompt = config_loader.generate_extraction_prompt()
+        llama_safe_prompt = config_loader.generate_llama_safe_prompt()
+
         if not extraction_prompt or len(extraction_prompt.strip()) < 50:
             raise ValueError(f"Generated extraction prompt is too short or empty from {config_path}")
+
+        if not llama_safe_prompt or len(llama_safe_prompt.strip()) < 30:
+            raise ValueError(f"Generated Llama-safe prompt is too short or empty from {config_path}")
 
         console.print(f"✅ Extraction configuration loaded from: {config_path}", style="green")
         console.print(f"   Fields: {config_loader.get_field_names()}", style="dim")
@@ -280,6 +311,7 @@ def load_extraction_config(config_path: str = "extraction_config.yaml") -> Dict[
                 "internvl": "/home/jovyan/nfs_share/models/InternVL3-8B",
             },
             "extraction_prompt": extraction_prompt,
+            "llama_safe_prompt": llama_safe_prompt,
             "test_images": [
                 ("image14.png", "TAX_INVOICE"),
                 ("image65.png", "TAX_INVOICE"),
@@ -1112,8 +1144,16 @@ def run_model_comparison(
                     image = Image.open(img_path).convert("RGB")
 
                     inference_start = time.time()
+
+                    # Use model-specific prompt
+                    prompt = (
+                        config["llama_safe_prompt"]
+                        if model_name == "llama"
+                        else config["extraction_prompt"]
+                    )
+
                     raw_response = model_loaders[model_name].run_inference(
-                        model, processor, config["extraction_prompt"], image, config["max_new_tokens"]
+                        model, processor, prompt, image, config["max_new_tokens"]
                     )
                     inference_time = time.time() - inference_start
                     total_inference_time += inference_time

@@ -5,21 +5,21 @@ extraction_fields:
   # Core business fields (required for success criteria)
   core_fields:
     - name: "STORE"
-      description: "store name"
+      description: "business name"
       validation_type: "text"
       required: true
       fallback_patterns:
         - "spotlight|woolworths|coles|bunnings|officeworks|kmart|target|harvey norman|jb hi-fi"
     
     - name: "DATE" 
-      description: "date from receipt"
+      description: "date in DD/MM/YYYY format"
       validation_type: "australian_date"
       required: true
       fallback_patterns:
         - "\\b(\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}|\\d{1,2}\\.\\d{1,2}\\.\\d{2,4})\\b"
     
     - name: "TOTAL"
-      description: "total amount"
+      description: "total amount in AUD"
       validation_type: "australian_currency"
       required: true
       fallback_patterns:
@@ -28,7 +28,7 @@ extraction_fields:
   # Optional/bonus fields
   bonus_fields:
     - name: "ABN"
-      description: "ABN number"
+      description: "11-digit Australian Business Number"
       validation_type: "australian_abn"
       required: false
       validation_rules:
@@ -76,9 +76,13 @@ success_criteria:
 
 # Prompt generation settings
 prompt_settings:
-  instruction_prefix: "Extract data from this receipt in KEY-VALUE format."
+  instruction_prefix: "Extract data from this Australian business document in KEY-VALUE format."
   output_format_header: "Output format:"
-  additional_instructions: ""
+  additional_instructions: |
+    Use Australian date format (DD/MM/YYYY) and include currency symbols. 
+    For any field that cannot be found in the document, return "N/A". 
+    Extract all visible text and format as KEY: VALUE pairs only. 
+    Stop after completion.
 
 # Expected ABN images (for evaluation purposes)
 evaluation:
