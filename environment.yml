@@ -13,6 +13,8 @@ dependencies:
   - tqdm
   - pyyaml
   - scikit-learn
+  - pandas
+  - seaborn
   - pip
   - ipykernel  # Required for Jupyter notebook support
   - ipywidgets  # Required for tqdm progress bars in Jupyter
