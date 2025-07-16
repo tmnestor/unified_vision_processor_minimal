@@ -1085,6 +1085,7 @@ def run_model_comparison(
     config = {
         "model_paths": model_paths,
         "extraction_prompt": extraction_config["extraction_prompt"],
+        "llama_safe_prompt": extraction_config["llama_safe_prompt"],
         "max_new_tokens": max_tokens,
         "enable_quantization": quantization,
         "test_models": models,
