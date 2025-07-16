@@ -62,15 +62,15 @@ DEFAULT_CONFIG = {
         <|image|>Extract data from this Australian business document in KEY-VALUE format.
 
         Output format:
-        STORE: [business name]
-        ABN: [11-digit Australian Business Number]
-        DATE: [date in DD/MM/YYYY format]
-        TOTAL: [total amount in AUD]
-        SUBTOTAL: [subtotal amount]
-        GST: [GST amount]
-        ITEMS: [item names separated by |]
+        STORE: [business name or N/A if not found]
+        ABN: [11-digit Australian Business Number or N/A if not found]
+        DATE: [date in DD/MM/YYYY format or N/A if not found]
+        TOTAL: [total amount in AUD or N/A if not found]
+        SUBTOTAL: [subtotal amount or N/A if not found]
+        GST: [GST amount or N/A if not found]
+        ITEMS: [item names separated by | or N/A if not found]
 
-        ABN is crucial - look for 11-digit numbers formatted as XX XXX XXX XXX or XXXXXXXXXXX. Use Australian date format (DD/MM/YYYY) and include currency symbols. Extract all visible text and format as KEY: VALUE pairs only. Stop after completion.
+        ABN is crucial - look for 11-digit numbers formatted as XX XXX XXX XXX or XXXXXXXXXXX. Use Australian date format (DD/MM/YYYY) and include currency symbols. For any field that cannot be found in the document, return "N/A". Extract all visible text and format as KEY: VALUE pairs only. Stop after completion.
     """).strip(),
     "test_images": [
         ("image14.png", "TAX_INVOICE"),
@@ -210,6 +210,18 @@ class KeyValueExtractionAnalyzer:
         total_match = re.search(
             r'(?:TOTAL|total_amount|total):\s*"?([^"\n]+)"?', response_clean, re.IGNORECASE
         )
+
+        # Check if extracted values are "N/A" and treat as not found
+        def is_valid_match(match):
+            if not match:
+                return False
+            value = match.group(1).strip()
+            return value.upper() != "N/A" and value != ""
+
+        store_match = store_match if is_valid_match(store_match) else None
+        abn_match = abn_match if is_valid_match(abn_match) else None
+        date_match = date_match if is_valid_match(date_match) else None
+        total_match = total_match if is_valid_match(total_match) else None
 
         # Fallback detection for non-structured responses
         if not store_match:

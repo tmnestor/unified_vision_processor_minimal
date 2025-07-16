@@ -118,6 +118,7 @@ The script creates these files in your `--output-dir`:
 - **ABN detection**: 11-digit patterns (XX XXX XXX XXX)
 - **Date formats**: DD/MM/YYYY Australian standard
 - **Currency**: AUD formatting ($X.XX)
+- **Missing values**: Returns "N/A" for fields not found in document
 - **Success criteria**: 2/3 core fields (STORE, DATE, TOTAL)
 
 ### Model Support
