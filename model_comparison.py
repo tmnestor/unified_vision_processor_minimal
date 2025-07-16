@@ -193,6 +193,45 @@ class KeyValueExtractionAnalyzer:
     """Analyzer for KEY-VALUE extraction results with realistic Australian business requirements"""
 
     @staticmethod
+    def is_valid_abn(abn_value: str) -> bool:
+        """Check if extracted ABN value is actually a valid ABN (not N/A, placeholder, etc.)"""
+        if not abn_value:
+            return False
+
+        abn_clean = abn_value.strip().upper()
+
+        # Check for explicit N/A or placeholder values
+        invalid_values = [
+            "N/A",
+            "NA",
+            "NOT AVAILABLE",
+            "NOT FOUND",
+            "NONE",
+            "-",
+            "UNKNOWN",
+            "NULL",
+            "EMPTY",
+            "NO ABN",
+            "NO NUMBER",
+            "MISSING",
+        ]
+
+        if abn_clean in invalid_values:
+            return False
+
+        # Check if it's actually a valid 11-digit ABN pattern
+        # Remove spaces and check if it's 11 digits
+        digits_only = re.sub(r"[^\d]", "", abn_clean)
+        if len(digits_only) != 11:
+            return False
+
+        # Additional check: make sure it's not all zeros or a repeating pattern
+        if digits_only == "00000000000" or len(set(digits_only)) == 1:
+            return False
+
+        return True
+
+    @staticmethod
     def analyze(response: str, img_name: str) -> Dict[str, Any]:
         """Analyze KEY-VALUE extraction results with Australian format but realistic success criteria"""
         response_clean = response.strip()
@@ -219,9 +258,14 @@ class KeyValueExtractionAnalyzer:
             return value.upper() != "N/A" and value != ""
 
         store_match = store_match if is_valid_match(store_match) else None
-        abn_match = abn_match if is_valid_match(abn_match) else None
         date_match = date_match if is_valid_match(date_match) else None
         total_match = total_match if is_valid_match(total_match) else None
+
+        # FIXED ABN DETECTION: Check if extracted ABN is actually valid
+        has_abn = False
+        if abn_match:
+            abn_value = abn_match.group(1).strip()
+            has_abn = KeyValueExtractionAnalyzer.is_valid_abn(abn_value)
 
         # Fallback detection for non-structured responses
         if not store_match:
@@ -231,14 +275,21 @@ class KeyValueExtractionAnalyzer:
                 re.IGNORECASE,
             )
 
-        if not abn_match:
-            abn_match = re.search(r"\b(\d{2}\s*\d{3}\s*\d{3}\s*\d{3}|\d{11})\b", response_clean)
-            if not abn_match:
-                abn_match = re.search(
+        # If no structured ABN found, try fallback patterns but validate them too
+        if not has_abn:
+            fallback_abn = re.search(r"\b(\d{2}\s*\d{3}\s*\d{3}\s*\d{3}|\d{11})\b", response_clean)
+            if fallback_abn:
+                has_abn = KeyValueExtractionAnalyzer.is_valid_abn(fallback_abn.group(1))
+
+            # Also look for "ABN:" prefix patterns
+            if not has_abn:
+                abn_prefix_match = re.search(
                     r"(?:ABN|A\.B\.N\.?)\s*:?\s*(\d{2}\s*\d{3}\s*\d{3}\s*\d{3}|\d{11})",
                     response_clean,
                     re.IGNORECASE,
                 )
+                if abn_prefix_match:
+                    has_abn = KeyValueExtractionAnalyzer.is_valid_abn(abn_prefix_match.group(1))
 
         if not date_match:
             date_match = re.search(
@@ -249,7 +300,6 @@ class KeyValueExtractionAnalyzer:
             total_match = re.search(r"(\$\d+\.\d{2}|\$\d+|AUD\s*\d+\.\d{2})", response_clean)
 
         has_store = bool(store_match)
-        has_abn = bool(abn_match)
         has_date = bool(date_match)
         has_total = bool(total_match)
 
