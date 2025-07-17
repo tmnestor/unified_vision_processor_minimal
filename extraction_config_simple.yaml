@@ -21,4 +21,5 @@ total_core_fields: 4
 prompts:
   internvl: "Extract data from this Australian business document in KEY-VALUE format:\n\nSTORE: [business name]\nDATE: [date in DD/MM/YYYY format]\nTOTAL: [total amount in AUD]\nABN: [11-digit Australian Business Number]\nSUBTOTAL: [subtotal amount]\nGST: [GST amount]\nITEMS: [item names separated by |]\n\nFormat as KEY: VALUE pairs only."
   
-  llama: "This is a Markdown extraction Tool for a Governmental Taxation Office. Extract relevant key and value pairs from the image and return it as markdown."
+  # llama: "This is a Markdown extraction Tool for a Governmental Taxation Office. Extract relevant key and value pairs from the image and return it as markdown."
+  llama: "This is a key-value extraction Tool for the Australian Taxation Office. Extract data from this Australian business document in KEY-VALUE format:\n\nSTORE: [business name]\nDATE: [date in DD/MM/YYYY format]\nTOTAL: [total amount in AUD]\nABN: [11-digit Australian Business Number]\nSUBTOTAL: [subtotal amount]\nGST: [GST amount]\nITEMS: [item names separated by |]\n\nFormat as KEY: VALUE pairs only."
