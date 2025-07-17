@@ -1169,7 +1169,7 @@ def run_model_comparison(
                     fields_str = "|".join(fields_detected) if fields_detected else "none"
 
                     console.print(
-                        f"   {i + 1:2d}. {img_name:<12} {status} {inference_time:.1f}s | {analysis['core_score']}/3 core | {fields_str}"
+                        f"   {i + 1:2d}. {img_name:<12} {status} {inference_time:.1f}s | {analysis['core_score']}/3 core | {analysis['extraction_score']} total | {fields_str}"
                     )
 
                     del image
@@ -1191,6 +1191,11 @@ def run_model_comparison(
             1 for doc in extraction_results[model_name]["documents"] if doc.get("has_abn", False)
         )
 
+        # Calculate average extraction score
+        avg_extraction_score = sum(
+            doc.get("extraction_score", 0) for doc in extraction_results[model_name]["documents"]
+        ) / len(extraction_results[model_name]["documents"]) if extraction_results[model_name]["documents"] else 0
+
         console.print(f"\n📊 {model_name.upper()} Results:")
         console.print(
             f"   Success rate: {extraction_results[model_name]['successful']}/{len(verified_images)}"
@@ -1201,6 +1206,7 @@ def run_model_comparison(
             else "   ABN detection: 0/0"
         )
         console.print(f"   Average time: {extraction_results[model_name]['avg_time']:.1f}s per document")
+        console.print(f"   Average fields extracted: {avg_extraction_score:.1f} key-value pairs")
 
         # Clean up model
         console.print(f"\n🧹 Cleaning up {model_name.upper()}")
@@ -1229,9 +1235,10 @@ def run_model_comparison(
             success_rate = model_df["successful"].mean() * 100
             avg_time = model_df["inference_time"].mean()
             abn_rate = model_df["has_abn"].mean() * 100
+            avg_extraction_score = model_df["extraction_score"].mean()
 
             console.print(
-                f"{model}: {success_rate:.1f}% success | {avg_time:.1f}s avg | {abn_rate:.1f}% ABN detection"
+                f"{model}: {success_rate:.1f}% success | {avg_time:.1f}s avg | {avg_extraction_score:.1f} avg fields | {abn_rate:.1f}% ABN detection"
             )
 
         console.print(f"\n✅ Analysis complete! Results saved to: {output_path}")
