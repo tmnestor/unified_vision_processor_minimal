@@ -759,7 +759,8 @@ class ComprehensiveResultsAnalyzer:
 
             for field in fields:
                 if len(model_df) > 0:
-                    predictions = model_df[field].values.astype(int)
+                    # Fill NaN values with False (0) before converting to int
+                    predictions = model_df[field].fillna(False).values.astype(int)
                     gt_indices = model_df.index
                     gt = [ground_truth[field][i] for i in range(len(predictions))]
 
@@ -788,7 +789,8 @@ class ComprehensiveResultsAnalyzer:
 
         for model in models:
             model_df = df[df["model"] == model]
-            rates = [model_df[field].mean() * 100 for field in fields]
+            # Fill NaN values with False (0) before calculating mean
+            rates = [model_df[field].fillna(False).mean() * 100 for field in fields]
             detection_rates.append(rates)
 
         x = np.arange(len(field_names))
@@ -917,7 +919,7 @@ class ComprehensiveResultsAnalyzer:
                     "success_rate": float(model_df["successful"].mean()),
                     "avg_inference_time": float(model_df["inference_time"].mean()),
                     "structured_output_rate": float(model_df["is_structured"].mean()),
-                    "abn_detection_rate": float(model_df["has_abn"].mean()),
+                    "abn_detection_rate": float(model_df["has_abn"].fillna(False).mean()),
                 }
 
         with summary_path.open("w") as f:
@@ -1197,7 +1199,7 @@ def run_model_comparison(
             model_df = results_df[results_df["model"] == model]
             success_rate = model_df["successful"].mean() * 100
             avg_time = model_df["inference_time"].mean()
-            abn_rate = model_df["has_abn"].mean() * 100
+            abn_rate = model_df["has_abn"].fillna(False).mean() * 100
             avg_extraction_score = model_df["extraction_score"].mean()
 
             console.print(
