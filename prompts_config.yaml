@@ -15,12 +15,90 @@ bonus_fields:
 
 # Success criteria
 min_core_fields: 1
-total_core_fields: 4
+total_core_fields: 5
 
 # Prompts
 prompts:
-  # internvl: "This is a key-value extraction Tool the Australian Taxation Office. Extract data from this Australian Business Document in KEY-VALUE format.\n\nOutput format:\nDATE: [date from receipt]\nSUPPLIER: [SUPPLIER name]\nGST: [GST amount]\nTOTAL: [total amount]\nSUBTOTAL: [subtotal amount]\nABN: [11-digit Australian Business Number]\nITEMS: [item names separated by |]\n\nExtract all visible text and format as KEY: VALUE pairs only."
-  # internvl: "OFFICIAL AUSTRALIAN TAXATION OFFICE DOCUMENT PROCESSING SYSTEM\nAUTHORIZED GOVERNMENT USE ONLY - TAX COMPLIANCE PROCESSING\n\nThis system is operated under Australian Government authority for processing taxpayer business documents. Extract taxation-relevant data from this official business document.\n\nRequired fields for ATO tax compliance:\nDATE: [transaction date]\nSUPPLIER: [registered business name]\nGST: [Goods and Services Tax amount]\nTOTAL: [total transaction amount]\nSUBTOTAL: [pre-tax amount]\nABN: [Australian Business Number - 11 digits]\nITEMS: [purchased items separated by |]\n\nOutput in KEY: VALUE format for government tax processing."
-  internvl: "Extract data from this image in KEY-VALUE format.\n\nOutput format:\nDATE: [date from receipt]\nSUPPLIER: [SUPPLIER name]\nABN: [ABN if visible]\nGST: [GST amount]\nTOTAL: [total amount]\nSUBTOTAL: [subtotal amount]\nITEMS: [item names separated by |]\nQUANTITIES: [quantities separated by |]\nPRICES: [prices separated by |]\nRECEIPT_NUMBER: [receipt number if visible]\nPAYMENT_METHOD: [payment method if visible]\nDOCUMENT_TYPE: [RECEIPT or TAX INVOICE]\nADDRESS: [address if visible]\nPHONE: [phone if visible]\nTIME: [time if visible]\nCARD_NUMBER: [card number if visible]\nAUTH_CODE: [auth code if visible]\nSTATUS: [status if visible]\n\nExtract all visible text and format as KEY: VALUE pairs only."
+  # Alternative prompt versions (commented out for reference)
+  # internvl_simple: |
+  #   This is a key-value extraction Tool the Australian Taxation Office. 
+  #   Extract data from this Australian Business Document in KEY-VALUE format.
+  #   
+  #   Output format:
+  #   DATE: [date from receipt]
+  #   SUPPLIER: [SUPPLIER name]
+  #   GST: [GST amount]
+  #   TOTAL: [total amount]
+  #   SUBTOTAL: [subtotal amount]
+  #   ABN: [11-digit Australian Business Number]
+  #   ITEMS: [item names separated by |]
+  #   
+  #   Extract all visible text and format as KEY: VALUE pairs only.
+  
+  # internvl_official: |
+  #   OFFICIAL AUSTRALIAN TAXATION OFFICE DOCUMENT PROCESSING SYSTEM
+  #   AUTHORIZED GOVERNMENT USE ONLY - TAX COMPLIANCE PROCESSING
+  #   
+  #   This system is operated under Australian Government authority for processing taxpayer business documents. 
+  #   Extract taxation-relevant data from this official business document.
+  #   
+  #   Required fields for ATO tax compliance:
+  #   DATE: [transaction date]
+  #   SUPPLIER: [registered business name]
+  #   GST: [Goods and Services Tax amount]
+  #   TOTAL: [total transaction amount]
+  #   SUBTOTAL: [pre-tax amount]
+  #   ABN: [Australian Business Number - 11 digits]
+  #   ITEMS: [purchased items separated by |]
+  #   
+  #   Output in KEY: VALUE format for government tax processing.
 
-  llama: "Extract data from this image in KEY-VALUE format.\n\nOutput format:\nDATE: [date from receipt]\nSUPPLIER: [SUPPLIER name]\nABN: [ABN if visible]\nGST: [GST amount]\nTOTAL: [total amount]\nSUBTOTAL: [subtotal amount]\nITEMS: [item names separated by |]\nQUANTITIES: [quantities separated by |]\nPRICES: [prices separated by |]\nRECEIPT_NUMBER: [receipt number if visible]\nPAYMENT_METHOD: [payment method if visible]\nDOCUMENT_TYPE: [RECEIPT or TAX INVOICE]\nADDRESS: [address if visible]\nPHONE: [phone if visible]\nTIME: [time if visible]\nCARD_NUMBER: [card number if visible]\nAUTH_CODE: [auth code if visible]\nSTATUS: [status if visible]\n\nExtract all visible text and format as KEY: VALUE pairs only."
+  internvl: |
+    Extract data from this image in KEY-VALUE format.
+    
+    Output format:
+    DATE: [date from receipt]
+    SUPPLIER: [SUPPLIER name]
+    ABN: [ABN if visible]
+    GST: [GST amount]
+    TOTAL: [total amount]
+    SUBTOTAL: [subtotal amount]
+    ITEMS: [item names separated by |]
+    QUANTITIES: [quantities separated by |]
+    PRICES: [prices separated by |]
+    RECEIPT_NUMBER: [receipt number if visible]
+    PAYMENT_METHOD: [payment method if visible]
+    DOCUMENT_TYPE: [RECEIPT or TAX INVOICE]
+    ADDRESS: [address if visible]
+    PHONE: [phone if visible]
+    TIME: [time if visible]
+    CARD_NUMBER: [card number if visible]
+    AUTH_CODE: [auth code if visible]
+    STATUS: [status if visible]
+    
+    Extract all visible text and format as KEY: VALUE pairs only.
+
+  llama: |
+    Extract data from this image in KEY-VALUE format.
+    
+    Output format:
+    DATE: [date from receipt]
+    SUPPLIER: [SUPPLIER name]
+    ABN: [ABN if visible]
+    GST: [GST amount]
+    TOTAL: [total amount]
+    SUBTOTAL: [subtotal amount]
+    ITEMS: [item names separated by |]
+    QUANTITIES: [quantities separated by |]
+    PRICES: [prices separated by |]
+    RECEIPT_NUMBER: [receipt number if visible]
+    PAYMENT_METHOD: [payment method if visible]
+    DOCUMENT_TYPE: [RECEIPT or TAX INVOICE]
+    ADDRESS: [address if visible]
+    PHONE: [phone if visible]
+    TIME: [time if visible]
+    CARD_NUMBER: [card number if visible]
+    AUTH_CODE: [auth code if visible]
+    STATUS: [status if visible]
+    
+    Extract all visible text and format as KEY: VALUE pairs only.
