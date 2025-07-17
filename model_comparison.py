@@ -1106,8 +1106,11 @@ def run_model_comparison(
 
                     inference_start = time.time()
 
-                    # Use the same ultra-minimal prompt for both models for fair comparison
-                    prompt = config["llama_safe_prompt"]
+                    # Use model-specific prompts
+                    if model_name == "llama":
+                        prompt = config["llama_safe_prompt"]
+                    else:  # internvl
+                        prompt = config["extraction_prompt"]
 
                     # Debug: Print prompt being used
                     if i == 0:  # Only print for first image to avoid spam
