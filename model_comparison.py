@@ -243,27 +243,30 @@ class ConfigurableFieldValidator:
 def load_extraction_config(config_path: str = "extraction_config_simple.yaml") -> Dict[str, Any]:
     """Load extraction configuration from YAML file - FAIL FAST if config missing"""
     try:
-        config_loader = ExtractionConfigLoader(config_path)
+        config_file = Path(config_path)
+        if not config_file.exists():
+            raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
-        # Validate configuration immediately
-        if not config_loader.get_all_fields():
-            raise ValueError(f"No extraction fields found in {config_path}")
+        with config_file.open("r") as f:
+            config = yaml.safe_load(f)
 
-        if not config_loader.get_core_fields():
-            raise ValueError(f"No core fields defined in {config_path}")
+        # Validate required sections exist
+        if "prompts" not in config:
+            raise ValueError(f"Missing 'prompts' section in {config_path}")
 
-        extraction_prompt = config_loader.generate_extraction_prompt()
-        llama_safe_prompt = config_loader.generate_llama_safe_prompt()
+        if "internvl" not in config["prompts"]:
+            raise ValueError(f"Missing 'internvl' prompt in {config_path}")
 
-        if not extraction_prompt or len(extraction_prompt.strip()) < 50:
-            raise ValueError(f"Generated extraction prompt is too short or empty from {config_path}")
+        if "llama" not in config["prompts"]:
+            raise ValueError(f"Missing 'llama' prompt in {config_path}")
 
-        if not llama_safe_prompt or len(llama_safe_prompt.strip()) < 30:
-            raise ValueError(f"Generated Llama-safe prompt is too short or empty from {config_path}")
+        # Extract prompts directly
+        extraction_prompt = f"<|image|>{config['prompts']['internvl']}"
+        llama_safe_prompt = f"<|image|>{config['prompts']['llama']}"
 
         console.print(f"✅ Extraction configuration loaded from: {config_path}", style="green")
-        console.print(f"   Fields: {config_loader.get_field_names()}", style="dim")
-        console.print(f"   Core fields: {config_loader.get_core_field_names()}", style="dim")
+        console.print(f"   InternVL prompt: {len(extraction_prompt)} characters", style="dim")
+        console.print(f"   Llama prompt: {len(llama_safe_prompt)} characters", style="dim")
 
         return {
             "model_paths": {
@@ -284,17 +287,17 @@ def load_extraction_config(config_path: str = "extraction_config_simple.yaml") -
                 ("image39.png", "TAX_INVOICE"),
                 ("image76.png", "TAX_INVOICE"),
             ],
-            "config_loader": config_loader,
+            "config": config,
         }
     except FileNotFoundError:
-        console.print(f"❌ FATAL: Extraction configuration file not found: {config_path}", style="bold red")
+        console.print(f"❌ FATAL: Configuration file not found: {config_path}", style="bold red")
         console.print(f"💡 Expected location: {Path(config_path).absolute()}", style="yellow")
-        console.print("💡 Create the file using: extraction_config_loader.py", style="yellow")
+        console.print("💡 Create the YAML file with 'prompts' section", style="yellow")
         raise typer.Exit(1) from None
     except Exception as e:
-        console.print(f"❌ FATAL: Failed to load extraction configuration: {e}", style="bold red")
+        console.print(f"❌ FATAL: Failed to load configuration: {e}", style="bold red")
         console.print(f"💡 Configuration file: {config_path}", style="yellow")
-        console.print("💡 Check YAML syntax and required fields", style="yellow")
+        console.print("💡 Check YAML syntax and required sections", style="yellow")
         raise typer.Exit(1) from None
 
 
@@ -522,8 +525,8 @@ class ConfigurableKeyValueExtractionAnalyzer:
         return False, None
 
 
-# For backwards compatibility, alias the old class name
-KeyValueExtractionAnalyzer = ConfigurableKeyValueExtractionAnalyzer
+# REMOVED: No backwards compatibility aliases - use explicit class names for clarity
+# This follows the "Fail Fast with Diagnostics" principle
 
 
 class DatasetManager:
@@ -1030,11 +1033,13 @@ def run_model_comparison(
 
     # Load extraction configuration
     extraction_config = load_extraction_config(config_path)
-    config_loader = extraction_config.get("config_loader")
+    config = extraction_config.get("config")
 
     # Initialize components
     memory_manager = MemoryManager()
     repetition_controller = UltraAggressiveRepetitionController()
+    # Create simple config_loader for compatibility with existing analyzer
+    config_loader = ExtractionConfigLoader(config_path)
     extraction_analyzer = ConfigurableKeyValueExtractionAnalyzer(config_loader)
     dataset_manager = DatasetManager(datasets_path)
 
@@ -1050,7 +1055,7 @@ def run_model_comparison(
         "enable_quantization": quantization,
         "test_models": models,
         "test_images": extraction_config["test_images"],
-        "config_loader": config_loader,
+        "config": config,
     }
 
     console.print("🏆 UNIFIED VISION MODEL COMPARISON", style="bold blue")
