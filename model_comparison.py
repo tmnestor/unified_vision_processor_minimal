@@ -274,7 +274,7 @@ def load_extraction_config(config_path: str = "model_comparison.yaml") -> Dict[s
             "llama_prompt": llama_prompt,
             "test_images": [
                 ("image14.png", "TAX_INVOICE"),
-                ("image65.png", "TAX_INVOICE"),
+                ("officeworks.png", "TAX_INVOICE"),
                 ("image71.png", "TAX_INVOICE"),
                 ("image27.png", "TAX_INVOICE"),
                 ("image205.png", "FUEL_RECEIPT"),
