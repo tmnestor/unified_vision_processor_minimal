@@ -49,6 +49,74 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 plt.switch_backend("Agg")  # Non-interactive backend for V100
 console = Console()
 
+
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+
+def load_extraction_config(config_path: str = "extraction_config_simple.yaml") -> Dict[str, Any]:
+    """Load extraction configuration from YAML file - FAIL FAST if config missing"""
+    try:
+        config_loader = ExtractionConfigLoader(config_path)
+
+        # Validate configuration immediately
+        if not config_loader.get_all_fields():
+            raise ValueError(f"No extraction fields found in {config_path}")
+
+        if not config_loader.get_core_fields():
+            raise ValueError(f"No core fields defined in {config_path}")
+
+        extraction_prompt = config_loader.generate_extraction_prompt()
+        llama_safe_prompt = config_loader.generate_llama_safe_prompt()
+
+        if not extraction_prompt or len(extraction_prompt.strip()) < 50:
+            raise ValueError(f"Generated extraction prompt is too short or empty from {config_path}")
+
+        if not llama_safe_prompt or len(llama_safe_prompt.strip()) < 30:
+            raise ValueError(f"Generated Llama-safe prompt is too short or empty from {config_path}")
+
+        console.print(f"✅ Extraction configuration loaded from: {config_path}", style="green")
+        console.print(f"   Fields: {config_loader.get_field_names()}", style="dim")
+        console.print(f"   Core fields: {config_loader.get_core_field_names()}", style="dim")
+
+        return {
+            "model_paths": {
+                "llama": "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision",
+                "internvl": "/home/jovyan/nfs_share/models/InternVL3-8B",
+            },
+            "extraction_prompt": extraction_prompt,
+            "llama_safe_prompt": llama_safe_prompt,
+            "test_images": [
+                ("image14.png", "TAX_INVOICE"),
+                ("image65.png", "TAX_INVOICE"),
+                ("image71.png", "TAX_INVOICE"),
+                ("image74.png", "TAX_INVOICE"),
+                ("image205.png", "FUEL_RECEIPT"),
+                ("image59.png", "TAX_INVOICE"),
+                ("image45.png", "TAX_INVOICE"),
+                ("image1.png", "BANK_STATEMENT"),
+                ("image38.png", "TAX_INVOICE"),
+                ("image76.png", "TAX_INVOICE"),
+            ],
+            "config_loader": config_loader,
+        }
+    except FileNotFoundError:
+        console.print(f"❌ FATAL: Extraction configuration file not found: {config_path}", style="bold red")
+        console.print(f"💡 Expected location: {Path(config_path).absolute()}", style="yellow")
+        console.print("💡 Create the file using: extraction_config_loader.py", style="yellow")
+        raise typer.Exit(1) from None
+    except Exception as e:
+        console.print(f"❌ FATAL: Failed to load extraction configuration: {e}", style="bold red")
+        console.print(f"💡 Configuration file: {config_path}", style="yellow")
+        console.print("💡 Check YAML syntax and required fields", style="yellow")
+        raise typer.Exit(1) from None
+
+
+# Load default configuration
+DEFAULT_CONFIG = load_extraction_config()
+
+
 # =============================================================================
 # EXTRACTION CONFIGURATION SYSTEM
 # =============================================================================
@@ -234,72 +302,6 @@ class ConfigurableFieldValidator:
 
         return value_clean not in invalid_values and len(value_clean) > 0
 
-
-# =============================================================================
-# CONFIGURATION
-# =============================================================================
-
-
-def load_extraction_config(config_path: str = "extraction_config_simple.yaml") -> Dict[str, Any]:
-    """Load extraction configuration from YAML file - FAIL FAST if config missing"""
-    try:
-        config_loader = ExtractionConfigLoader(config_path)
-
-        # Validate configuration immediately
-        if not config_loader.get_all_fields():
-            raise ValueError(f"No extraction fields found in {config_path}")
-
-        if not config_loader.get_core_fields():
-            raise ValueError(f"No core fields defined in {config_path}")
-
-        extraction_prompt = config_loader.generate_extraction_prompt()
-        llama_safe_prompt = config_loader.generate_llama_safe_prompt()
-
-        if not extraction_prompt or len(extraction_prompt.strip()) < 50:
-            raise ValueError(f"Generated extraction prompt is too short or empty from {config_path}")
-
-        if not llama_safe_prompt or len(llama_safe_prompt.strip()) < 30:
-            raise ValueError(f"Generated Llama-safe prompt is too short or empty from {config_path}")
-
-        console.print(f"✅ Extraction configuration loaded from: {config_path}", style="green")
-        console.print(f"   Fields: {config_loader.get_field_names()}", style="dim")
-        console.print(f"   Core fields: {config_loader.get_core_field_names()}", style="dim")
-
-        return {
-            "model_paths": {
-                "llama": "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision",
-                "internvl": "/home/jovyan/nfs_share/models/InternVL3-8B",
-            },
-            "extraction_prompt": extraction_prompt,
-            "llama_safe_prompt": llama_safe_prompt,
-            "test_images": [
-                ("image14.png", "TAX_INVOICE"),
-                ("image65.png", "TAX_INVOICE"),
-                ("image71.png", "TAX_INVOICE"),
-                ("image74.png", "TAX_INVOICE"),
-                ("image205.png", "FUEL_RECEIPT"),
-                ("image59.png", "TAX_INVOICE"),
-                ("image45.png", "TAX_INVOICE"),
-                ("image1.png", "BANK_STATEMENT"),
-                ("image39.png", "TAX_INVOICE"),
-                ("image76.png", "TAX_INVOICE"),
-            ],
-            "config_loader": config_loader,
-        }
-    except FileNotFoundError:
-        console.print(f"❌ FATAL: Extraction configuration file not found: {config_path}", style="bold red")
-        console.print(f"💡 Expected location: {Path(config_path).absolute()}", style="yellow")
-        console.print("💡 Create the file using: extraction_config_loader.py", style="yellow")
-        raise typer.Exit(1) from None
-    except Exception as e:
-        console.print(f"❌ FATAL: Failed to load extraction configuration: {e}", style="bold red")
-        console.print(f"💡 Configuration file: {config_path}", style="yellow")
-        console.print("💡 Check YAML syntax and required fields", style="yellow")
-        raise typer.Exit(1) from None
-
-
-# Load default configuration
-DEFAULT_CONFIG = load_extraction_config()
 
 # =============================================================================
 # UTILITY CLASSES (From Notebook Cells 1-2)
