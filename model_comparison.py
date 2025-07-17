@@ -57,7 +57,7 @@ console = Console()
 class ExtractionConfigLoader:
     """Loads and manages simplified extraction configuration from YAML files"""
 
-    def __init__(self, config_path: str = "prompts_config.yaml"):
+    def __init__(self, config_path: str = "model_comparison.yaml"):
         self.config_path = Path(config_path)
         self.config = self._load_config()
 
@@ -224,7 +224,7 @@ class ConfigurableFieldValidator:
 # =============================================================================
 
 
-def load_extraction_config(config_path: str = "prompts_config.yaml") -> Dict[str, Any]:
+def load_extraction_config(config_path: str = "model_comparison.yaml") -> Dict[str, Any]:
     """Load extraction configuration from YAML file - FAIL FAST if config missing"""
     try:
         config_file = Path(config_path)
@@ -251,7 +251,7 @@ def load_extraction_config(config_path: str = "prompts_config.yaml") -> Dict[str
         # Create config_loader for dynamic field handling
         config_loader = ExtractionConfigLoader(config_path)
 
-        console.print(f"✅ Extraction configuration loaded from: {config_path}", style="green")
+        console.print(f"✅ Model comparison configuration loaded from: {config_path}", style="green")
         console.print(f"   InternVL prompt: {len(internvl_prompt)} characters", style="dim")
         console.print(f"   Llama prompt: {len(llama_prompt)} characters", style="dim")
         console.print(f"   Max tokens: {config.get('max_tokens', 256)}", style="dim")
@@ -282,7 +282,7 @@ def load_extraction_config(config_path: str = "prompts_config.yaml") -> Dict[str
     except FileNotFoundError:
         console.print(f"❌ FATAL: Configuration file not found: {config_path}", style="bold red")
         console.print(f"💡 Expected location: {Path(config_path).absolute()}", style="yellow")
-        console.print("💡 Create the YAML file with 'prompts' section", style="yellow")
+        console.print("💡 Create the YAML file with 'fields' and 'prompts' sections", style="yellow")
         raise typer.Exit(1) from None
     except Exception as e:
         console.print(f"❌ FATAL: Failed to load configuration: {e}", style="bold red")
@@ -1021,7 +1021,7 @@ def run_model_comparison(
     max_tokens: int,
     quantization: bool,
     model_paths: Dict[str, str] = None,
-    config_path: str = "prompts_config.yaml",
+    config_path: str = "model_comparison.yaml",
 ):
     """Main model comparison execution"""
 
@@ -1041,15 +1041,12 @@ def run_model_comparison(
     if model_paths is None:
         model_paths = extraction_config["model_paths"]
 
-    # Use max_tokens from config if not explicitly provided
-    effective_max_tokens = max_tokens if max_tokens != 256 else extraction_config.get("max_tokens", 256)
-
     config = {
         "model_paths": model_paths,
         "internvl_prompt": extraction_config["internvl_prompt"],
         "llama_prompt": extraction_config["llama_prompt"],
-        "max_new_tokens": effective_max_tokens,
-        "enable_quantization": quantization,
+        "max_new_tokens": max_tokens,  # Already effective value from CLI
+        "enable_quantization": quantization,  # Already effective value from CLI
         "test_models": models,
         "test_images": extraction_config["test_images"],
         "config": config,
@@ -1057,7 +1054,7 @@ def run_model_comparison(
 
     console.print("🏆 UNIFIED VISION MODEL COMPARISON", style="bold blue")
     console.print(f"📋 Models: {', '.join(models)}")
-    console.print(f"📋 Max tokens: {effective_max_tokens}")
+    console.print(f"📋 Max tokens: {max_tokens}")
     console.print(f"📋 Quantization: {quantization}")
 
     # CUDA diagnostics
@@ -1246,20 +1243,39 @@ app = typer.Typer(help="Unified Vision Model Comparison for V100 Production Envi
 @app.command()
 def compare(
     datasets_path: str = typer.Option(..., help="Path to input datasets directory (required for KFP)"),
-    output_dir: str = typer.Option("results", help="Output directory for results"),
-    models: str = typer.Option("llama,internvl", help="Comma-separated list of models (llama,internvl)"),
-    max_tokens: int = typer.Option(256, help="Maximum new tokens for generation"),
-    quantization: bool = typer.Option(True, help="Enable 8-bit quantization for V100"),
+    output_dir: str = typer.Option(None, help="Output directory for results (default from config)"),
+    models: str = typer.Option(None, help="Comma-separated list of models (default from config)"),
+    max_tokens: int = typer.Option(None, help="Maximum new tokens for generation (default from config)"),
+    quantization: bool = typer.Option(
+        None, help="Enable 8-bit quantization for V100 (default from config)"
+    ),
     llama_path: str = typer.Option(None, help="Custom path to Llama model"),
     internvl_path: str = typer.Option(None, help="Custom path to InternVL model"),
-    config_path: str = typer.Option("prompts_config.yaml", help="Path to prompts configuration YAML file"),
+    config_path: str = typer.Option(
+        "model_comparison.yaml", help="Path to model comparison configuration YAML file"
+    ),
 ):
     """Run comprehensive model comparison with analytics"""
 
-    models_list = [m.strip() for m in models.split(",")]
+    # Load configuration first to get defaults
+    extraction_config = load_extraction_config(config_path)
+    config = extraction_config.get("config", {})
+    defaults = config.get("defaults", {})
+
+    # Apply effective values (CLI overrides config defaults)
+    effective_output_dir = output_dir if output_dir is not None else defaults.get("output_dir", "results")
+    effective_models = models if models is not None else defaults.get("models", "llama,internvl")
+    effective_max_tokens = (
+        max_tokens if max_tokens is not None else extraction_config.get("max_tokens", 256)
+    )
+    effective_quantization = (
+        quantization if quantization is not None else defaults.get("quantization", True)
+    )
+
+    models_list = [m.strip() for m in effective_models.split(",")]
 
     # Custom model paths if provided
-    model_paths = DEFAULT_CONFIG["model_paths"].copy()
+    model_paths = extraction_config["model_paths"].copy()
     if llama_path:
         model_paths["llama"] = llama_path
     if internvl_path:
@@ -1268,9 +1284,9 @@ def compare(
     run_model_comparison(
         models=models_list,
         datasets_path=datasets_path,
-        output_dir=output_dir,
-        max_tokens=max_tokens,
-        quantization=quantization,
+        output_dir=effective_output_dir,
+        max_tokens=effective_max_tokens,
+        quantization=effective_quantization,
         model_paths=model_paths,
         config_path=config_path,
     )
