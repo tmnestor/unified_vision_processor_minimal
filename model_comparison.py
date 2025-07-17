@@ -49,6 +49,9 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 plt.switch_backend("Agg")  # Non-interactive backend for V100
 console = Console()
 
+# Suppress pandas future warnings about downcasting
+pd.set_option("future.no_silent_downcasting", True)
+
 # =============================================================================
 # EXTRACTION CONFIGURATION SYSTEM
 # =============================================================================
