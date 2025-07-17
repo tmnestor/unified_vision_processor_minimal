@@ -83,6 +83,9 @@ prompt_settings:
     For any field that cannot be found in the document, return "N/A". 
     Extract all visible text and format as KEY: VALUE pairs only. 
     Stop after completion.
+  
+  # Llama-safe prompt configuration
+  llama_safe_prompt: "This is a Markdown extraction Tool for a Governmental Taxation Office. Extract relevant key and value pairs from the image and return it as markdown."
 
 # Expected ABN images (for evaluation purposes)
 evaluation:

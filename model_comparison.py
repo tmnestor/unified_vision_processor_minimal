@@ -28,7 +28,6 @@ Features:
 import gc
 import json
 import re
-import textwrap
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -56,9 +55,9 @@ console = Console()
 
 
 class ExtractionConfigLoader:
-    """Loads and manages extraction configuration from YAML files"""
+    """Loads and manages simplified extraction configuration from YAML files"""
 
-    def __init__(self, config_path: str = "extraction_config.yaml"):
+    def __init__(self, config_path: str = "extraction_config_simple.yaml"):
         self.config_path = Path(config_path)
         self.config = self._load_config()
 
@@ -71,67 +70,49 @@ class ExtractionConfigLoader:
             return yaml.safe_load(f)
 
     def get_all_fields(self) -> List[Dict[str, Any]]:
-        """Get all extraction fields (core + bonus)"""
+        """Get all extraction fields (core + bonus) - simplified format"""
         all_fields = []
-        all_fields.extend(self.config["extraction_fields"]["core_fields"])
-        all_fields.extend(self.config["extraction_fields"]["bonus_fields"])
+        # Convert simple field names to old format for compatibility
+        for field_name in self.config["core_fields"]:
+            all_fields.append({"name": field_name, "required": True})
+        for field_name in self.config["bonus_fields"]:
+            all_fields.append({"name": field_name, "required": False})
         return all_fields
 
     def get_core_fields(self) -> List[Dict[str, Any]]:
         """Get only core fields (required for success)"""
-        return self.config["extraction_fields"]["core_fields"]
+        return [{"name": field_name, "required": True} for field_name in self.config["core_fields"]]
 
     def get_bonus_fields(self) -> List[Dict[str, Any]]:
         """Get only bonus fields (optional)"""
-        return self.config["extraction_fields"]["bonus_fields"]
+        return [{"name": field_name, "required": False} for field_name in self.config["bonus_fields"]]
 
     def get_field_names(self) -> List[str]:
         """Get list of all field names"""
-        return [field["name"] for field in self.get_all_fields()]
+        return self.config["core_fields"] + self.config["bonus_fields"]
 
     def get_core_field_names(self) -> List[str]:
         """Get list of core field names"""
-        return [field["name"] for field in self.get_core_fields()]
+        return self.config["core_fields"]
 
     def get_success_criteria(self) -> Dict[str, int]:
         """Get success criteria configuration"""
-        return self.config["success_criteria"]
+        return {
+            "min_core_fields": self.config["min_core_fields"],
+            "total_core_fields": self.config["total_core_fields"],
+        }
 
     def get_expected_abn_images(self) -> List[str]:
         """Get list of images expected to have ABN (for evaluation)"""
-        return self.config.get("evaluation", {}).get("expected_abn_images", [])
+        return []  # Simplified - no evaluation config
 
     def generate_extraction_prompt(self) -> str:
-        """Generate extraction prompt dynamically from configuration"""
-        prompt_settings = self.config["prompt_settings"]
-        all_fields = self.get_all_fields()
-
-        # Build the prompt
-        lines = [
-            "<|image|>" + prompt_settings["instruction_prefix"],
-            "",
-            prompt_settings["output_format_header"],
-        ]
-
-        # Add each field to the format
-        for field in all_fields:
-            field_line = f"{field['name']}: [{field['description']}]"
-            if not field.get("required", True):
-                field_line += " or N/A if not found"
-            lines.append(field_line)
-
-        lines.append("")
-
-        # Add additional instructions
-        if "additional_instructions" in prompt_settings:
-            lines.append(prompt_settings["additional_instructions"])
-
-        return textwrap.dedent("\n".join(lines)).strip()
+        """Generate extraction prompt for InternVL from simplified configuration"""
+        return f"<|image|>{self.config['prompts']['internvl']}"
 
     def generate_llama_safe_prompt(self) -> str:
         """Generate ultra-safe Llama prompt that bypasses safety mode"""
-        # ATO official context with structured key-value pairs in markdown format
-        return """<|image|>This is a Markdown extraction Tool for the Australian Taxation Office. Extract relevant key and value pairs from the image and return it as markdown."""
+        return f"<|image|>{self.config['prompts']['llama']}"
 
     def get_field_config(self, field_name: str) -> Optional[Dict[str, Any]]:
         """Get configuration for a specific field"""
@@ -259,7 +240,7 @@ class ConfigurableFieldValidator:
 # =============================================================================
 
 
-def load_extraction_config(config_path: str = "extraction_config.yaml") -> Dict[str, Any]:
+def load_extraction_config(config_path: str = "extraction_config_simple.yaml") -> Dict[str, Any]:
     """Load extraction configuration from YAML file - FAIL FAST if config missing"""
     try:
         config_loader = ExtractionConfigLoader(config_path)
