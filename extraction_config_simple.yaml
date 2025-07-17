@@ -19,6 +19,6 @@ total_core_fields: 4
 
 # Prompts
 prompts:
-  internvl: "This is a key-value extraction Tool the Australian Taxation Office. Extract data from this Tax Invoice in KEY-VALUE format.\n\nOutput format:\nDATE: [date from receipt]\nSTORE: [store name]\nGST: [GST amount]\nTOTAL: [total amount]\nSUBTOTAL: [subtotal amount]\nABN: [11-digit Australian Business Number]\nITEMS: [item names separated by |]\n\nExtract all visible text and format as KEY: VALUE pairs only."
+  internvl: "This is a key-value extraction Tool the Australian Taxation Office. Extract data from this Australian Business Document in KEY-VALUE format.\n\nOutput format:\nDATE: [date from receipt]\nSTORE: [store name]\nGST: [GST amount]\nTOTAL: [total amount]\nSUBTOTAL: [subtotal amount]\nABN: [11-digit Australian Business Number]\nITEMS: [item names separated by |]\n\nExtract all visible text and format as KEY: VALUE pairs only."
   
   llama: "This is a key-value extraction Tool the Australian Taxation Office. Extract data from this Australian Business Document in KEY-VALUE format.\n\nOutput format:\nDATE: [date from receipt]\nSTORE: [store name]\nGST: [GST amount]\nTOTAL: [total amount]\nSUBTOTAL: [subtotal amount]\nABN: [11-digit Australian Business Number]\nITEMS: [item names separated by |]\n\nExtract all visible text and format as KEY: VALUE pairs only."
