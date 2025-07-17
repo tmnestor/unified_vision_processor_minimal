@@ -1221,7 +1221,7 @@ app = typer.Typer(help="Unified Vision Model Comparison for V100 Production Envi
 
 @app.command()
 def compare(
-    datasets_path: str = typer.Option(..., help="Path to input datasets directory (required for KFP)"),
+    datasets_path: str = typer.Option(None, help="Path to input datasets directory (default from config)"),
     output_dir: str = typer.Option(None, help="Output directory for results (default from config)"),
     models: str = typer.Option(None, help="Comma-separated list of models (default from config)"),
     max_tokens: int = typer.Option(None, help="Maximum new tokens for generation (default from config)"),
@@ -1242,6 +1242,9 @@ def compare(
     defaults = config.get("defaults", {})
 
     # Apply effective values (CLI overrides config defaults)
+    effective_datasets_path = (
+        datasets_path if datasets_path is not None else defaults.get("datasets_path", "datasets")
+    )
     effective_output_dir = output_dir if output_dir is not None else defaults.get("output_dir", "results")
     effective_models = models if models is not None else defaults.get("models", "llama,internvl")
     effective_max_tokens = max_tokens if max_tokens is not None else defaults.get("max_tokens", 256)
@@ -1265,7 +1268,7 @@ def compare(
 
     run_model_comparison(
         models=models_list,
-        datasets_path=datasets_path,
+        datasets_path=effective_datasets_path,
         output_dir=effective_output_dir,
         max_tokens=effective_max_tokens,
         quantization=effective_quantization,
