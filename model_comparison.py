@@ -69,16 +69,14 @@ class ExtractionConfigLoader:
         with self.config_path.open("r") as f:
             return yaml.safe_load(f)
 
-    def get_all_fields(self) -> List[Dict[str, Any]]:
-        """Get all extraction fields - simplified format"""
-        all_fields = []
-        for field_name in self.config["fields"]:
-            all_fields.append({"name": field_name, "required": False})
-        return all_fields
+    def get_field_names_from_response(self, response: str) -> List[str]:
+        """Dynamically extract field names from response"""
+        import re
 
-    def get_field_names(self) -> List[str]:
-        """Get list of all field names"""
-        return self.config["fields"]
+        # Find all "FIELD:" patterns in the response
+        field_pattern = r"([A-Z_]+):\s*"
+        matches = re.findall(field_pattern, response)
+        return list(set(matches))  # Remove duplicates
 
     def get_success_criteria(self) -> Dict[str, int]:
         """Get success criteria configuration"""
@@ -254,7 +252,8 @@ def load_extraction_config(config_path: str = "model_comparison.yaml") -> Dict[s
         console.print(f"✅ Model comparison configuration loaded from: {config_path}", style="green")
         console.print(f"   InternVL prompt: {len(internvl_prompt)} characters", style="dim")
         console.print(f"   Llama prompt: {len(llama_prompt)} characters", style="dim")
-        console.print(f"   Max tokens: {config.get('max_tokens', 256)}", style="dim")
+        defaults = config.get("defaults", {})
+        console.print(f"   Max tokens: {defaults.get('max_tokens', 256)}", style="dim")
 
         return {
             "model_paths": {
@@ -263,7 +262,6 @@ def load_extraction_config(config_path: str = "model_comparison.yaml") -> Dict[s
             },
             "internvl_prompt": internvl_prompt,
             "llama_prompt": llama_prompt,
-            "max_tokens": config.get("max_tokens", 256),  # Read from config or default to 256
             "test_images": [
                 ("image14.png", "TAX_INVOICE"),
                 ("image65.png", "TAX_INVOICE"),
@@ -282,7 +280,7 @@ def load_extraction_config(config_path: str = "model_comparison.yaml") -> Dict[s
     except FileNotFoundError:
         console.print(f"❌ FATAL: Configuration file not found: {config_path}", style="bold red")
         console.print(f"💡 Expected location: {Path(config_path).absolute()}", style="yellow")
-        console.print("💡 Create the YAML file with 'fields' and 'prompts' sections", style="yellow")
+        console.print("💡 Create the YAML file with 'prompts' section", style="yellow")
         raise typer.Exit(1) from None
     except Exception as e:
         console.print(f"❌ FATAL: Failed to load configuration: {e}", style="bold red")
@@ -291,8 +289,8 @@ def load_extraction_config(config_path: str = "model_comparison.yaml") -> Dict[s
         raise typer.Exit(1) from None
 
 
-# Load default configuration
-DEFAULT_CONFIG = load_extraction_config()
+# Load default configuration lazily (will be loaded in CLI)
+DEFAULT_CONFIG = None
 
 # =============================================================================
 # UTILITY CLASSES (From Notebook Cells 1-2)
@@ -415,16 +413,6 @@ class ConfigurableKeyValueExtractionAnalyzer:
 
     def _validate_config(self):
         """Validate configuration at startup - FAIL FAST if invalid"""
-        all_fields = self.config_loader.get_all_fields()
-
-        if not all_fields:
-            raise ValueError("No extraction fields configured")
-
-        # Simplified validation - only check for name property
-        for field in all_fields:
-            if "name" not in field:
-                raise ValueError(f"Field missing 'name' property: {field}")
-
         success_criteria = self.config_loader.get_success_criteria()
         if "min_fields_for_success" not in success_criteria:
             raise ValueError("Success criteria missing 'min_fields_for_success'")
@@ -433,21 +421,20 @@ class ConfigurableKeyValueExtractionAnalyzer:
         """Analyze KEY-VALUE extraction results with configurable fields"""
         response_clean = response.strip()
 
-        # Get all configured fields
-        all_fields = self.config_loader.get_all_fields()
+        # Dynamically detect fields from response
+        detected_fields = self.config_loader.get_field_names_from_response(response_clean)
 
         # Check if response is structured (contains any field patterns)
-        field_patterns = [f"{field['name']}:" for field in all_fields]
-        pattern = "|".join(field_patterns)
-        is_structured = bool(re.search(pattern, response_clean, re.IGNORECASE))
+        is_structured = len(detected_fields) > 0
 
-        # Extract and validate each field
+        # Extract and validate each detected field
         field_results = {}
         field_matches = {}
 
-        for field in all_fields:
-            field_name = field["name"]
-            field_detected, field_match = self._extract_and_validate_field(field, response_clean)
+        for field_name in detected_fields:
+            field_detected, field_match = self._extract_and_validate_field_simple(
+                field_name, response_clean
+            )
 
             field_results[f"has_{field_name.lower()}"] = field_detected
             field_matches[field_name.lower()] = field_match
@@ -475,12 +462,10 @@ class ConfigurableKeyValueExtractionAnalyzer:
 
         return result
 
-    def _extract_and_validate_field(
-        self, field_config: Dict[str, Any], response: str
+    def _extract_and_validate_field_simple(
+        self, field_name: str, response: str
     ) -> Tuple[bool, Optional[str]]:
-        """Extract and validate a specific field from the response - simplified version"""
-        field_name = field_config["name"]
-
+        """Extract and validate a specific field from the response - dynamic version"""
         # Try structured extraction first
         pattern = rf'(?:{field_name}|{field_name.lower()}):\s*"?([^"\n]+)"?'
         match = re.search(pattern, response, re.IGNORECASE)
@@ -501,7 +486,6 @@ class ConfigurableKeyValueExtractionAnalyzer:
             ]:
                 return True, field_value
 
-        # For simplified config, we don't have fallback patterns, so just return what we found
         return False, None
 
 
@@ -795,15 +779,9 @@ class ComprehensiveResultsAnalyzer:
         # 1. Field Detection Rates Comparison
         plt.subplot(2, 3, 1)
 
-        # Get fields dynamically from config as single source of truth
-        if self.config_loader:
-            all_field_names = self.config_loader.get_field_names()
-            fields = [f"has_{field.lower()}" for field in all_field_names]
-            field_names = all_field_names  # Use config field names directly
-        else:
-            # Fallback to default fields if no config_loader
-            fields = ["has_supplier", "has_abn", "has_date", "has_total"]
-            field_names = ["SUPPLIER", "ABN", "DATE", "TOTAL"]
+        # Get fields dynamically from actual data
+        fields = [col for col in df.columns if col.startswith("has_")]
+        field_names = [field[4:].upper() for field in fields]  # Remove "has_" prefix and uppercase
 
         detection_rates = []
         models = df["model"].unique()
@@ -1021,19 +999,18 @@ def run_model_comparison(
     max_tokens: int,
     quantization: bool,
     model_paths: Dict[str, str] = None,
-    config_path: str = "model_comparison.yaml",
+    extraction_config: Dict[str, Any] = None,
 ):
     """Main model comparison execution"""
 
-    # Load extraction configuration
-    extraction_config = load_extraction_config(config_path)
+    # Use the already loaded extraction_config passed from CLI
     config = extraction_config.get("config")
 
     # Initialize components
     memory_manager = MemoryManager()
     repetition_controller = UltraAggressiveRepetitionController()
     # Create simple config_loader for compatibility with existing analyzer
-    config_loader = ExtractionConfigLoader(config_path)
+    config_loader = extraction_config["config_loader"]
     extraction_analyzer = ConfigurableKeyValueExtractionAnalyzer(config_loader)
     dataset_manager = DatasetManager(datasets_path)
 
@@ -1265,9 +1242,7 @@ def compare(
     # Apply effective values (CLI overrides config defaults)
     effective_output_dir = output_dir if output_dir is not None else defaults.get("output_dir", "results")
     effective_models = models if models is not None else defaults.get("models", "llama,internvl")
-    effective_max_tokens = (
-        max_tokens if max_tokens is not None else extraction_config.get("max_tokens", 256)
-    )
+    effective_max_tokens = max_tokens if max_tokens is not None else defaults.get("max_tokens", 256)
     effective_quantization = (
         quantization if quantization is not None else defaults.get("quantization", True)
     )
@@ -1275,7 +1250,12 @@ def compare(
     models_list = [m.strip() for m in effective_models.split(",")]
 
     # Custom model paths if provided
-    model_paths = extraction_config["model_paths"].copy()
+    if DEFAULT_CONFIG is None:
+        # Load default paths from config for the first time
+        model_paths = extraction_config["model_paths"].copy()
+    else:
+        model_paths = DEFAULT_CONFIG["model_paths"].copy()
+
     if llama_path:
         model_paths["llama"] = llama_path
     if internvl_path:
@@ -1288,7 +1268,7 @@ def compare(
         max_tokens=effective_max_tokens,
         quantization=effective_quantization,
         model_paths=model_paths,
-        config_path=config_path,
+        extraction_config=extraction_config,
     )
 
 
