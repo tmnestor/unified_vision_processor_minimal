@@ -13,6 +13,11 @@ defaults:
   quantization: true  # Enable 8-bit quantization for V100
   output_dir: "results"  # Default output directory
   models: "llama,internvl"  # Default models to compare
+  
+# Model paths
+model_paths:
+  llama: "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision"
+  internvl: "/home/jovyan/nfs_share/models/InternVL3-8B"
 
 
 # Prompts

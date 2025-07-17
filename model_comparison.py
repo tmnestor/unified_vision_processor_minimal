@@ -252,17 +252,24 @@ def load_extraction_config(config_path: str = "model_comparison.yaml") -> Dict[s
         # Create config_loader for dynamic field handling
         config_loader = ExtractionConfigLoader(config_path)
 
+        model_paths_config = config.get(
+            "model_paths",
+            {
+                "llama": "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision",
+                "internvl": "/home/jovyan/nfs_share/models/InternVL3-8B",
+            },
+        )
+
         console.print(f"✅ Model comparison configuration loaded from: {config_path}", style="green")
         console.print(f"   InternVL prompt: {len(internvl_prompt)} characters", style="dim")
         console.print(f"   Llama prompt: {len(llama_prompt)} characters", style="dim")
         defaults = config.get("defaults", {})
         console.print(f"   Max tokens: {defaults.get('max_tokens', 256)}", style="dim")
+        console.print(f"   Llama path: {model_paths_config.get('llama', 'default')}", style="dim")
+        console.print(f"   InternVL path: {model_paths_config.get('internvl', 'default')}", style="dim")
 
         return {
-            "model_paths": {
-                "llama": "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision",
-                "internvl": "/home/jovyan/nfs_share/models/InternVL3-8B",
-            },
+            "model_paths": model_paths_config,
             "internvl_prompt": internvl_prompt,
             "llama_prompt": llama_prompt,
             "test_images": [
