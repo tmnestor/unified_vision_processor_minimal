@@ -264,6 +264,9 @@ def load_extraction_config(config_path: str = "prompts_config.yaml") -> Dict[str
         internvl_prompt = f"<|image|>{config['prompts']['internvl']}"
         llama_prompt = f"<|image|>{config['prompts']['llama']}"
 
+        # Create config_loader for dynamic field handling
+        config_loader = ExtractionConfigLoader(config_path)
+
         console.print(f"✅ Extraction configuration loaded from: {config_path}", style="green")
         console.print(f"   InternVL prompt: {len(internvl_prompt)} characters", style="dim")
         console.print(f"   Llama prompt: {len(llama_prompt)} characters", style="dim")
@@ -288,6 +291,7 @@ def load_extraction_config(config_path: str = "prompts_config.yaml") -> Dict[str
                 ("image76.png", "TAX_INVOICE"),
             ],
             "config": config,
+            "config_loader": config_loader,
         }
     except FileNotFoundError:
         console.print(f"❌ FATAL: Configuration file not found: {config_path}", style="bold red")
@@ -734,9 +738,10 @@ class InternVLModelLoader:
 class ComprehensiveResultsAnalyzer:
     """Advanced results analysis with statistical metrics and visualizations for V100"""
 
-    def __init__(self, output_dir: Path):
+    def __init__(self, output_dir: Path, config_loader: Any = None):
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.config_loader = config_loader
         plt.style.use("default")
         sns.set_palette("husl")
 
@@ -749,39 +754,45 @@ class ComprehensiveResultsAnalyzer:
                 continue
 
             for doc in results["documents"]:
-                all_results.append(
-                    {
-                        "model": model_name.upper(),
-                        "image": doc["img_name"],
-                        "doc_type": doc["doc_type"],
-                        "inference_time": doc["inference_time"],
-                        "is_structured": doc["is_structured"],
-                        "has_store": doc["has_store"],
-                        "has_abn": doc["has_abn"],
-                        "has_date": doc["has_date"],
-                        "has_total": doc["has_total"],
-                        "extraction_score": doc["extraction_score"],
-                        "core_score": doc["core_score"],
-                        "successful": doc["successful"],
-                    }
-                )
+                # Build row dynamically based on what fields are present in doc
+                row = {
+                    "model": model_name.upper(),
+                    "image": doc["img_name"],
+                    "doc_type": doc["doc_type"],
+                    "inference_time": doc["inference_time"],
+                    "is_structured": doc["is_structured"],
+                    "extraction_score": doc["extraction_score"],
+                    "core_score": doc["core_score"],
+                    "successful": doc["successful"],
+                }
+
+                # Add all has_* fields dynamically
+                for key, value in doc.items():
+                    if key.startswith("has_"):
+                        row[key] = value
+
+                all_results.append(row)
 
         return pd.DataFrame(all_results)
 
     def calculate_field_f1_scores(self, df: pd.DataFrame) -> Dict:
         """Calculate F1 scores for each field and model"""
-        fields = ["has_store", "has_abn", "has_date", "has_total"]
+        # Get field names dynamically from DataFrame columns
+        fields = [col for col in df.columns if col.startswith("has_")]
         f1_results = {}
 
-        # Ground truth for realistic evaluation
-        ground_truth = {
-            "has_store": [1] * len(df),
-            "has_abn": [
-                1 if img in ["image39.png", "image76.png", "image71.png"] else 0 for img in df["image"]
-            ],
-            "has_date": [1] * len(df),
-            "has_total": [1] * len(df),
-        }
+        # Ground truth for realistic evaluation - build dynamically
+        ground_truth = {}
+
+        # Set ground truth based on field names
+        for field in fields:
+            if field == "has_abn":
+                ground_truth[field] = [
+                    1 if img in ["image39.png", "image76.png", "image71.png"] else 0 for img in df["image"]
+                ]
+            else:
+                # Most fields should be present in all images
+                ground_truth[field] = [1] * len(df)
 
         for model in df["model"].unique():
             model_df = df[df["model"] == model]
@@ -808,7 +819,7 @@ class ComprehensiveResultsAnalyzer:
 
         # 1. Field Detection Rates Comparison
         plt.subplot(2, 3, 1)
-        fields = ["has_store", "has_abn", "has_date", "has_total"]
+        fields = ["has_supplier", "has_abn", "has_date", "has_total"]
         field_names = ["STORE", "ABN", "DATE", "TOTAL"]
 
         detection_rates = []
@@ -1147,14 +1158,14 @@ def run_model_comparison(
                     # Show progress
                     status = "✅" if analysis["successful"] else "❌"
                     fields_detected = []
-                    if analysis["has_store"]:
-                        fields_detected.append("STORE")
-                    if analysis["has_abn"]:
-                        fields_detected.append("ABN")
-                    if analysis["has_date"]:
-                        fields_detected.append("DATE")
-                    if analysis["has_total"]:
-                        fields_detected.append("TOTAL")
+
+                    # Dynamically check all has_* fields
+                    for key, value in analysis.items():
+                        if key.startswith("has_") and value:
+                            # Convert has_supplier -> SUPPLIER, has_abn -> ABN, etc.
+                            field_name = key[4:].upper()  # Remove "has_" prefix and uppercase
+                            fields_detected.append(field_name)
+
                     fields_str = "|".join(fields_detected) if fields_detected else "none"
 
                     console.print(
@@ -1202,7 +1213,7 @@ def run_model_comparison(
     console.print(f"{'=' * 70}")
 
     output_path = Path(output_dir)
-    analyzer = ComprehensiveResultsAnalyzer(output_path)
+    analyzer = ComprehensiveResultsAnalyzer(output_path, config_loader)
 
     results_df = analyzer.create_detailed_dataframe(extraction_results, verified_images)
 
@@ -1245,9 +1256,7 @@ def compare(
     quantization: bool = typer.Option(True, help="Enable 8-bit quantization for V100"),
     llama_path: str = typer.Option(None, help="Custom path to Llama model"),
     internvl_path: str = typer.Option(None, help="Custom path to InternVL model"),
-    config_path: str = typer.Option(
-        "prompts_config.yaml", help="Path to prompts configuration YAML file"
-    ),
+    config_path: str = typer.Option("prompts_config.yaml", help="Path to prompts configuration YAML file"),
 ):
     """Run comprehensive model comparison with analytics"""
 
