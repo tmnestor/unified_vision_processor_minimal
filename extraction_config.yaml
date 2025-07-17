@@ -24,13 +24,11 @@ extraction_fields:
       required: true
       fallback_patterns:
         - "(\\$\\d+\\.\\d{2}|\\$\\d+|AUD\\s*\\d+\\.\\d{2})"
-
-  # Optional/bonus fields
-  bonus_fields:
+    
     - name: "ABN"
       description: "11-digit Australian Business Number"
       validation_type: "australian_abn"
-      required: false
+      required: true
       validation_rules:
         - "must_be_11_digits"
         - "no_all_zeros"
@@ -51,7 +49,9 @@ extraction_fields:
       fallback_patterns:
         - "\\b(\\d{2}\\s*\\d{3}\\s*\\d{3}\\s*\\d{3}|\\d{11})\\b"
         - "(?:ABN|A\\.B\\.N\\.?)\\s*:?\\s*(\\d{2}\\s*\\d{3}\\s*\\d{3}\\s*\\d{3}|\\d{11})"
-    
+
+  # Optional/bonus fields
+  bonus_fields:
     - name: "SUBTOTAL"
       description: "subtotal amount"
       validation_type: "australian_currency" 
@@ -70,9 +70,9 @@ extraction_fields:
 # Success criteria configuration
 success_criteria:
   # Minimum number of core fields required for successful extraction
-  min_core_fields: 2
+  min_core_fields: 3
   # Total core fields available
-  total_core_fields: 3
+  total_core_fields: 4
 
 # Prompt generation settings
 prompt_settings:

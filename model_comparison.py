@@ -130,11 +130,12 @@ class ExtractionConfigLoader:
 
     def generate_llama_safe_prompt(self) -> str:
         """Generate ultra-safe Llama prompt that bypasses safety mode"""
-        # Ultra-minimal approach to avoid safety triggers
+        # Ultra-minimal approach to avoid safety triggers, includes ABN for Australian Tax Invoices
         return """<|image|>Extract data in KEY-VALUE format:
 
 DATE: [date]
 STORE: [store name]
+ABN: [ABN number]
 GST: [GST amount]
 TOTAL: [total amount]
 SUBTOTAL: [subtotal amount]
