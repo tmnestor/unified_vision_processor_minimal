@@ -819,8 +819,16 @@ class ComprehensiveResultsAnalyzer:
 
         # 1. Field Detection Rates Comparison
         plt.subplot(2, 3, 1)
-        fields = ["has_supplier", "has_abn", "has_date", "has_total"]
-        field_names = ["STORE", "ABN", "DATE", "TOTAL"]
+
+        # Get fields dynamically from config as single source of truth
+        if self.config_loader:
+            core_field_names = self.config_loader.get_core_field_names()
+            fields = [f"has_{field.lower()}" for field in core_field_names]
+            field_names = core_field_names  # Use config field names directly
+        else:
+            # Fallback to default fields if no config_loader
+            fields = ["has_supplier", "has_abn", "has_date", "has_total"]
+            field_names = ["SUPPLIER", "ABN", "DATE", "TOTAL"]
 
         detection_rates = []
         models = df["model"].unique()
@@ -1192,9 +1200,12 @@ def run_model_comparison(
         )
 
         # Calculate average extraction score
-        avg_extraction_score = sum(
-            doc.get("extraction_score", 0) for doc in extraction_results[model_name]["documents"]
-        ) / len(extraction_results[model_name]["documents"]) if extraction_results[model_name]["documents"] else 0
+        avg_extraction_score = (
+            sum(doc.get("extraction_score", 0) for doc in extraction_results[model_name]["documents"])
+            / len(extraction_results[model_name]["documents"])
+            if extraction_results[model_name]["documents"]
+            else 0
+        )
 
         console.print(f"\n📊 {model_name.upper()} Results:")
         console.print(
