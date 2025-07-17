@@ -59,7 +59,7 @@ prompts:
     Output format:
     DATE: [date from receipt]
     SUPPLIER: [SUPPLIER name]
-    ABN: [ABN if visible]
+    ABN: [11-digit Australian Business Number if visible]
     GST: [GST amount]
     TOTAL: [total amount]
     SUBTOTAL: [subtotal amount]
@@ -84,7 +84,7 @@ prompts:
     Output format:
     DATE: [date from receipt]
     SUPPLIER: [SUPPLIER name]
-    ABN: [ABN if visible]
+    ABN: [11-digit Australian Business Number if visible]
     GST: [GST amount]
     TOTAL: [total amount]
     SUBTOTAL: [subtotal amount]
