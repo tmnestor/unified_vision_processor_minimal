@@ -278,7 +278,7 @@ def load_extraction_config(config_path: str = "extraction_config_simple.yaml") -
                 ("image71.png", "TAX_INVOICE"),
                 ("image74.png", "TAX_INVOICE"),
                 ("image205.png", "FUEL_RECEIPT"),
-                ("image23.png", "TAX_INVOICE"),
+                ("image59.png", "TAX_INVOICE"),
                 ("image45.png", "TAX_INVOICE"),
                 ("image1.png", "BANK_STATEMENT"),
                 ("image39.png", "TAX_INVOICE"),
