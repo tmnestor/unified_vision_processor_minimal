@@ -9,7 +9,7 @@ Answer: """
 ALTERNATIVE_PROMPTS = [
     "<|image|>Is this a receipt or invoice? Answer: TAX_INVOICE or BUSINESS_RECEIPT",
     "<|image|>Document type?",
-    "<|image|>Receipt type: FUEL_RECEIPT, BUSINESS_RECEIPT, or OTHER_BUSINESS?"
+    "<|image|>Receipt type: FUEL_RECEIPT, BUSINESS_RECEIPT, or OTHER_BUSINESS?",
 ]
 
 print("Copy these simplified prompts to test:")

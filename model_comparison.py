@@ -414,7 +414,8 @@ class ConfigurableKeyValueExtractionAnalyzer:
             )
 
         self.config_loader = config_loader
-        self.validator = ConfigurableFieldValidator(config_loader)
+        # Simplified - no complex field validator needed
+        self.validator = None  # Explicitly set to None for simplified config
 
         # Validate configuration at initialization
         self._validate_config()
@@ -430,14 +431,10 @@ class ConfigurableKeyValueExtractionAnalyzer:
         if not core_fields:
             raise ValueError("No core fields configured")
 
-        # Validate each field has required properties
+        # Simplified validation - only check for name property
         for field in all_fields:
             if "name" not in field:
                 raise ValueError(f"Field missing 'name' property: {field}")
-            if "description" not in field:
-                raise ValueError(f"Field '{field['name']}' missing 'description' property")
-            if "validation_type" not in field:
-                raise ValueError(f"Field '{field['name']}' missing 'validation_type' property")
 
         success_criteria = self.config_loader.get_success_criteria()
         if "min_core_fields" not in success_criteria:
@@ -498,7 +495,7 @@ class ConfigurableKeyValueExtractionAnalyzer:
     def _extract_and_validate_field(
         self, field_config: Dict[str, Any], response: str
     ) -> Tuple[bool, Optional[str]]:
-        """Extract and validate a specific field from the response"""
+        """Extract and validate a specific field from the response - simplified version"""
         field_name = field_config["name"]
 
         # Try structured extraction first
@@ -507,18 +504,21 @@ class ConfigurableKeyValueExtractionAnalyzer:
 
         if match:
             field_value = match.group(1).strip()
-            if self.validator and self.validator.validate_field(field_name, field_value):
+            # Simplified validation - just check if value exists and isn't N/A
+            if field_value and field_value.upper() not in [
+                "N/A",
+                "NA",
+                "NOT AVAILABLE",
+                "NOT FOUND",
+                "NONE",
+                "-",
+                "UNKNOWN",
+                "NULL",
+                "EMPTY",
+            ]:
                 return True, field_value
 
-        # Try fallback patterns if structured extraction failed
-        fallback_patterns = field_config.get("fallback_patterns", [])
-        for pattern in fallback_patterns:
-            fallback_match = re.search(pattern, response, re.IGNORECASE)
-            if fallback_match:
-                field_value = fallback_match.group(1).strip()
-                if self.validator and self.validator.validate_field(field_name, field_value):
-                    return True, field_value
-
+        # For simplified config, we don't have fallback patterns, so just return what we found
         return False, None
 
 

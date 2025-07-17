@@ -25,5 +25,6 @@ def convert_jpg_to_png():
         except Exception as e:
             print(f"Error converting {jpg_file}: {e}")
 
+
 if __name__ == "__main__":
     convert_jpg_to_png()
