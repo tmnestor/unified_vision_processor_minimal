@@ -130,8 +130,8 @@ class ExtractionConfigLoader:
 
     def generate_llama_safe_prompt(self) -> str:
         """Generate ultra-safe Llama prompt that bypasses safety mode"""
-        # ATO official context with structured KEY-VALUE extraction
-        return """<|image|>This is a Text extraction Tool for the Australian Taxation Office. Extract data in KEY-VALUE format:
+        # ATO official context with explicit key-value extraction instruction
+        return """<|image|>This is a key-value extraction Tool for the Australian Taxation Office. Extract data in KEY-VALUE format:
 
 DATE: [date]
 STORE: [store name]
