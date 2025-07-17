@@ -1024,7 +1024,7 @@ def run_model_comparison(
     max_tokens: int,
     quantization: bool,
     model_paths: Dict[str, str] = None,
-    config_path: str = "extraction_config.yaml",
+    config_path: str = "extraction_config_simple.yaml",
 ):
     """Main model comparison execution"""
 
@@ -1238,7 +1238,7 @@ def compare(
     llama_path: str = typer.Option(None, help="Custom path to Llama model"),
     internvl_path: str = typer.Option(None, help="Custom path to InternVL model"),
     config_path: str = typer.Option(
-        "extraction_config.yaml", help="Path to extraction configuration YAML file"
+        "extraction_config_simple.yaml", help="Path to extraction configuration YAML file"
     ),
 ):
     """Run comprehensive model comparison with analytics"""
