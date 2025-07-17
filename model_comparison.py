@@ -240,7 +240,7 @@ class ConfigurableFieldValidator:
 # =============================================================================
 
 
-def load_extraction_config(config_path: str = "extraction_config_simple.yaml") -> Dict[str, Any]:
+def load_extraction_config(config_path: str = "prompts_config.yaml") -> Dict[str, Any]:
     """Load extraction configuration from YAML file - FAIL FAST if config missing"""
     try:
         config_file = Path(config_path)
@@ -260,21 +260,21 @@ def load_extraction_config(config_path: str = "extraction_config_simple.yaml") -
         if "llama" not in config["prompts"]:
             raise ValueError(f"Missing 'llama' prompt in {config_path}")
 
-        # Extract prompts directly
-        extraction_prompt = f"<|image|>{config['prompts']['internvl']}"
-        llama_safe_prompt = f"<|image|>{config['prompts']['llama']}"
+        # Extract prompts directly with explicit model names
+        internvl_prompt = f"<|image|>{config['prompts']['internvl']}"
+        llama_prompt = f"<|image|>{config['prompts']['llama']}"
 
         console.print(f"✅ Extraction configuration loaded from: {config_path}", style="green")
-        console.print(f"   InternVL prompt: {len(extraction_prompt)} characters", style="dim")
-        console.print(f"   Llama prompt: {len(llama_safe_prompt)} characters", style="dim")
+        console.print(f"   InternVL prompt: {len(internvl_prompt)} characters", style="dim")
+        console.print(f"   Llama prompt: {len(llama_prompt)} characters", style="dim")
 
         return {
             "model_paths": {
                 "llama": "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision",
                 "internvl": "/home/jovyan/nfs_share/models/InternVL3-8B",
             },
-            "extraction_prompt": extraction_prompt,
-            "llama_safe_prompt": llama_safe_prompt,
+            "internvl_prompt": internvl_prompt,
+            "llama_prompt": llama_prompt,
             "test_images": [
                 ("image14.png", "TAX_INVOICE"),
                 ("image65.png", "TAX_INVOICE"),
@@ -1027,7 +1027,7 @@ def run_model_comparison(
     max_tokens: int,
     quantization: bool,
     model_paths: Dict[str, str] = None,
-    config_path: str = "extraction_config_simple.yaml",
+    config_path: str = "prompts_config.yaml",
 ):
     """Main model comparison execution"""
 
@@ -1049,8 +1049,8 @@ def run_model_comparison(
 
     config = {
         "model_paths": model_paths,
-        "extraction_prompt": extraction_config["extraction_prompt"],
-        "llama_safe_prompt": extraction_config["llama_safe_prompt"],
+        "internvl_prompt": extraction_config["internvl_prompt"],
+        "llama_prompt": extraction_config["llama_prompt"],
         "max_new_tokens": max_tokens,
         "enable_quantization": quantization,
         "test_models": models,
@@ -1113,9 +1113,9 @@ def run_model_comparison(
 
                     # Use model-specific prompts
                     if model_name == "llama":
-                        prompt = config["llama_safe_prompt"]
+                        prompt = config["llama_prompt"]
                     else:  # internvl
-                        prompt = config["extraction_prompt"]
+                        prompt = config["internvl_prompt"]
 
                     # Debug: Print prompt being used
                     if i == 0:  # Only print for first image to avoid spam
@@ -1246,7 +1246,7 @@ def compare(
     llama_path: str = typer.Option(None, help="Custom path to Llama model"),
     internvl_path: str = typer.Option(None, help="Custom path to InternVL model"),
     config_path: str = typer.Option(
-        "extraction_config_simple.yaml", help="Path to extraction configuration YAML file"
+        "prompts_config.yaml", help="Path to prompts configuration YAML file"
     ),
 ):
     """Run comprehensive model comparison with analytics"""
