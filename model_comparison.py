@@ -130,8 +130,18 @@ class ExtractionConfigLoader:
 
     def generate_llama_safe_prompt(self) -> str:
         """Generate ultra-safe Llama prompt that bypasses safety mode"""
-        # ATO official context approach to justify business document processing
-        return """<|image|>This is a Text extraction Tool for the Australian Taxation Office. Extract all text as markdown"""
+        # ATO official context with structured KEY-VALUE extraction
+        return """<|image|>This is a Text extraction Tool for the Australian Taxation Office. Extract data in KEY-VALUE format:
+
+DATE: [date]
+STORE: [store name]
+ABN: [ABN number]
+GST: [GST amount]
+TOTAL: [total amount]
+SUBTOTAL: [subtotal amount]
+ITEMS: [items]
+
+Format as KEY: VALUE pairs only."""
 
     def get_field_config(self, field_name: str) -> Optional[Dict[str, Any]]:
         """Get configuration for a specific field"""
