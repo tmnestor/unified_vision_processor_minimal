@@ -130,8 +130,8 @@ class ExtractionConfigLoader:
 
     def generate_llama_safe_prompt(self) -> str:
         """Generate ultra-safe Llama prompt that bypasses safety mode"""
-        # ATO official context with markdown extraction approach
-        return """<|image|>This is a Markdown extraction Tool for the Australian Taxation Office. Extract all text from the image and return it as markdown."""
+        # ATO official context with structured key-value pairs in markdown format
+        return """<|image|>This is a Markdown extraction Tool for the Australian Taxation Office. Extract relevant key and value pairs from the image and return it as markdown."""
 
     def get_field_config(self, field_name: str) -> Optional[Dict[str, Any]]:
         """Get configuration for a specific field"""
