@@ -276,7 +276,7 @@ def load_extraction_config(config_path: str = "model_comparison.yaml") -> Dict[s
                 ("image14.png", "TAX_INVOICE"),
                 ("image65.png", "TAX_INVOICE"),
                 ("image71.png", "TAX_INVOICE"),
-                ("image74.png", "TAX_INVOICE"),
+                ("image27.png", "TAX_INVOICE"),
                 ("image205.png", "FUEL_RECEIPT"),
                 ("image23.png", "TAX_INVOICE"),
                 ("image45.png", "TAX_INVOICE"),
