@@ -270,6 +270,7 @@ def load_extraction_config(config_path: str = "prompts_config.yaml") -> Dict[str
         console.print(f"✅ Extraction configuration loaded from: {config_path}", style="green")
         console.print(f"   InternVL prompt: {len(internvl_prompt)} characters", style="dim")
         console.print(f"   Llama prompt: {len(llama_prompt)} characters", style="dim")
+        console.print(f"   Max tokens: {config.get('max_tokens', 256)}", style="dim")
 
         return {
             "model_paths": {
@@ -278,6 +279,7 @@ def load_extraction_config(config_path: str = "prompts_config.yaml") -> Dict[str
             },
             "internvl_prompt": internvl_prompt,
             "llama_prompt": llama_prompt,
+            "max_tokens": config.get("max_tokens", 256),  # Read from config or default to 256
             "test_images": [
                 ("image14.png", "TAX_INVOICE"),
                 ("image65.png", "TAX_INVOICE"),
@@ -1066,11 +1068,14 @@ def run_model_comparison(
     if model_paths is None:
         model_paths = extraction_config["model_paths"]
 
+    # Use max_tokens from config if not explicitly provided
+    effective_max_tokens = max_tokens if max_tokens != 256 else extraction_config.get("max_tokens", 256)
+
     config = {
         "model_paths": model_paths,
         "internvl_prompt": extraction_config["internvl_prompt"],
         "llama_prompt": extraction_config["llama_prompt"],
-        "max_new_tokens": max_tokens,
+        "max_new_tokens": effective_max_tokens,
         "enable_quantization": quantization,
         "test_models": models,
         "test_images": extraction_config["test_images"],
@@ -1079,7 +1084,7 @@ def run_model_comparison(
 
     console.print("🏆 UNIFIED VISION MODEL COMPARISON", style="bold blue")
     console.print(f"📋 Models: {', '.join(models)}")
-    console.print(f"📋 Max tokens: {max_tokens}")
+    console.print(f"📋 Max tokens: {effective_max_tokens}")
     console.print(f"📋 Quantization: {quantization}")
 
     # CUDA diagnostics
@@ -1270,7 +1275,7 @@ def compare(
     datasets_path: str = typer.Option(..., help="Path to input datasets directory (required for KFP)"),
     output_dir: str = typer.Option("results", help="Output directory for results"),
     models: str = typer.Option("llama,internvl", help="Comma-separated list of models (llama,internvl)"),
-    max_tokens: int = typer.Option(64, help="Maximum new tokens for generation"),
+    max_tokens: int = typer.Option(256, help="Maximum new tokens for generation"),
     quantization: bool = typer.Option(True, help="Enable 8-bit quantization for V100"),
     llama_path: str = typer.Option(None, help="Custom path to Llama model"),
     internvl_path: str = typer.Option(None, help="Custom path to InternVL model"),

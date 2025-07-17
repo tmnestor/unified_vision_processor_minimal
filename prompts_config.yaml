@@ -17,6 +17,9 @@ bonus_fields:
 min_core_fields: 1
 total_core_fields: 5
 
+# Generation parameters
+max_tokens: 256  # Increased from 64 to allow complete key-value extraction
+
 # Prompts
 prompts:
   # Alternative prompt versions (commented out for reference)
