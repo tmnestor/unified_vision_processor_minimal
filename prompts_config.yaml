@@ -1,21 +1,17 @@
 # Simple Information Extraction Configuration
 
-# Core fields for document processing
-core_fields:
+# All extraction fields
+fields:
   - SUPPLIER
   - DATE  
   - TOTAL
   - ABN
   - GST
-
-# Optional fields
-bonus_fields:
   - SUBTOTAL
   - ITEMS
 
-# Success criteria
-min_core_fields: 1
-total_core_fields: 5
+# Success criteria - simplified
+min_fields_for_success:  1 # Document is successful if it extracts at least 1 fields
 
 # Generation parameters
 max_tokens: 256  # Increased from 64 to allow complete key-value extraction
@@ -71,7 +67,7 @@ prompts:
     PRICES: [prices separated by |]
     RECEIPT_NUMBER: [receipt number if visible]
     PAYMENT_METHOD: [payment method if visible]
-    DOCUMENT_TYPE: [RECEIPT or TAX INVOICE]
+    DOCUMENT_TYPE: [if visible]
     ADDRESS: [address if visible]
     PHONE: [phone if visible]
     TIME: [time if visible]
@@ -96,7 +92,7 @@ prompts:
     PRICES: [prices separated by |]
     RECEIPT_NUMBER: [receipt number if visible]
     PAYMENT_METHOD: [payment method if visible]
-    DOCUMENT_TYPE: [RECEIPT or TAX INVOICE]
+    DOCUMENT_TYPE: [if visible]
     ADDRESS: [address if visible]
     PHONE: [phone if visible]
     TIME: [time if visible]

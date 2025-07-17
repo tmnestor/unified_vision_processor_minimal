@@ -57,7 +57,7 @@ console = Console()
 class ExtractionConfigLoader:
     """Loads and manages simplified extraction configuration from YAML files"""
 
-    def __init__(self, config_path: str = "extraction_config_simple.yaml"):
+    def __init__(self, config_path: str = "prompts_config.yaml"):
         self.config_path = Path(config_path)
         self.config = self._load_config()
 
@@ -70,36 +70,20 @@ class ExtractionConfigLoader:
             return yaml.safe_load(f)
 
     def get_all_fields(self) -> List[Dict[str, Any]]:
-        """Get all extraction fields (core + bonus) - simplified format"""
+        """Get all extraction fields - simplified format"""
         all_fields = []
-        # Convert simple field names to old format for compatibility
-        for field_name in self.config["core_fields"]:
-            all_fields.append({"name": field_name, "required": True})
-        for field_name in self.config["bonus_fields"]:
+        for field_name in self.config["fields"]:
             all_fields.append({"name": field_name, "required": False})
         return all_fields
 
-    def get_core_fields(self) -> List[Dict[str, Any]]:
-        """Get only core fields (required for success)"""
-        return [{"name": field_name, "required": True} for field_name in self.config["core_fields"]]
-
-    def get_bonus_fields(self) -> List[Dict[str, Any]]:
-        """Get only bonus fields (optional)"""
-        return [{"name": field_name, "required": False} for field_name in self.config["bonus_fields"]]
-
     def get_field_names(self) -> List[str]:
         """Get list of all field names"""
-        return self.config["core_fields"] + self.config["bonus_fields"]
-
-    def get_core_field_names(self) -> List[str]:
-        """Get list of core field names"""
-        return self.config["core_fields"]
+        return self.config["fields"]
 
     def get_success_criteria(self) -> Dict[str, int]:
         """Get success criteria configuration"""
         return {
-            "min_core_fields": self.config["min_core_fields"],
-            "total_core_fields": self.config["total_core_fields"],
+            "min_fields_for_success": self.config["min_fields_for_success"],
         }
 
     def get_expected_abn_images(self) -> List[str]:
@@ -432,13 +416,9 @@ class ConfigurableKeyValueExtractionAnalyzer:
     def _validate_config(self):
         """Validate configuration at startup - FAIL FAST if invalid"""
         all_fields = self.config_loader.get_all_fields()
-        core_fields = self.config_loader.get_core_fields()
 
         if not all_fields:
             raise ValueError("No extraction fields configured")
-
-        if not core_fields:
-            raise ValueError("No core fields configured")
 
         # Simplified validation - only check for name property
         for field in all_fields:
@@ -446,8 +426,8 @@ class ConfigurableKeyValueExtractionAnalyzer:
                 raise ValueError(f"Field missing 'name' property: {field}")
 
         success_criteria = self.config_loader.get_success_criteria()
-        if "min_core_fields" not in success_criteria:
-            raise ValueError("Success criteria missing 'min_core_fields'")
+        if "min_fields_for_success" not in success_criteria:
+            raise ValueError("Success criteria missing 'min_fields_for_success'")
 
     def analyze(self, response: str, img_name: str) -> Dict[str, Any]:
         """Analyze KEY-VALUE extraction results with configurable fields"""
@@ -455,7 +435,6 @@ class ConfigurableKeyValueExtractionAnalyzer:
 
         # Get all configured fields
         all_fields = self.config_loader.get_all_fields()
-        core_fields = self.config_loader.get_core_fields()
 
         # Check if response is structured (contains any field patterns)
         field_patterns = [f"{field['name']}:" for field in all_fields]
@@ -473,18 +452,14 @@ class ConfigurableKeyValueExtractionAnalyzer:
             field_results[f"has_{field_name.lower()}"] = field_detected
             field_matches[field_name.lower()] = field_match
 
-        # Calculate scores
-        core_field_names = [field["name"].lower() for field in core_fields]
-        core_scores = [field_results.get(f"has_{name}", False) for name in core_field_names]
+        # Calculate scores - simplified
         all_scores = [field_results.get(key, False) for key in field_results.keys()]
-
-        core_score = sum(core_scores)
         extraction_score = sum(all_scores)
 
-        # Success criteria from config
+        # Success criteria from config - simplified
         success_criteria = self.config_loader.get_success_criteria()
-        min_core_fields = success_criteria.get("min_core_fields", 2)
-        successful = core_score >= min_core_fields
+        min_fields = success_criteria.get("min_fields_for_success", 2)
+        successful = extraction_score >= min_fields
 
         # Build result dictionary
         result = {
@@ -492,7 +467,6 @@ class ConfigurableKeyValueExtractionAnalyzer:
             "response": response_clean,
             "is_structured": is_structured,
             "extraction_score": extraction_score,
-            "core_score": core_score,
             "successful": successful,
         }
 
@@ -764,7 +738,6 @@ class ComprehensiveResultsAnalyzer:
                     "inference_time": doc["inference_time"],
                     "is_structured": doc["is_structured"],
                     "extraction_score": doc["extraction_score"],
-                    "core_score": doc["core_score"],
                     "successful": doc["successful"],
                 }
 
@@ -824,9 +797,9 @@ class ComprehensiveResultsAnalyzer:
 
         # Get fields dynamically from config as single source of truth
         if self.config_loader:
-            core_field_names = self.config_loader.get_core_field_names()
-            fields = [f"has_{field.lower()}" for field in core_field_names]
-            field_names = core_field_names  # Use config field names directly
+            all_field_names = self.config_loader.get_field_names()
+            fields = [f"has_{field.lower()}" for field in all_field_names]
+            field_names = all_field_names  # Use config field names directly
         else:
             # Fallback to default fields if no config_loader
             fields = ["has_supplier", "has_abn", "has_date", "has_total"]
@@ -899,17 +872,17 @@ class ComprehensiveResultsAnalyzer:
         plt.legend(title="Document Type", bbox_to_anchor=(1.05, 1), loc="upper left")
         plt.grid(True, alpha=0.3)
 
-        # 5. Core Score Distribution
+        # 5. Extraction Score Distribution
         plt.subplot(2, 3, 5)
         for model in models:
             model_df = df[df["model"] == model]
             if len(model_df) > 0:
-                scores = model_df["core_score"].value_counts().sort_index()
+                scores = model_df["extraction_score"].value_counts().sort_index()
                 plt.plot(scores.index, scores.values, marker="o", label=model, linewidth=2)
 
-        plt.xlabel("Core Score (0-3)")
+        plt.xlabel("Extraction Score (fields extracted)")
         plt.ylabel("Number of Documents")
-        plt.title("Core Score Distribution")
+        plt.title("Extraction Score Distribution")
         plt.legend()
         plt.grid(True, alpha=0.3)
 
@@ -1182,7 +1155,7 @@ def run_model_comparison(
                     fields_str = "|".join(fields_detected) if fields_detected else "none"
 
                     console.print(
-                        f"   {i + 1:2d}. {img_name:<12} {status} {inference_time:.1f}s | {analysis['core_score']}/3 core | {analysis['extraction_score']} total | {fields_str}"
+                        f"   {i + 1:2d}. {img_name:<12} {status} {inference_time:.1f}s | {analysis['extraction_score']} fields | {fields_str}"
                     )
 
                     del image
