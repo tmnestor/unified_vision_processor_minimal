@@ -369,7 +369,8 @@ class UltraAggressiveRepetitionController:
         response = self._remove_word_repetition(response)
         response = self._remove_phrase_repetition(response)
 
-        response = re.sub(r"\s+", " ", response)
+        # Clean up multiple spaces but preserve newlines
+        response = re.sub(r"[ \t]+", " ", response)  # Only replace spaces/tabs, not newlines
         response = re.sub(r"[.]{2,}", ".", response)
         response = re.sub(r"[!]{2,}", "!", response)
 
@@ -406,7 +407,7 @@ class UltraAggressiveRepetitionController:
             r"^([A-Za-z][A-Za-z\s_]*?):\s*(.+)$", normalize_field_name, converted_text, flags=re.MULTILINE
         )
 
-        # Clean up extra whitespace and blank lines
+        # Clean up extra whitespace but preserve single line breaks
         converted_text = re.sub(r"\n\s*\n+", "\n", converted_text)
         converted_text = re.sub(r"  +", " ", converted_text)
 
@@ -1210,9 +1211,12 @@ def run_model_comparison(
 
                     cleaned_response = repetition_controller.clean_response(raw_response)
 
-                    # Debug: Print cleaned/processed response
+                    # Debug: Print cleaned/processed response with proper formatting
                     console.print(f"[dim]🔍 {img_name}[/dim]")
-                    console.print(f"[dim]{cleaned_response}[/dim]")
+                    if cleaned_response:
+                        console.print(f"[dim]{cleaned_response}[/dim]")
+                    else:
+                        console.print(f"[dim]No cleaned response[/dim]")
 
                     analysis = extraction_analyzer.analyze(cleaned_response, img_name)
                     analysis["inference_time"] = inference_time
