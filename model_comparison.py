@@ -381,17 +381,37 @@ class UltraAggressiveRepetitionController:
         text = re.sub(r"\|", "", text)  # Remove table pipes
         text = re.sub(r"^-+\s*$", "", text, flags=re.MULTILINE)  # Remove table separators
         text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)  # Remove bold formatting
-        text = re.sub(r"\*([^*]+)\*", r"\1", text)  # Remove italic formatting
         text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)  # Remove headers
 
-        # Convert bullet points to key-value pairs
-        text = re.sub(r"^\*\s*([A-Z_]+):\s*(.+)$", r"\1: \2", text, flags=re.MULTILINE)
+        # Convert bullet points to key-value pairs (handle various bullet formats)
+        text = re.sub(r"^\*\s*([A-Za-z][A-Za-z\s]*?):\s*(.+)$", r"\1: \2", text, flags=re.MULTILINE)
+        text = re.sub(r"^-\s*([A-Za-z][A-Za-z\s]*?):\s*(.+)$", r"\1: \2", text, flags=re.MULTILINE)
+        text = re.sub(r"^•\s*([A-Za-z][A-Za-z\s]*?):\s*(.+)$", r"\1: \2", text, flags=re.MULTILINE)
+
+        # Normalize field names to uppercase (DATE, SUPPLIER, etc.)
+        def normalize_field(match):
+            field = match.group(1).strip().upper().replace(" ", "_")
+            value = match.group(2).strip()
+            return f"{field}: {value}"
+
+        text = re.sub(r"^([A-Za-z][A-Za-z\s_]*?):\s*(.+)$", normalize_field, text, flags=re.MULTILINE)
+
+        # Remove remaining single asterisks that aren't bullet points
+        text = re.sub(r"\*([^*\n]+)\*", r"\1", text)  # Remove single asterisks
 
         # Clean up multiple spaces and blank lines
         text = re.sub(r"\n\s*\n", "\n", text)
         text = re.sub(r"  +", " ", text)
 
-        return text
+        # Remove non-key-value lines (like "Note:" text)
+        lines = text.split("\n")
+        keyvalue_lines = []
+        for line in lines:
+            line = line.strip()
+            if ":" in line and not line.startswith("Note:") and len(line.split(":")) == 2:
+                keyvalue_lines.append(line)
+
+        return "\n".join(keyvalue_lines)
 
     def _remove_business_patterns(self, text: str) -> str:
         """Remove business document specific repetitive patterns"""
