@@ -16,7 +16,7 @@ defaults:
   
 # Model paths
 model_paths:
-  llama: "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision"
+  llama: "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision-Instruct"
   internvl: "/home/jovyan/nfs_share/models/InternVL3-8B"
 
 

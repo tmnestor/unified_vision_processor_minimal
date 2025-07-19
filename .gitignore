@@ -93,3 +93,4 @@ synthetic_invoice_generator.py
 synthetic_invoice.json
 .gitignore
 .gitignore
+.env
