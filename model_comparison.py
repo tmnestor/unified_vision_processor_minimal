@@ -421,6 +421,7 @@ class UltraAggressiveRepetitionController:
                 line
                 and ":" in line
                 and not line.startswith("Note:")
+                and not line.startswith("NOTE:")
                 and not line.startswith("#")
                 and len(line.split(":", 1)) == 2
             ):
