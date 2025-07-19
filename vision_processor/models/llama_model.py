@@ -199,9 +199,18 @@ class LlamaVisionModel(BaseVisionModel):
             # Configure generation settings for stable inference (based on working implementation)
             self.model.generation_config.max_new_tokens = 1024  # Use max_new_tokens instead of max_length
             self.model.generation_config.do_sample = False  # Deterministic for consistency
-            self.model.generation_config.temperature = None  # Disable temperature in deterministic mode
-            self.model.generation_config.top_p = None  # Disable top_p in deterministic mode
-            self.model.generation_config.top_k = None  # Disable top_k in deterministic mode
+            
+            # Completely remove sampling parameters to avoid warnings when do_sample=False
+            # These parameters are not needed for deterministic generation
+            try:
+                self.model.generation_config.temperature = 1.0  # Reset to default, will be ignored
+                self.model.generation_config.top_p = 1.0  # Reset to default, will be ignored
+                self.model.generation_config.top_k = 50  # Reset to default, will be ignored
+                
+                # The key is to ensure do_sample=False overrides these in generation calls
+                logger.info("Generation config updated for deterministic inference")
+            except Exception as e:
+                logger.warning(f"Could not update generation config: {e}")
             self.model.config.use_cache = True  # Enable KV cache
 
             # Store metadata for inference
@@ -260,6 +269,9 @@ class LlamaVisionModel(BaseVisionModel):
                     **test_inputs,
                     max_new_tokens=10,
                     do_sample=False,
+                    temperature=None,  # Explicitly disable to avoid warnings
+                    top_p=None,  # Explicitly disable to avoid warnings
+                    top_k=None,  # Explicitly disable to avoid warnings
                     pad_token_id=self.processor.tokenizer.eos_token_id,
                 )
 
@@ -380,6 +392,9 @@ class LlamaVisionModel(BaseVisionModel):
                 **inputs,
                 "max_new_tokens": max_tokens,
                 "do_sample": False,  # Deterministic generation bypasses safety checks
+                "temperature": None,  # Explicitly disable to avoid warnings
+                "top_p": None,  # Explicitly disable to avoid warnings
+                "top_k": None,  # Explicitly disable to avoid warnings
                 "pad_token_id": self.processor.tokenizer.eos_token_id,
                 "eos_token_id": self.processor.tokenizer.eos_token_id,
                 "use_cache": True,
@@ -626,6 +641,9 @@ Output document type only."""
                 **inputs,
                 "max_new_tokens": max_tokens,
                 "do_sample": False,
+                "temperature": None,  # Explicitly disable to avoid warnings
+                "top_p": None,  # Explicitly disable to avoid warnings
+                "top_k": None,  # Explicitly disable to avoid warnings
                 "pad_token_id": self.processor.tokenizer.eos_token_id,
                 "eos_token_id": self.processor.tokenizer.eos_token_id,
                 "use_cache": True,
