@@ -377,39 +377,63 @@ class UltraAggressiveRepetitionController:
 
     def _convert_markdown_to_keyvalue(self, text: str) -> str:
         """Convert markdown formatting to clean KEY: VALUE pairs"""
-        # Remove markdown table formatting
-        text = re.sub(r"\|", "", text)  # Remove table pipes
-        text = re.sub(r"^-+\s*$", "", text, flags=re.MULTILINE)  # Remove table separators
-        text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)  # Remove bold formatting
-        text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)  # Remove headers
-
-        # Convert bullet points to key-value pairs (handle various bullet formats)
-        text = re.sub(r"^\*\s*([A-Za-z][A-Za-z\s]*?):\s*(.+)$", r"\1: \2", text, flags=re.MULTILINE)
-        text = re.sub(r"^-\s*([A-Za-z][A-Za-z\s]*?):\s*(.+)$", r"\1: \2", text, flags=re.MULTILINE)
-        text = re.sub(r"^•\s*([A-Za-z][A-Za-z\s]*?):\s*(.+)$", r"\1: \2", text, flags=re.MULTILINE)
-
-        # Normalize field names to uppercase (DATE, SUPPLIER, etc.)
-        def normalize_field(match):
-            field = match.group(1).strip().upper().replace(" ", "_")
-            value = match.group(2).strip()
-            return f"{field}: {value}"
-
-        text = re.sub(r"^([A-Za-z][A-Za-z\s_]*?):\s*(.+)$", normalize_field, text, flags=re.MULTILINE)
-
-        # Remove remaining single asterisks that aren't bullet points
-        text = re.sub(r"\*([^*\n]+)\*", r"\1", text)  # Remove single asterisks
-
-        # Clean up multiple spaces and blank lines
-        text = re.sub(r"\n\s*\n", "\n", text)
-        text = re.sub(r"  +", " ", text)
-
-        # Remove non-key-value lines (like "Note:" text)
         lines = text.split("\n")
         keyvalue_lines = []
+
         for line in lines:
             line = line.strip()
-            if ":" in line and not line.startswith("Note:") and len(line.split(":")) == 2:
-                keyvalue_lines.append(line)
+            if not line:
+                continue
+
+            # Skip markdown table separators and headers
+            if re.match(r"^-+\s*$", line) or re.match(r"^\|.*\|$", line):
+                continue
+
+            # Handle markdown headers (extract account info)
+            if line.startswith("**") and line.endswith("**"):
+                header_text = line.replace("**", "").strip()
+                if "BANK STATEMENT" in header_text:
+                    keyvalue_lines.append("DOCUMENT_TYPE: BANK_STATEMENT")
+                continue
+
+            # Convert bullet points to key-value pairs
+            bullet_match = re.match(r"^\*\s*([A-Za-z][A-Za-z\s]*?):\s*(.+)$", line)
+            if bullet_match:
+                field = bullet_match.group(1).strip().upper().replace(" ", "_")
+                value = bullet_match.group(2).strip()
+                keyvalue_lines.append(f"{field}: {value}")
+                continue
+
+            # Handle direct key-value pairs (like "Account Holder: James Taylor")
+            if ":" in line and not line.startswith("Note:"):
+                parts = line.split(":", 1)
+                if len(parts) == 2:
+                    field = parts[0].strip().upper().replace(" ", "_")
+                    value = parts[1].strip()
+
+                    # Clean up field names
+                    field = re.sub(r"[^A-Z_]", "", field)
+                    if field and value:
+                        keyvalue_lines.append(f"{field}: {value}")
+                continue
+
+            # Extract key info from descriptive text
+            if "Account Holder" in line:
+                match = re.search(r"Account Holder:\s*(.+)", line)
+                if match:
+                    keyvalue_lines.append(f"ACCOUNT_HOLDER: {match.group(1).strip()}")
+            elif "BSB" in line:
+                match = re.search(r"BSB:\s*([0-9-]+)", line)
+                if match:
+                    keyvalue_lines.append(f"BSB: {match.group(1).strip()}")
+            elif "Account Number" in line:
+                match = re.search(r"Account Number:\s*(\d+)", line)
+                if match:
+                    keyvalue_lines.append(f"ACCOUNT_NUMBER: {match.group(1).strip()}")
+            elif "Statement Period" in line:
+                match = re.search(r"Statement Period:\s*(.+)", line)
+                if match:
+                    keyvalue_lines.append(f"STATEMENT_PERIOD: {match.group(1).strip()}")
 
         return "\n".join(keyvalue_lines)
 
