@@ -56,35 +56,35 @@ prompts:
     Do NOT use bullets, tables, or any other formatting.
     
   llama: |
-    You MUST output ONLY in this exact format:
-    Extract data from this image in KEY-VALUE format.
+    Extract data from this image. You MUST output ONLY in this exact format:
     
-    Output format:
-    DATE: [date from receipt]
-    SUPPLIER: [SUPPLIER name]
-    ABN: [11-digit Australian Business Number if visible]
-    GST: [GST amount]
-    TOTAL: [total amount]
-    SUBTOTAL: [subtotal amount]
-    ITEMS: [item names separated by |]
-    QUANTITIES: [quantities separated by |]
-    PRICES: [prices separated by |]
-    RECEIPT_NUMBER: [receipt number if visible]
-    PAYMENT_METHOD: [payment method if visible]
-    DOCUMENT_TYPE: [if visible]
-    BUSINESS_ADDRESS: [business address if visible]
-    BUSINESS_PHONE: [business phone if visible]
-    PAYER_NAME: [customer/payer name if visible]
-    PAYER_ADDRESS: [customer/payer address if visible]
-    PAYER_PHONE: [customer/payer phone if visible]
-    PAYER_EMAIL: [customer/payer email if visible]
-    INVOICE_NUMBER: [invoice number if visible]
-    TIME: [time if visible]
-    CARD_NUMBER: [card number if visible]
-    AUTH_CODE: [auth code if visible]
-    STATUS: [status if visible]
+    DATE: value
+    SUPPLIER: value
+    ABN: value
+    GST: value
+    TOTAL: value
+    SUBTOTAL: value
+    ITEMS: value
+    QUANTITIES: value
+    PRICES: value
+    RECEIPT_NUMBER: value
+    PAYMENT_METHOD: value
+    DOCUMENT_TYPE: value
+    BUSINESS_ADDRESS: value
+    BUSINESS_PHONE: value
+    PAYER_NAME: value
+    PAYER_ADDRESS: value
+    PAYER_PHONE: value
+    PAYER_EMAIL: value
+    INVOICE_NUMBER: value
+    TIME: value
+    CARD_NUMBER: value
+    AUTH_CODE: value
+    STATUS: value
     
-    Extract all visible text and format as KEY: VALUE pairs only.
+    Do NOT use markdown, bullets, asterisks, tables, or any other formatting.
+    Use exactly "FIELD: value" on each line.
+    If a field is not visible, write "FIELD: N/A".
 
 
 
