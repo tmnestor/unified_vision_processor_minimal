@@ -52,8 +52,11 @@ prompts:
     STATUS: [status if visible]
     
     Extract all visible text and format as KEY: VALUE pairs only.
-
+    Use exactly "FIELD: value" on each line.
+    Do NOT use bullets, tables, or any other formatting.
+    
   llama: |
+    You MUST output ONLY in this exact format:
     Extract data from this image in KEY-VALUE format.
     
     Output format:
