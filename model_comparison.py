@@ -1216,7 +1216,7 @@ def run_model_comparison(
                     if cleaned_response:
                         console.print(f"[dim]{cleaned_response}[/dim]")
                     else:
-                        console.print(f"[dim]No cleaned response[/dim]")
+                        console.print("[dim]No cleaned response[/dim]")
 
                     analysis = extraction_analyzer.analyze(cleaned_response, img_name)
                     analysis["inference_time"] = inference_time
