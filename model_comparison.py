@@ -272,20 +272,7 @@ def load_extraction_config(config_path: str = "model_comparison.yaml") -> Dict[s
             "model_paths": model_paths_config,
             "internvl_prompt": internvl_prompt,
             "llama_prompt": llama_prompt,
-            "test_images": [
-                ("image14.png", "TAX_INVOICE"),
-                ("officeworks.png", "TAX_INVOICE"),
-                ("image71.png", "TAX_INVOICE"),
-                ("image27.png", "TAX_INVOICE"),
-                ("image205.png", "FUEL_RECEIPT"),
-                ("image23.png", "TAX_INVOICE"),
-                ("image45.png", "TAX_INVOICE"),
-                ("image1.png", "BANK_STATEMENT"),
-                ("image39.png", "TAX_INVOICE"),
-                ("image76.png", "TAX_INVOICE"),
-                ("du_invoice.png", "TAX_INVOICE"),
-                ("customer_invoice.png", "TAX_INVOICE"),
-            ],
+            "test_images": [],  # Will be populated dynamically from datasets directory
             "config": config,
             "config_loader": config_loader,
         }
@@ -510,6 +497,40 @@ class DatasetManager:
 
     def __init__(self, datasets_path: str = "datasets"):
         self.datasets_path = Path(datasets_path)
+
+    def discover_all_images(self) -> List[Tuple[str, str]]:
+        """Discover all PNG images in the datasets directory"""
+        discovered_images = []
+
+        if not self.datasets_path.exists():
+            return discovered_images
+
+        # Find all PNG files in the datasets directory
+        png_files = list(self.datasets_path.glob("*.png"))
+
+        for png_file in sorted(png_files):
+            img_name = png_file.name
+            # Classify document type based on filename patterns
+            doc_type = self._classify_document_type(img_name)
+            discovered_images.append((img_name, doc_type))
+
+        return discovered_images
+
+    def _classify_document_type(self, img_name: str) -> str:
+        """Classify document type based on filename patterns"""
+        img_lower = img_name.lower()
+
+        if "invoice" in img_lower or "tax" in img_lower:
+            return "TAX_INVOICE"
+        elif "fuel" in img_lower or "petrol" in img_lower or "gas" in img_lower:
+            return "FUEL_RECEIPT"
+        elif "bank" in img_lower or "statement" in img_lower:
+            return "BANK_STATEMENT"
+        elif "receipt" in img_lower:
+            return "RECEIPT"
+        else:
+            # Default classification for numbered images
+            return "BUSINESS_DOCUMENT"
 
     def verify_images(self, test_images: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
         """Verify that test images exist and return verified list"""
@@ -1059,6 +1080,11 @@ def run_model_comparison(
         console.print(f"   CUDA Version: {torch.version.cuda}")
         console.print(f"   Device: {torch.cuda.get_device_name(0)}")
         memory_manager.print_memory_usage("Baseline")
+
+    # Discover all images in datasets directory
+    if not config["test_images"]:  # If test_images is empty, discover all images
+        config["test_images"] = dataset_manager.discover_all_images()
+        console.print(f"📁 Discovered {len(config['test_images'])} images in {datasets_path}")
 
     # Verify dataset
     verified_images = dataset_manager.verify_images(config["test_images"])

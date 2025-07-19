@@ -207,12 +207,12 @@ class LlamaVisionModel(BaseVisionModel):
             # These parameters are not needed for deterministic generation
             try:
                 # Remove the problematic parameters that cause warnings
-                if hasattr(self.model.generation_config, 'temperature'):
-                    delattr(self.model.generation_config, 'temperature')
-                if hasattr(self.model.generation_config, 'top_p'):
-                    delattr(self.model.generation_config, 'top_p')
-                if hasattr(self.model.generation_config, 'top_k'):
-                    delattr(self.model.generation_config, 'top_k')
+                if hasattr(self.model.generation_config, "temperature"):
+                    delattr(self.model.generation_config, "temperature")
+                if hasattr(self.model.generation_config, "top_p"):
+                    delattr(self.model.generation_config, "top_p")
+                if hasattr(self.model.generation_config, "top_k"):
+                    delattr(self.model.generation_config, "top_k")
 
                 logger.info("Removed sampling parameters from generation config")
             except Exception as e:

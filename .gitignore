@@ -68,11 +68,11 @@ htmlcov/
 docs/_build/
 
 # Datasets and images
-datasets/*
-*.png
-*.jpg
-*.jpeg
-
+# datasets/*
+# *.png
+# *.jpg
+# *.jpeg
+datasets_old/*
 # Archive for legacy code and directories
 archive/*
 
