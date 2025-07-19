@@ -1198,10 +1198,10 @@ def run_model_comparison(
                         prompt = config["internvl_prompt"]
 
                     # Debug: Print prompt being used
-                    if i == 0:  # Only print for first image to avoid spam
-                        console.print(f"[dim]🔧 {model_name.upper()} PROMPT:[/dim]")
-                        truncated_prompt = prompt[:150] + ("..." if len(prompt) > 150 else "")
-                        console.print(f"[dim]'{truncated_prompt}'[/dim]")
+                    # if i == 0:  # Only print for first image to avoid spam
+                    #     console.print(f"[dim]🔧 {model_name.upper()} PROMPT:[/dim]")
+                    #     truncated_prompt = prompt[:150] + ("..." if len(prompt) > 150 else "")
+                    #     console.print(f"[dim]'{truncated_prompt}'[/dim]")
 
                     raw_response = model_loaders[model_name].run_inference(
                         model, processor, prompt, image, config["max_new_tokens"]
@@ -1210,10 +1210,15 @@ def run_model_comparison(
                     total_inference_time += inference_time
 
                     # Debug: Print raw response to detect safety mode
-                    console.print(f"[dim]🔍 {img_name}[/dim]")
-                    console.print(f"[dim]{raw_response}[/dim]")
+                    # console.print(f"[dim]🔍 {img_name}[/dim]")
+                    # console.print(f"[dim]{raw_response}[/dim]")
 
                     cleaned_response = repetition_controller.clean_response(raw_response)
+                    
+                    # Debug: Print cleaned/processed response
+                    console.print(f"[dim]🔍 {img_name}[/dim]")
+                    console.print(f"[dim]{cleaned_response}[/dim]")
+                    
                     analysis = extraction_analyzer.analyze(cleaned_response, img_name)
                     analysis["inference_time"] = inference_time
                     analysis["doc_type"] = doc_type
