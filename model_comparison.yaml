@@ -82,10 +82,6 @@ prompts:
     CARD_NUMBER: [card number if visible]
     AUTH_CODE: [auth code if visible]
     STATUS: [status if visible]
-    
-    Extract all visible text and format as KEY: VALUE pairs only.
-    Use exactly "FIELD: value" on each line.
-    Do NOT use bullets, tables, or any other formatting.
 
 
 
