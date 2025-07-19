@@ -20,7 +20,6 @@ from transformers import (
 )
 
 # We'll suppress warnings during model loading using context managers
-
 from ..utils.repetition_control import UltraAggressiveRepetitionController
 from .base_model import BaseVisionModel, DeviceConfig, ModelCapabilities, ModelResponse
 from .model_utils import DeviceManager
