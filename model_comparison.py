@@ -682,6 +682,9 @@ class LlamaModelLoader:
                 **inputs,
                 max_new_tokens=max_new_tokens,
                 do_sample=False,
+                temperature=None,  # Explicitly disable to suppress warnings
+                top_p=None,       # Explicitly disable to suppress warnings
+                top_k=None,       # Explicitly disable to suppress warnings
                 pad_token_id=processor.tokenizer.eos_token_id,
                 eos_token_id=processor.tokenizer.eos_token_id,
                 use_cache=True,
