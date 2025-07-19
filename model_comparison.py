@@ -1214,11 +1214,11 @@ def run_model_comparison(
                     # console.print(f"[dim]{raw_response}[/dim]")
 
                     cleaned_response = repetition_controller.clean_response(raw_response)
-                    
+
                     # Debug: Print cleaned/processed response
                     console.print(f"[dim]🔍 {img_name}[/dim]")
                     console.print(f"[dim]{cleaned_response}[/dim]")
-                    
+
                     analysis = extraction_analyzer.analyze(cleaned_response, img_name)
                     analysis["inference_time"] = inference_time
                     analysis["doc_type"] = doc_type
