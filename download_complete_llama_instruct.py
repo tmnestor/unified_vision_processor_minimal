@@ -9,7 +9,6 @@ and resume capability.
 import os
 
 from huggingface_hub import snapshot_download
-from tqdm import tqdm
 
 
 def download_complete_llama():
