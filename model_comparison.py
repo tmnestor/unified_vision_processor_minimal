@@ -362,6 +362,9 @@ class UltraAggressiveRepetitionController:
         if not response or len(response.strip()) == 0:
             return ""
 
+        # First convert markdown to key-value format
+        response = self._convert_markdown_to_keyvalue(response)
+
         response = self._remove_business_patterns(response)
         response = self._remove_word_repetition(response)
         response = self._remove_phrase_repetition(response)
@@ -371,6 +374,24 @@ class UltraAggressiveRepetitionController:
         response = re.sub(r"[!]{2,}", "!", response)
 
         return response.strip()
+
+    def _convert_markdown_to_keyvalue(self, text: str) -> str:
+        """Convert markdown formatting to clean KEY: VALUE pairs"""
+        # Remove markdown table formatting
+        text = re.sub(r"\|", "", text)  # Remove table pipes
+        text = re.sub(r"^-+\s*$", "", text, flags=re.MULTILINE)  # Remove table separators
+        text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)  # Remove bold formatting
+        text = re.sub(r"\*([^*]+)\*", r"\1", text)  # Remove italic formatting
+        text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)  # Remove headers
+
+        # Convert bullet points to key-value pairs
+        text = re.sub(r"^\*\s*([A-Z_]+):\s*(.+)$", r"\1: \2", text, flags=re.MULTILINE)
+
+        # Clean up multiple spaces and blank lines
+        text = re.sub(r"\n\s*\n", "\n", text)
+        text = re.sub(r"  +", " ", text)
+
+        return text
 
     def _remove_business_patterns(self, text: str) -> str:
         """Remove business document specific repetitive patterns"""
