@@ -429,7 +429,13 @@ class UltraAggressiveRepetitionController:
                 field = field.strip()
                 value = value.strip()
 
-                if field and value and field.isupper():
+                # Filter out explanatory text and non-data fields
+                if (
+                    field
+                    and value
+                    and field.isupper()
+                    and field not in ["NOTE", "EXPLANATION", "OUTPUT", "FORMAT", "INSTRUCTION"]
+                ):
                     keyvalue_lines.append(f"{field}: {value}")
 
         return "\n".join(keyvalue_lines)
@@ -684,8 +690,8 @@ class LlamaModelLoader:
                 max_new_tokens=max_new_tokens,
                 do_sample=False,
                 temperature=None,  # Explicitly disable to suppress warnings
-                top_p=None,       # Explicitly disable to suppress warnings
-                top_k=None,       # Explicitly disable to suppress warnings
+                top_p=None,  # Explicitly disable to suppress warnings
+                top_k=None,  # Explicitly disable to suppress warnings
                 pad_token_id=processor.tokenizer.eos_token_id,
                 eos_token_id=processor.tokenizer.eos_token_id,
                 use_cache=True,
