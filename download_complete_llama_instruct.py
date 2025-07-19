@@ -43,7 +43,7 @@ def download_complete_llama():
 
         model_dir = pathlib.Path("/Users/tod/PretrainedLLM/Llama-3.2-11B-Vision-Instruct")
         if model_dir.exists():
-            print(f"\n📋 Downloaded files:")
+            print("\n📋 Downloaded files:")
             for file in sorted(model_dir.rglob("*")):
                 if file.is_file():
                     size_mb = file.stat().st_size / (1024 * 1024)
