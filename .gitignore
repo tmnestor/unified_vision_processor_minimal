@@ -88,3 +88,8 @@ LLAMA_REPETITION_CUDA_BUG_ANALYSIS.md
 backup/
 .claude/
 
+simple_invoice_generator.py
+synthetic_invoice_generator.py
+synthetic_invoice.json
+.gitignore
+.gitignore
