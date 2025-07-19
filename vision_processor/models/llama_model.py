@@ -19,6 +19,8 @@ from transformers import (
     MllamaForConditionalGeneration,
 )
 
+# We'll suppress warnings during model loading using context managers
+
 from ..utils.repetition_control import UltraAggressiveRepetitionController
 from .base_model import BaseVisionModel, DeviceConfig, ModelCapabilities, ModelResponse
 from .model_utils import DeviceManager
@@ -183,11 +185,13 @@ class LlamaVisionModel(BaseVisionModel):
             )
             logger.info("Processor loaded successfully")
 
-            # Load model
-            self.model = MllamaForConditionalGeneration.from_pretrained(
-                str(self.model_path),
-                **model_loading_args,
-            ).eval()
+            # Load model with suppressed generation config warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                self.model = MllamaForConditionalGeneration.from_pretrained(
+                    str(self.model_path),
+                    **model_loading_args,
+                ).eval()
 
             # Move to device if needed (CPU only)
             if self.device.type == "cpu":
