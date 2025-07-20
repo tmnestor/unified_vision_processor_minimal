@@ -658,7 +658,11 @@ class LlamaModelLoader:
 
         processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, local_files_only=True)
 
-        model_kwargs = {"torch_dtype": torch.float16, "local_files_only": True}
+        model_kwargs = {
+            "torch_dtype": torch.float16, 
+            "local_files_only": True,
+            "low_cpu_mem_usage": True  # Optimize memory usage and prevent warnings
+        }
 
         if enable_quantization:
             quantization_config = BitsAndBytesConfig(
@@ -726,7 +730,12 @@ class InternVLModelLoader:
             if tokenizer.pad_token_id is None:
                 tokenizer.pad_token_id = tokenizer.eos_token_id
 
-        model_kwargs = {"trust_remote_code": True, "torch_dtype": torch.bfloat16, "local_files_only": True}
+        model_kwargs = {
+            "trust_remote_code": False,  # Production-safe: no remote code execution
+            "torch_dtype": torch.bfloat16, 
+            "local_files_only": True,
+            "low_cpu_mem_usage": True
+        }
 
         if enable_quantization:
             quantization_config = BitsAndBytesConfig(
