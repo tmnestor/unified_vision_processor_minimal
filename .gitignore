@@ -94,3 +94,4 @@ synthetic_invoice.json
 .gitignore
 .gitignore
 .env
+standard_labels.txt
