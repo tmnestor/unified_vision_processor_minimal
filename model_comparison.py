@@ -357,13 +357,26 @@ class UltraAggressiveRepetitionController:
             r"[.-]\s*THANK YOU",
         ]
 
-    def clean_response(self, response: str) -> str:
-        """Clean business document extraction response"""
+    def clean_response(self, response: str, image_name: str = "") -> str:
+        """Clean business document extraction response with automatic raw markdown fallback"""
         if not response or len(response.strip()) == 0:
             return ""
 
-        # First convert markdown to key-value format
-        response = self._convert_markdown_to_keyvalue(response)
+        original_response = response
+
+        # Try converting markdown to key-value format
+        converted_response = self._convert_markdown_to_keyvalue(response)
+
+        # Check if conversion was successful by looking for key-value pairs
+        if self._has_valid_keyvalue_pairs(converted_response):
+            # Conversion successful, continue with normal cleaning
+            response = converted_response
+        else:
+            # Conversion failed, use raw markdown fallback
+            console.print(
+                f"[yellow]📄 Key-value conversion failed for {image_name}, using raw markdown fallback[/yellow]"
+            )
+            response = original_response
 
         response = self._remove_business_patterns(response)
         response = self._remove_word_repetition(response)
@@ -375,6 +388,28 @@ class UltraAggressiveRepetitionController:
         response = re.sub(r"[!]{2,}", "!", response)
 
         return response.strip()
+
+    def _has_valid_keyvalue_pairs(self, text: str) -> bool:
+        """Check if text contains valid key-value pairs after conversion"""
+        if not text or not text.strip():
+            return False
+
+        lines = text.split("\n")
+        valid_pairs = 0
+
+        for line in lines:
+            line = line.strip()
+            # Look for lines that match KEY: VALUE pattern
+            if line and ":" in line and len(line.split(":", 1)) == 2:
+                field, value = line.split(":", 1)
+                field = field.strip()
+                value = value.strip()
+                # Valid if field is alphabetic and value is not empty
+                if field and value and field.replace("_", "").isalpha():
+                    valid_pairs += 1
+
+        # Consider conversion successful if we have at least 3 valid key-value pairs
+        return valid_pairs >= 3
 
     def _convert_markdown_to_keyvalue(self, text: str) -> str:
         """Convert markdown formatting to clean KEY: VALUE pairs"""
@@ -661,7 +696,7 @@ class LlamaModelLoader:
         model_kwargs = {
             "torch_dtype": torch.float16,
             "local_files_only": True,
-            "low_cpu_mem_usage": True  # Optimize memory usage and prevent warnings
+            "low_cpu_mem_usage": True,  # Optimize memory usage and prevent warnings
         }
 
         if enable_quantization:
@@ -734,7 +769,7 @@ class InternVLModelLoader:
             "trust_remote_code": trust_remote_code,  # Configurable via YAML
             "torch_dtype": torch.bfloat16,
             "local_files_only": True,
-            "low_cpu_mem_usage": True
+            "low_cpu_mem_usage": True,
         }
 
         if enable_quantization:
@@ -1230,7 +1265,7 @@ def run_model_comparison(
                     # console.print(f"[dim]🔍 {img_name}[/dim]")
                     # console.print(f"[dim]{raw_response}[/dim]")
 
-                    cleaned_response = repetition_controller.clean_response(raw_response)
+                    cleaned_response = repetition_controller.clean_response(raw_response, img_name)
 
                     # Debug: Print cleaned/processed response with proper formatting
                     console.print(f"[dim]🔍 {img_name}[/dim]")
