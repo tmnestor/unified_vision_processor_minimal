@@ -652,7 +652,7 @@ class LlamaModelLoader:
     """Modular Llama model loader with V100 optimization"""
 
     @staticmethod
-    def load_model(model_path: str, enable_quantization: bool = True):
+    def load_model(model_path: str, enable_quantization: bool = True, trust_remote_code: bool = True):
         """Load Llama model with proper V100 configuration"""
         from transformers import AutoProcessor, BitsAndBytesConfig, MllamaForConditionalGeneration
 
@@ -713,7 +713,7 @@ class InternVLModelLoader:
     """Modular InternVL model loader with V100 optimization"""
 
     @staticmethod
-    def load_model(model_path: str, enable_quantization: bool = True):
+    def load_model(model_path: str, enable_quantization: bool = True, trust_remote_code: bool = True):
         """Load InternVL model with proper V100 configuration"""
         import warnings
 
@@ -731,7 +731,7 @@ class InternVLModelLoader:
                 tokenizer.pad_token_id = tokenizer.eos_token_id
 
         model_kwargs = {
-            "trust_remote_code": False,  # Production-safe: no remote code execution
+            "trust_remote_code": trust_remote_code,  # Configurable via YAML
             "torch_dtype": torch.bfloat16,
             "local_files_only": True,
             "low_cpu_mem_usage": True
@@ -1064,7 +1064,7 @@ def validate_model(
         console.print(f"🔄 Loading {model_name.upper()} model...")
 
         model, processor_or_tokenizer = model_loader_class.load_model(
-            model_path, config["enable_quantization"]
+            model_path, config["enable_quantization"], config.get("trust_remote_code", True)
         )
 
         model.eval()
@@ -1117,6 +1117,7 @@ def run_model_comparison(
     output_dir: str,
     max_tokens: int,
     quantization: bool,
+    trust_remote_code: bool,
     model_paths: Dict[str, str] = None,
     extraction_config: Dict[str, Any] = None,
 ):
@@ -1143,6 +1144,7 @@ def run_model_comparison(
         "llama_prompt": extraction_config["llama_prompt"],
         "max_new_tokens": max_tokens,  # Already effective value from CLI
         "enable_quantization": quantization,  # Already effective value from CLI
+        "trust_remote_code": trust_remote_code,  # YAML configurable
         "test_models": models,
         "test_images": extraction_config["test_images"],
         "config": config,
@@ -1357,6 +1359,9 @@ def compare(
     quantization: bool = typer.Option(
         None, help="Enable 8-bit quantization for V100 (default from config)"
     ),
+    trust_remote_code: bool = typer.Option(
+        None, help="Allow execution of remote code for custom models (default from config)"
+    ),
     llama_path: str = typer.Option(None, help="Custom path to Llama model"),
     internvl_path: str = typer.Option(None, help="Custom path to InternVL model"),
     config_path: str = typer.Option(
@@ -1380,6 +1385,9 @@ def compare(
     effective_quantization = (
         quantization if quantization is not None else defaults.get("quantization", True)
     )
+    effective_trust_remote_code = (
+        trust_remote_code if trust_remote_code is not None else defaults.get("trust_remote_code", True)
+    )
 
     models_list = [m.strip() for m in effective_models.split(",")]
 
@@ -1401,6 +1409,7 @@ def compare(
         output_dir=effective_output_dir,
         max_tokens=effective_max_tokens,
         quantization=effective_quantization,
+        trust_remote_code=effective_trust_remote_code,
         model_paths=model_paths,
         extraction_config=extraction_config,
     )
