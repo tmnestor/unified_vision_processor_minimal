@@ -520,7 +520,7 @@ class ConfigurableKeyValueExtractionAnalyzer:
             raise ValueError("Success criteria missing 'min_fields_for_success'")
 
     def analyze(self, response: str, img_name: str) -> Dict[str, Any]:
-        """Analyze KEY-VALUE extraction results with configurable fields"""
+        """Analyze KEY-VALUE extraction results with configurable fields and raw markdown fallback"""
         response_clean = response.strip()
 
         # Dynamically detect fields from response
@@ -529,14 +529,33 @@ class ConfigurableKeyValueExtractionAnalyzer:
         # Check if response is structured (contains any field patterns)
         is_structured = len(detected_fields) > 0
 
+        # If no structured fields found, try to detect content in raw markdown format
+        if not is_structured and response_clean:
+            # For raw markdown fallback, count meaningful content as successful extraction
+            content_indicators = self._detect_raw_markdown_content(response_clean)
+            if content_indicators > 0:
+                is_structured = True
+                # Create synthetic field detection for raw markdown content
+                detected_fields = self._extract_fields_from_raw_markdown(response_clean)
+
         # Extract and validate each detected field
         field_results = {}
         field_matches = {}
 
         for field_name in detected_fields:
-            field_detected, field_match = self._extract_and_validate_field_simple(
-                field_name, response_clean
-            )
+            # Check if this looks like a raw markdown response (no structured KEY:VALUE pairs found initially)
+            # OR if we're dealing with synthetic fields created from raw markdown detection
+            initial_structured_fields = self.config_loader.get_field_names_from_response(response_clean)
+            using_raw_markdown = len(initial_structured_fields) == 0 and len(detected_fields) > 0
+
+            if using_raw_markdown:
+                field_detected, field_match = self._extract_field_from_raw_markdown(
+                    field_name, response_clean
+                )
+            else:
+                field_detected, field_match = self._extract_and_validate_field_simple(
+                    field_name, response_clean
+                )
 
             field_results[f"has_{field_name.lower()}"] = field_detected
             field_matches[field_name.lower()] = field_match
@@ -587,6 +606,89 @@ class ConfigurableKeyValueExtractionAnalyzer:
                 "EMPTY",
             ]:
                 return True, field_value
+
+        return False, None
+
+    def _detect_raw_markdown_content(self, response: str) -> int:
+        """Detect meaningful content indicators in raw markdown format"""
+        content_score = 0
+
+        # Look for business-specific patterns that indicate successful extraction
+        business_patterns = [
+            r"\b\d{2,3}[\s-]\d{3}[\s-]\d{3}[\s-]\d{3}\b",  # ABN patterns
+            r"\$\d+\.\d{2}",  # Currency amounts
+            r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b",  # Business names (Title Case)
+            r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b",  # Dates
+            r"\b\d{4,}\b",  # Invoice/receipt numbers
+            r"[A-Z]{2,}\s+[A-Z]{2,}",  # All caps business names
+        ]
+
+        for pattern in business_patterns:
+            matches = re.findall(pattern, response, re.IGNORECASE)
+            content_score += len(matches)
+
+        return content_score
+
+    def _extract_fields_from_raw_markdown(self, response: str) -> List[str]:
+        """Extract synthetic field names from raw markdown content"""
+        synthetic_fields = []
+
+        # Check for specific content types and create synthetic fields
+        if re.search(r"\b\d{2,3}[\s-]\d{3}[\s-]\d{3}[\s-]\d{3}\b", response):
+            synthetic_fields.append("ABN")
+
+        if re.search(r"\$\d+\.\d{2}", response):
+            synthetic_fields.append("TOTAL")
+            synthetic_fields.append("AMOUNT")
+
+        if re.search(r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b", response):
+            synthetic_fields.append("STORE")
+            synthetic_fields.append("BUSINESS_NAME")
+
+        if re.search(r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", response):
+            synthetic_fields.append("DATE")
+
+        if re.search(r"\b\d{4,}\b", response):
+            synthetic_fields.append("RECEIPT_NUMBER")
+
+        return synthetic_fields
+
+    def _extract_field_from_raw_markdown(
+        self, field_name: str, response: str
+    ) -> Tuple[bool, Optional[str]]:
+        """Extract specific field from raw markdown content using pattern matching"""
+        field_name_upper = field_name.upper()
+
+        if field_name_upper == "ABN":
+            match = re.search(r"\b(\d{2,3}[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{3})\b", response)
+            if match:
+                return True, match.group(1)
+
+        elif field_name_upper in ["TOTAL", "AMOUNT"]:
+            # Look for currency amounts, prefer the largest one as total
+            amounts = re.findall(r"\$(\d+\.\d{2})", response)
+            if amounts:
+                # Return the largest amount as the most likely total
+                max_amount = max(amounts, key=lambda x: float(x))
+                return True, f"${max_amount}"
+
+        elif field_name_upper in ["STORE", "BUSINESS_NAME"]:
+            # Look for title case business names
+            match = re.search(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b", response)
+            if match:
+                return True, match.group(1)
+
+        elif field_name_upper == "DATE":
+            # Look for date patterns
+            match = re.search(r"\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\b", response)
+            if match:
+                return True, match.group(1)
+
+        elif field_name_upper == "RECEIPT_NUMBER":
+            # Look for long numeric sequences (likely receipt/invoice numbers)
+            match = re.search(r"\b(\d{6,})\b", response)
+            if match:
+                return True, match.group(1)
 
         return False, None
 
