@@ -20,7 +20,8 @@ from ..analysis.field_analyzer import FieldAnalyzer
 from ..analysis.performance_analyzer import PerformanceAnalyzer
 from ..config.model_registry import get_model_registry
 from ..config.production_config import ProductionConfig
-from ..extraction.production_extractor import ExtractionResult, ProductionExtractor
+from ..extraction.dynamic_extractor import DynamicExtractionResult, DynamicFieldExtractor
+from ..extraction.production_extractor import ExtractionResult
 from .model_validator import ModelValidator
 
 
@@ -93,10 +94,9 @@ class ComparisonRunner:
         # Initialize components
         self.model_registry = get_model_registry()
         self.model_validator = ModelValidator(self.model_registry)
-        self.extractor = ProductionExtractor(
-            enable_repetition_control=True,
-            enable_awk_processing=True,
-            strict_validation=config.extraction.strict_validation,
+        # Use dynamic extractor for original script compatibility
+        self.extractor = DynamicFieldExtractor(
+            min_fields_for_success=config.extraction.min_total_fields,
         )
 
         # Initialize analyzers
@@ -304,14 +304,12 @@ class ComparisonRunner:
                                 image, prompt, max_new_tokens=self.config.processing.max_tokens
                             )
 
-                            # Extract fields using production extractor
+                            # Extract fields using dynamic extractor (original script logic)
                             extraction_result = self.extractor.extract_fields(
-                                response.raw_text, image_path.name, model_name
+                                response.raw_text, image_path.name, model_name, response.processing_time
                             )
 
-                            # Add model response metadata
-                            extraction_result.raw_response = response.raw_text
-                            extraction_result.extraction_time = response.processing_time
+                            # Note: DynamicExtractionResult already has these fields populated
 
                             model_results.append(extraction_result)
 
@@ -333,23 +331,17 @@ class ComparisonRunner:
                                 f"   {i + 1:2d}. {image_path.name:<15} ❌ Error: {str(e)[:30]}..."
                             )
                             # Create error result
-                            error_result = ExtractionResult(
+                            error_result = DynamicExtractionResult(
                                 image_name=image_path.name,
                                 model_name=model_name,
-                                extraction_time=0.0,
+                                processing_time=0.0,
                                 raw_response=f"Error: {e}",
                                 cleaned_response="",
                                 extracted_fields={},
                                 field_count=0,
-                                core_fields_found=[],
-                                required_fields_found=[],
-                                missing_core_fields=[],
-                                missing_required_fields=[],
                                 is_successful=False,
-                                confidence_score=0.0,
-                                fields_by_category={},
-                                has_structured_output=False,
-                                raw_markdown_fallback_used=False,
+                                extraction_score=0,
+                                using_raw_markdown=False,
                                 processing_notes=[f"Processing error: {e}"],
                             )
                             model_results.append(error_result)
