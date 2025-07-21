@@ -75,9 +75,14 @@ class DynamicFieldExtractor:
         Returns:
             DynamicExtractionResult with fields found
         """
+        # Debug: Log the response being processed
+        response_preview = response[:200] if response else "EMPTY"
+        print(f"🔍 DynamicExtractor processing {image_name}: '{response_preview}...'")
+        print(f"   Response length: {len(response) if response else 0} chars")
         # Step 1: Field detection exactly like working script
         # Dynamically detect fields from response
         detected_fields = self._get_field_names_from_response(response)
+        print(f"   Structured fields detected: {detected_fields}")
 
         # Check if response is structured (contains any field patterns)
         is_structured = len(detected_fields) > 0
@@ -86,10 +91,12 @@ class DynamicFieldExtractor:
         if not is_structured and response:
             # For raw markdown fallback, count meaningful content as successful extraction
             content_indicators = self._detect_raw_markdown_content(response)
+            print(f"   Raw markdown content indicators: {content_indicators}")
             if content_indicators > 0:
                 is_structured = True
                 # Create synthetic field detection for raw markdown content
                 detected_fields = self._extract_fields_from_raw_markdown(response)
+                print(f"   Synthetic fields from raw markdown: {detected_fields}")
 
         # EXACT WORKING SCRIPT LOGIC: Determine extraction method
         initial_structured_fields = self._get_field_names_from_response(response)
@@ -119,6 +126,12 @@ class DynamicFieldExtractor:
         all_scores = [field_results.get(key, False) for key in field_results.keys()]
         extraction_score = sum(all_scores)
         is_successful = extraction_score >= self.min_fields_for_success
+        
+        # Debug: Log the final results
+        print(f"   Final extraction results: {extraction_score} fields, success: {is_successful}")
+        print(f"   Field results: {field_results}")
+        if extracted_fields:
+            print(f"   Extracted field samples: {list(extracted_fields.keys())[:5]}")
 
         return DynamicExtractionResult(
             image_name=image_name,
@@ -140,21 +153,11 @@ class DynamicFieldExtractor:
         )
 
     def _get_field_names_from_response(self, response: str) -> List[str]:
-        """Dynamically extract field names from response (original logic)."""
+        """Dynamically extract field names from response (EXACT WORKING SCRIPT LOGIC)."""
         # Find all "FIELD:" patterns in the response
         field_pattern = r"([A-Z_]+):\s*"
         matches = re.findall(field_pattern, response)
-
-        # Clean and deduplicate
-        fields = []
-        seen = set()
-        for match in matches:
-            field = match.strip().upper()
-            if field and field not in seen and len(field) > 1:
-                fields.append(field)
-                seen.add(field)
-
-        return fields
+        return list(set(matches))  # Remove duplicates (EXACT WORKING SCRIPT)
 
     def _has_valid_keyvalue_pairs(self, text: str) -> bool:
         """Check if text contains valid key-value pairs after conversion (original logic)."""
@@ -190,39 +193,71 @@ class DynamicFieldExtractor:
 
         if match:
             value = match.group(1).strip()
-            # Basic validation
-            if (
-                value
-                and len(value) > 0
-                and value.upper() not in ["N/A", "NOT VISIBLE", "NONE", "UNKNOWN", "-"]
-            ):
+            # Simplified validation - just check if value exists and isn't N/A (EXACT WORKING SCRIPT)
+            if value and value.upper() not in [
+                "N/A",
+                "NA",
+                "NOT AVAILABLE",
+                "NOT FOUND",
+                "NONE",
+                "-",
+                "UNKNOWN",
+                "NULL",
+                "EMPTY",
+            ]:
                 return True, value
 
         return False, None
 
     def _extract_fields_from_raw_markdown(self, response: str) -> List[str]:
-        """Extract synthetic field names from raw markdown content (WORKING SCRIPT LOGIC - SIMPLE 6 FIELDS)."""
+        """Extract synthetic field names from raw markdown content (MATCH PROMPT EXPECTATIONS)."""
         synthetic_fields = []
 
-        # Check for specific content types and create synthetic fields (EXACTLY LIKE WORKING SCRIPT)
-        if re.search(r"\b\d{2,3}[\s-]\d{3}[\s-]\d{3}[\s-]\d{3}\b", response):
-            synthetic_fields.append("ABN")
+        # ALL FIELDS FROM THE PROMPT - check if content suggests these fields exist
+        
+        # Basic financial fields
+        if re.search(r"\$\d+\.\d{2}|\d+\.\d{2}", response):
+            synthetic_fields.extend(["TOTAL", "SUBTOTAL", "GST", "AMOUNT"])
 
-        if re.search(r"\$\d+\.\d{2}", response):
-            synthetic_fields.append("TOTAL")
-            synthetic_fields.append("AMOUNT")
-
-        if re.search(r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b", response):
-            synthetic_fields.append("STORE")
-            synthetic_fields.append("BUSINESS_NAME")
-
+        # Date/time fields  
         if re.search(r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", response):
             synthetic_fields.append("DATE")
+        if re.search(r"\b\d{1,2}:\d{2}", response):
+            synthetic_fields.append("TIME")
 
+        # Business identification
+        if re.search(r"\b\d{2,3}[\s-]\d{3}[\s-]\d{3}[\s-]\d{3}\b", response):
+            synthetic_fields.append("ABN")
+        if re.search(r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b", response):
+            synthetic_fields.extend(["SUPPLIER", "BUSINESS_NAME"])
+
+        # Reference numbers
         if re.search(r"\b\d{4,}\b", response):
-            synthetic_fields.append("RECEIPT_NUMBER")
+            synthetic_fields.extend(["RECEIPT_NUMBER", "INVOICE_NUMBER", "CARD_NUMBER", "AUTH_CODE"])
 
-        return synthetic_fields
+        # Address and contact
+        if re.search(r"\b\d+\s+[A-Z][a-z]+\s+(ST|RD|AVE)", response, re.IGNORECASE):
+            synthetic_fields.extend(["BUSINESS_ADDRESS", "PAYER_ADDRESS"])
+        if re.search(r"\b\d{2,4}[\s-]\d{3,4}[\s-]\d{3,4}\b|@", response):
+            synthetic_fields.extend(["BUSINESS_PHONE", "PAYER_PHONE", "PAYER_EMAIL"])
+
+        # Items and quantities
+        if len(response.split()) > 10:  # Substantial content likely has items
+            synthetic_fields.extend(["ITEMS", "QUANTITIES", "PRICES"])
+
+        # Payment and document metadata
+        if re.search(r"\b(CASH|CARD|EFTPOS|CREDIT|DEBIT)\b", response, re.IGNORECASE):
+            synthetic_fields.append("PAYMENT_METHOD")
+        
+        # Names and status
+        if re.search(r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b", response):
+            synthetic_fields.append("PAYER_NAME")
+        
+        # Always include document type for classification
+        synthetic_fields.append("DOCUMENT_TYPE")
+        synthetic_fields.append("STATUS")
+
+        return list(set(synthetic_fields))  # Remove duplicates
 
     def _detect_raw_markdown_content(self, response: str) -> int:
         """Detect meaningful content indicators in raw markdown format (WORKING SCRIPT LOGIC)."""

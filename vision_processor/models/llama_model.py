@@ -200,13 +200,10 @@ class LlamaVisionModel(BaseVisionModel):
             logger.info(f"Model loaded successfully on {self.device}")
 
             # Configure generation settings for stable inference (based on working implementation)
+            # Note: Parameters like temperature, top_p, top_k are passed directly to generate() calls
+            # to avoid GenerationConfig attribute errors
             self.model.generation_config.max_new_tokens = 1024  # Use max_new_tokens instead of max_length
             self.model.generation_config.do_sample = False  # Deterministic for consistency
-
-            # Set sampling parameters to None to suppress warnings (working approach)
-            self.model.generation_config.temperature = None
-            self.model.generation_config.top_p = None
-            self.model.generation_config.top_k = None
 
             self.model.config.use_cache = True  # Enable KV cache
             logger.info("Configured generation settings for deterministic inference")
@@ -333,7 +330,7 @@ class LlamaVisionModel(BaseVisionModel):
 
         return inputs
 
-    def _clean_response(self, response: str) -> str:
+    def _clean_response(self, response: str, image_name: str = "") -> str:
         """Clean response using ultra-aggressive repetition control."""
         if not self.repetition_enabled:
             # Fallback to basic cleaning if repetition control is disabled
@@ -345,7 +342,7 @@ class LlamaVisionModel(BaseVisionModel):
             return response.strip()
 
         # Use the ultra-aggressive repetition controller
-        return self.repetition_controller.clean_response(response)
+        return self.repetition_controller.clean_response(response, image_name)
 
     def process_image(
         self,
@@ -370,6 +367,12 @@ class LlamaVisionModel(BaseVisionModel):
         start_time = time.time()
 
         try:
+            # Extract image name for repetition controller
+            if isinstance(image_path, (str, Path)):
+                image_name = Path(image_path).name
+            else:
+                image_name = "unknown_image"
+            
             # Preprocess image
             image = self._preprocess_image(image_path)
 
@@ -404,7 +407,7 @@ class LlamaVisionModel(BaseVisionModel):
             )
 
             # Clean response from repetitive text and common artifacts
-            response = self._clean_response(response)
+            response = self._clean_response(response, image_name)
 
             processing_time = time.time() - start_time
             logger.info(f"Inference completed in {processing_time:.2f}s")
@@ -620,6 +623,12 @@ Output document type only."""
         try:
             start_time = time.time()
 
+            # Extract image name for repetition controller
+            if isinstance(image_path, (str, Path)):
+                image_name = Path(image_path).name
+            else:
+                image_name = "unknown_image"
+
             # Preprocess image
             image = self._preprocess_image(image_path)
 
@@ -653,7 +662,7 @@ Output document type only."""
             )
 
             # Clean response from repetitive text and common artifacts
-            response = self._clean_response(response)
+            response = self._clean_response(response, image_name)
 
             inference_time = time.time() - start_time
             logger.info(f"Inference completed in {inference_time:.2f}s")
