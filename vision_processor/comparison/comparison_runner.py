@@ -21,7 +21,7 @@ from ..analysis.performance_analyzer import PerformanceAnalyzer
 from ..config.model_registry import get_model_registry
 from ..config.production_config import ProductionConfig
 from ..extraction.dynamic_extractor import DynamicExtractionResult, DynamicFieldExtractor
-from ..extraction.production_extractor import ExtractionResult
+from ..utils.repetition_control import UltraAggressiveRepetitionController
 from .model_validator import ModelValidator
 
 
@@ -57,7 +57,7 @@ class ComparisonResults:
     models_tested: List[str]
 
     # Extraction results
-    extraction_results: Dict[str, List[ExtractionResult]]
+    extraction_results: Dict[str, List[Dict[str, Any]]]
 
     # Analysis results
     performance_analysis: Optional[Any] = None
@@ -98,6 +98,8 @@ class ComparisonRunner:
         self.extractor = DynamicFieldExtractor(
             min_fields_for_success=config.extraction.min_total_fields,
         )
+        # Initialize repetition controller (matching original script)
+        self.repetition_controller = UltraAggressiveRepetitionController()
 
         # Initialize analyzers
         self.performance_analyzer = PerformanceAnalyzer()
@@ -262,7 +264,7 @@ class ComparisonRunner:
 
     def _run_extractions(
         self, model_names: List[str], image_paths: List[Path]
-    ) -> Dict[str, List[ExtractionResult]]:
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """Run extractions for all models on all images."""
         self.console.print("\n🔥 EXTRACTION PIPELINE", style="bold yellow")
 
@@ -304,14 +306,20 @@ class ComparisonRunner:
                                 image, prompt, max_new_tokens=self.config.processing.max_tokens
                             )
 
-                            # Extract fields using dynamic extractor (original script logic)
-                            extraction_result = self.extractor.extract_fields(
-                                response.raw_text, image_path.name, model_name, response.processing_time
+                            # Clean response using repetition controller (matching original script)
+                            cleaned_response = self.repetition_controller.clean_response(
+                                response.raw_text, image_path.name
                             )
 
-                            # Note: DynamicExtractionResult already has these fields populated
+                            # Extract fields using dynamic extractor (original script logic)
+                            extraction_result = self.extractor.extract_fields(
+                                cleaned_response, image_path.name, model_name, response.processing_time
+                            )
 
-                            model_results.append(extraction_result)
+                            # Convert DynamicExtractionResult to original dictionary format for compatibility
+                            analysis_dict = self._convert_to_original_format(extraction_result)
+
+                            model_results.append(analysis_dict)
 
                             # Print progress
                             status = "✅" if extraction_result.is_successful else "❌"
@@ -330,20 +338,16 @@ class ComparisonRunner:
                             self.console.print(
                                 f"   {i + 1:2d}. {image_path.name:<15} ❌ Error: {str(e)[:30]}..."
                             )
-                            # Create error result
-                            error_result = DynamicExtractionResult(
-                                image_name=image_path.name,
-                                model_name=model_name,
-                                processing_time=0.0,
-                                raw_response=f"Error: {e}",
-                                cleaned_response="",
-                                extracted_fields={},
-                                field_count=0,
-                                is_successful=False,
-                                extraction_score=0,
-                                using_raw_markdown=False,
-                                processing_notes=[f"Processing error: {e}"],
-                            )
+                            # Create error result in original dictionary format
+                            error_result = {
+                                "img_name": image_path.name,
+                                "response": f"Error: {e}",
+                                "is_structured": False,
+                                "extraction_score": 0,
+                                "successful": False,
+                                "inference_time": 0.0,
+                                "doc_type": "UNKNOWN",
+                            }
                             model_results.append(error_result)
 
             except Exception as e:
@@ -363,10 +367,12 @@ class ComparisonRunner:
 
             # Calculate model summary
             model_time = time.time() - model_start_time
-            successful_extractions = sum(1 for r in model_results if r.is_successful)
+            successful_extractions = sum(1 for r in model_results if r.get("successful", False))
             success_rate = successful_extractions / len(model_results) if model_results else 0
             avg_fields = (
-                sum(r.field_count for r in model_results) / len(model_results) if model_results else 0
+                sum(r.get("extraction_score", 0) for r in model_results) / len(model_results)
+                if model_results
+                else 0
             )
 
             self.console.print(f"\n📊 {model_name.upper()} Summary:")
@@ -380,7 +386,40 @@ class ComparisonRunner:
 
         return extraction_results
 
-    def _run_analysis(self, extraction_results: Dict[str, List[ExtractionResult]]) -> Dict[str, Any]:
+    def _convert_to_original_format(self, extraction_result: DynamicExtractionResult) -> Dict[str, Any]:
+        """Convert DynamicExtractionResult to original script dictionary format.
+
+        Args:
+            extraction_result: DynamicExtractionResult from dynamic extractor
+
+        Returns:
+            Dictionary in original script format with has_* fields
+        """
+        # Create base result dictionary matching original format
+        result = {
+            "img_name": extraction_result.image_name,
+            "response": extraction_result.cleaned_response,
+            "is_structured": not extraction_result.using_raw_markdown,
+            "extraction_score": extraction_result.extraction_score,
+            "successful": extraction_result.is_successful,
+            "extraction_time": extraction_result.processing_time,  # Fixed: analysis expects extraction_time
+            "doc_type": "BUSINESS_DOCUMENT",  # Default classification
+            # Add required fields for analysis compatibility
+            "image_name": extraction_result.image_name,
+            "model_name": extraction_result.model_name,
+            "field_count": extraction_result.field_count,
+            "is_successful": extraction_result.is_successful,
+            "confidence_score": extraction_result.extraction_score / 10.0,  # Normalize to 0-1 range
+        }
+
+        # Add has_* fields for each extracted field (matching original logic)
+        for field_name, _field_value in extraction_result.extracted_fields.items():
+            has_field_key = f"has_{field_name.lower()}"
+            result[has_field_key] = True  # Field was detected and extracted
+
+        return result
+
+    def _run_analysis(self, extraction_results: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
         """Run comprehensive analysis on extraction results."""
         self.console.print("\n📊 COMPREHENSIVE ANALYSIS", style="bold green")
 
@@ -419,7 +458,7 @@ class ComparisonRunner:
         return analysis_results
 
     def _calculate_success_metrics(
-        self, extraction_results: Dict[str, List[ExtractionResult]]
+        self, extraction_results: Dict[str, List[Dict[str, Any]]]
     ) -> Dict[str, Any]:
         """Calculate overall success metrics."""
         model_success_rates = {}
@@ -429,9 +468,9 @@ class ComparisonRunner:
 
         for model_name, results in extraction_results.items():
             if results:
-                successful = sum(1 for r in results if r.is_successful)
+                successful = sum(1 for r in results if r.get("successful", False))
                 model_success_rates[model_name] = successful / len(results)
-                model_execution_times[model_name] = sum(r.extraction_time for r in results)
+                model_execution_times[model_name] = sum(r.get("inference_time", 0.0) for r in results)
 
                 total_successful += successful
                 total_documents += len(results)

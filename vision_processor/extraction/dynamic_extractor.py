@@ -117,7 +117,7 @@ class DynamicFieldExtractor:
     def _get_field_names_from_response(self, response: str) -> List[str]:
         """Dynamically extract field names from response (original logic)."""
         # Find all "FIELD:" patterns in the response
-        field_pattern = r"([A-Z_]+):\\s*"
+        field_pattern = r"([A-Z_]+):\s*"
         matches = re.findall(field_pattern, response)
 
         # Clean and deduplicate
@@ -136,7 +136,7 @@ class DynamicFieldExtractor:
         if not text or not text.strip():
             return False
 
-        lines = text.split("\\n")
+        lines = text.split("\n")
         valid_pairs = 0
 
         for line in lines:
@@ -160,7 +160,7 @@ class DynamicFieldExtractor:
     ) -> Tuple[bool, Optional[str]]:
         """Extract and validate a specific field from the response (original logic)."""
         # Try structured extraction first
-        pattern = rf'(?:{field_name}|{field_name.lower()}):\\s*"?([^"\\n]+)"?'
+        pattern = rf'(?:{field_name}|{field_name.lower()}):\s*"?([^"\n]+)"?'
         match = re.search(pattern, response, re.IGNORECASE)
 
         if match:
@@ -180,25 +180,25 @@ class DynamicFieldExtractor:
         synthetic_fields = []
 
         # Check for specific content types and create synthetic fields
-        if re.search(r"\\b\\d{2,3}[\\s-]\\d{3}[\\s-]\\d{3}[\\s-]\\d{3}\\b", response):
+        if re.search(r"\b\d{2,3}[\s-]\d{3}[\s-]\d{3}[\s-]\d{3}\b", response):
             synthetic_fields.append("ABN")
 
-        if re.search(r"\\$\\d+\\.\\d{2}", response):
+        if re.search(r"\$\d+\.\d{2}", response):
             synthetic_fields.append("TOTAL")
             synthetic_fields.append("SUBTOTAL")
             synthetic_fields.append("GST")
 
-        if re.search(r"\\d{1,2}/\\d{1,2}/\\d{4}", response):
+        if re.search(r"\d{1,2}/\d{1,2}/\d{4}", response):
             synthetic_fields.append("DATE")
 
-        if re.search(r"\\b[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)+\\b", response):
+        if re.search(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b", response):
             synthetic_fields.append("SUPPLIER")
             synthetic_fields.append("STORE")
 
-        if re.search(r"\\b\\d{3}-\\d{3}\\b", response):
+        if re.search(r"\b\d{3}-\d{3}\b", response):
             synthetic_fields.append("BSB")
 
-        if re.search(r"\\b\\d{6,12}\\b", response):
+        if re.search(r"\b\d{6,12}\b", response):
             synthetic_fields.append("ACCOUNT_NUMBER")
 
         return synthetic_fields
@@ -211,18 +211,18 @@ class DynamicFieldExtractor:
 
         # Define extraction patterns for each field type
         patterns = {
-            "ABN": [r"\\b(\\d{2,3}[\\s-]\\d{3}[\\s-]\\d{3}[\\s-]\\d{3})\\b"],
-            "TOTAL": [r"\\$?(\\d+\\.\\d{2})", r"total[:\\s]*(\\$?\\d+\\.\\d{2})"],
+            "ABN": [r"\b(\d{2,3}[\s-]\d{3}[\s-]\d{3}[\s-]\d{3})\b"],
+            "TOTAL": [r"\$?(\d+\.\d{2})", r"total[:\s]*(\$?\d+\.\d{2})"],
             "SUBTOTAL": [
-                r"subtotal[:\\s]*(\\$?\\d+\\.\\d{2})",
-                r"sub[\\s-]?total[:\\s]*(\\$?\\d+\\.\\d{2})",
+                r"subtotal[:\s]*(\$?\d+\.\d{2})",
+                r"sub[\s-]?total[:\s]*(\$?\d+\.\d{2})",
             ],
-            "GST": [r"gst[:\\s]*(\\$?\\d+\\.\\d{2})", r"tax[:\\s]*(\\$?\\d+\\.\\d{2})"],
-            "DATE": [r"(\\d{1,2}/\\d{1,2}/\\d{4})", r"(\\d{1,2}-\\d{1,2}-\\d{4})"],
-            "SUPPLIER": [r"^([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)+)", r"supplier[:\\s]*([A-Za-z].*?)(?:\\n|$)"],
-            "STORE": [r"^([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)+)", r"store[:\\s]*([A-Za-z].*?)(?:\\n|$)"],
-            "BSB": [r"\\b(\\d{3}-\\d{3})\\b"],
-            "ACCOUNT_NUMBER": [r"\\b(\\d{6,12})\\b"],
+            "GST": [r"gst[:\s]*(\$?\d+\.\d{2})", r"tax[:\s]*(\$?\d+\.\d{2})"],
+            "DATE": [r"(\d{1,2}/\d{1,2}/\d{4})", r"(\d{1,2}-\d{1,2}-\d{4})"],
+            "SUPPLIER": [r"^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)", r"supplier[:\s]*([A-Za-z].*?)(?:\n|$)"],
+            "STORE": [r"^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)", r"store[:\s]*([A-Za-z].*?)(?:\n|$)"],
+            "BSB": [r"\b(\d{3}-\d{3})\b"],
+            "ACCOUNT_NUMBER": [r"\b(\d{6,12})\b"],
         }
 
         if field_name_upper in patterns:
