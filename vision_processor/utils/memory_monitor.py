@@ -80,7 +80,7 @@ class MemoryMonitor:
 
             # Get total memory for GPU 0 specifically
             total_bytes = torch.cuda.get_device_properties(0).total_memory
-            
+
             # Debug: Check if memory is spread across multiple GPUs
             if torch.cuda.device_count() > 1:
                 total_used_all_gpus = sum(torch.cuda.memory_allocated(i) for i in range(torch.cuda.device_count()))
@@ -182,10 +182,10 @@ class MemoryMonitor:
                 # Calculate percentage based on reserved memory (what PyTorch actually claims)
                 reserved_gb = snapshot.gpu_memory_reserved_gb or snapshot.gpu_memory_used_gb
                 reserved_percent = (reserved_gb / snapshot.gpu_memory_total_gb * 100) if snapshot.gpu_memory_total_gb else 0.0
-                
+
                 self.console.print(f"   🎮 GPU Reserved: {reserved_gb:.1f}GB / {snapshot.gpu_memory_total_gb:.1f}GB ({reserved_percent:.1f}%)")
                 self.console.print(f"   📊 GPU Allocated: {snapshot.gpu_memory_used_gb:.1f}GB (active tensors)")
-                
+
                 # V100 Production Warning
                 if reserved_gb > 16.0:
                     self.console.print(f"   ⚠️  WARNING: Reserved memory ({reserved_gb:.1f}GB) exceeds V100 limit (16GB)", style="bold red")
