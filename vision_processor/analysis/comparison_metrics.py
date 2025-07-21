@@ -299,7 +299,10 @@ class ComparisonMetrics:
 
                 # Create a simple extraction capability score
                 # This rewards models that extract more information
-                if model_extraction_metrics and model_extraction_metrics.get("avg_fields_per_document", 0) > 0:
+                if (
+                    model_extraction_metrics
+                    and model_extraction_metrics.get("avg_fields_per_document", 0) > 0
+                ):
                     extraction_score = (
                         model_extraction_metrics["avg_fields_per_document"] * 0.6  # Primary: fields per doc
                         + model_extraction_metrics["unique_field_types"] * 0.3  # Diversity of fields
@@ -405,22 +408,26 @@ class ComparisonMetrics:
         )
 
     def _calculate_category_performance(
-        self, all_f1_scores: Dict[str, Dict[str, F1Metrics]]
+        self, field_f1_scores: Dict[str, Dict[str, F1Metrics]]
     ) -> Dict[str, Dict[str, float]]:
         """Calculate performance by field category."""
         category_performance = {}
+
+        # Get all model names from the field_f1_scores structure
+        all_model_names = set()
+        for field_metrics in field_f1_scores.values():
+            all_model_names.update(field_metrics.keys())
 
         for category in FieldCategory:
             category_fields = PRODUCTION_SCHEMA.get_fields_by_category(category)
             category_performance[category.value] = {}
 
-            for model_name, model_metrics in all_f1_scores.items():
-                # Get F1 scores for fields in this category
-                category_f1_scores = [
-                    metrics.f1_score
-                    for field_name, metrics in model_metrics.items()
-                    if field_name in category_fields
-                ]
+            for model_name in all_model_names:
+                # Get F1 scores for fields in this category for this model
+                category_f1_scores = []
+                for field_name in category_fields:
+                    if field_name in field_f1_scores and model_name in field_f1_scores[field_name]:
+                        category_f1_scores.append(field_f1_scores[field_name][model_name].f1_score)
 
                 if category_f1_scores:
                     category_performance[category.value][model_name] = statistics.mean(category_f1_scores)
@@ -472,17 +479,23 @@ class ComparisonMetrics:
         return compliance_scores
 
     def _calculate_critical_field_performance(
-        self, all_f1_scores: Dict[str, Dict[str, F1Metrics]]
+        self, field_f1_scores: Dict[str, Dict[str, F1Metrics]]
     ) -> Dict[str, float]:
         """Calculate performance on critical fields."""
         critical_field_performance = {}
 
-        # REMOVED ARTIFICIAL BIAS: All fields are critical for information extraction
-        # critical_fields = ["ABN", "TOTAL", "AMOUNT", "DATE", "STORE", "BUSINESS_NAME"]
+        # Get all model names from the field_f1_scores structure
+        all_model_names = set()
+        for field_metrics in field_f1_scores.values():
+            all_model_names.update(field_metrics.keys())
 
-        for model_name, model_metrics in all_f1_scores.items():
+        # REMOVED ARTIFICIAL BIAS: All fields are critical for information extraction
+        for model_name in all_model_names:
             # ALL fields are critical - no artificial distinction
-            all_f1_scores_list = [metrics.f1_score for field_name, metrics in model_metrics.items()]
+            all_f1_scores_list = []
+            for _field_name, field_metrics in field_f1_scores.items():
+                if model_name in field_metrics:
+                    all_f1_scores_list.append(field_metrics[model_name].f1_score)
 
             if all_f1_scores_list:
                 critical_field_performance[model_name] = statistics.mean(all_f1_scores_list)
@@ -570,13 +583,22 @@ class ComparisonMetrics:
         return significant_differences
 
     def _calculate_confidence_intervals(
-        self, all_f1_scores: Dict[str, Dict[str, F1Metrics]]
+        self, field_f1_scores: Dict[str, Dict[str, F1Metrics]]
     ) -> Dict[str, Tuple[float, float]]:
         """Calculate confidence intervals for F1 scores (simplified)."""
         confidence_intervals = {}
 
-        for model_name, model_metrics in all_f1_scores.items():
-            f1_scores = [metrics.f1_score for metrics in model_metrics.values()]
+        # Get all model names from the field_f1_scores structure
+        all_model_names = set()
+        for field_metrics in field_f1_scores.values():
+            all_model_names.update(field_metrics.keys())
+
+        for model_name in all_model_names:
+            # Collect F1 scores for this model across all fields
+            f1_scores = []
+            for _field_name, field_metrics in field_f1_scores.items():
+                if model_name in field_metrics:
+                    f1_scores.append(field_metrics[model_name].f1_score)
 
             if len(f1_scores) > 1:
                 mean_f1 = statistics.mean(f1_scores)
@@ -629,18 +651,27 @@ class ComparisonMetrics:
         return rankings
 
     def _generate_performance_recommendations(
-        self, all_f1_scores: Dict[str, Dict[str, F1Metrics]], model_names: List[str]
+        self, field_f1_scores: Dict[str, Dict[str, F1Metrics]], model_names: List[str]
     ) -> Dict[str, List[str]]:
         """Generate performance improvement recommendations."""
         recommendations = {}
 
         for model_name in model_names:
             model_recommendations = []
-            model_metrics = all_f1_scores[model_name]
+
+            # Collect all metrics for this model across all fields
+            model_field_metrics = {}
+            for field_name, field_metrics in field_f1_scores.items():
+                if model_name in field_metrics:
+                    model_field_metrics[field_name] = field_metrics[model_name]
+
+            if not model_field_metrics:
+                recommendations[model_name] = ["No field metrics available for analysis"]
+                continue
 
             # Identify weak fields
             weak_fields = [
-                field_name for field_name, metrics in model_metrics.items() if metrics.f1_score < 0.5
+                field_name for field_name, metrics in model_field_metrics.items() if metrics.f1_score < 0.5
             ]
 
             if weak_fields:
@@ -651,7 +682,7 @@ class ComparisonMetrics:
             # Precision vs Recall analysis
             low_precision_fields = [
                 field_name
-                for field_name, metrics in model_metrics.items()
+                for field_name, metrics in model_field_metrics.items()
                 if metrics.precision < 0.6 and metrics.recall > 0.7
             ]
 
@@ -662,7 +693,7 @@ class ComparisonMetrics:
 
             low_recall_fields = [
                 field_name
-                for field_name, metrics in model_metrics.items()
+                for field_name, metrics in model_field_metrics.items()
                 if metrics.recall < 0.6 and metrics.precision > 0.7
             ]
 
@@ -675,7 +706,7 @@ class ComparisonMetrics:
             # Focus on overall weak performance instead of arbitrary "critical" fields
             very_weak_fields = [
                 field_name
-                for field_name, metrics in model_metrics.items()
+                for field_name, metrics in model_field_metrics.items()
                 if metrics.f1_score < 0.3  # Only flag truly poor performance
             ]
 
@@ -743,11 +774,19 @@ class ComparisonMetrics:
         return explanations
 
     def _explain_f1_performance(
-        self, winner: str, overall_scores: Dict[str, float], all_f1_scores: Dict[str, Dict[str, F1Metrics]]
+        self,
+        winner: str,
+        overall_scores: Dict[str, float],
+        field_f1_scores: Dict[str, Dict[str, F1Metrics]],
     ) -> str:
-        """Explain why a model has the best overall F1 score."""
+        """Explain why a model has the best overall extraction score."""
         winner_score = overall_scores[winner]
-        winner_metrics = all_f1_scores[winner]
+
+        # Collect winner's metrics across all fields
+        winner_metrics = {}
+        for field_name, field_metrics in field_f1_scores.items():
+            if winner in field_metrics:
+                winner_metrics[field_name] = field_metrics[winner]
 
         # Analyze strengths
         strong_fields = [field for field, metrics in winner_metrics.items() if metrics.f1_score > 0.8]
@@ -756,7 +795,9 @@ class ComparisonMetrics:
         ]
         weak_fields = [field for field, metrics in winner_metrics.items() if metrics.f1_score < 0.6]
 
-        explanation = f"{winner} achieves the highest overall F1 score ({winner_score:.3f}) due to: "
+        explanation = (
+            f"{winner} achieves the highest overall extraction score ({winner_score:.3f}) due to: "
+        )
 
         if strong_fields:
             explanation += f"excellent performance on {len(strong_fields)} fields ({', '.join(strong_fields[:3])}{'...' if len(strong_fields) > 3 else ''}), "
@@ -769,11 +810,16 @@ class ComparisonMetrics:
         return explanation
 
     def _explain_ato_performance(
-        self, winner: str, ato_scores: Dict[str, float], all_f1_scores: Dict[str, Dict[str, F1Metrics]]
+        self, winner: str, ato_scores: Dict[str, float], field_f1_scores: Dict[str, Dict[str, F1Metrics]]
     ) -> str:
         """Explain why a model has the best ATO compliance."""
         winner_score = ato_scores[winner]
-        winner_metrics = all_f1_scores[winner]
+
+        # Collect winner's metrics across all fields
+        winner_metrics = {}
+        for field_name, field_metrics in field_f1_scores.items():
+            if winner in field_metrics:
+                winner_metrics[field_name] = field_metrics[winner]
 
         # REMOVED ARTIFICIAL ATO BIAS: Analyze ALL extracted fields equally
         all_fields_performance = {}
@@ -793,13 +839,16 @@ class ComparisonMetrics:
         return explanation
 
     def _explain_critical_field_performance(
-        self, winner: str, critical_scores: Dict[str, float], all_f1_scores: Dict[str, Dict[str, F1Metrics]]
+        self,
+        winner: str,
+        critical_scores: Dict[str, float],
+        field_f1_scores: Dict[str, Dict[str, F1Metrics]],
     ) -> str:
         """Explain why a model performs best on critical fields."""
         winner_score = critical_scores[winner]
 
-        explanation = f"{winner} demonstrates superior critical field extraction ({winner_score:.3f}) "
-        explanation += "through consistent detection of high-priority business document fields "
+        explanation = f"{winner} demonstrates superior field extraction ({winner_score:.3f}) "
+        explanation += "through consistent detection of comprehensive business document fields "
         explanation += "essential for automated accounting and tax compliance processing."
 
         return explanation

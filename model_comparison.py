@@ -123,7 +123,10 @@ def run_production_comparison(
         }
 
     except Exception as e:
+        import traceback
         console.print(f"❌ Production comparison failed: {e}", style="bold red")
+        console.print("🔍 Full traceback:", style="red")
+        console.print(traceback.format_exc(), style="red")
         return {"success": False, "error": str(e)}
 
 
