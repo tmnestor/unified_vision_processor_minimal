@@ -517,10 +517,29 @@ class UltraAggressiveRepetitionController(RepetitionController):
         # Count fields in AWK result
         awk_field_count = len(awk_result.extracted_fields)
 
-        # Count fields in original response (basic heuristic)
-        original_field_count = len(
-            [line for line in original_response.split("\n") if ":" in line and len(line.strip()) > 0]
-        )
+        # Count fields in original response using same logic as DynamicExtractor
+        import re
+        field_pattern = r"([A-Z_]+):\s*"
+        detected_fields = list(set(re.findall(field_pattern, original_response)))
+        original_field_count = len(detected_fields)
+        
+        # If no structured fields, try raw markdown content detection
+        if original_field_count == 0:
+            # Count content indicators like ABN patterns, currency amounts, etc.
+            content_score = 0
+            if re.search(r"\b\d{2,3}[\s-]\d{3}[\s-]\d{3}[\s-]\d{3}\b", original_response):
+                content_score += 2  # ABN pattern
+            if re.search(r"\$\d+\.\d{2}", original_response):
+                content_score += 2  # Currency amounts
+            if re.search(r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b", original_response):
+                content_score += 1  # Business names
+            if re.search(r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", original_response):
+                content_score += 1  # Date patterns
+            if re.search(r"\b\d{4,}\b", original_response):
+                content_score += 1  # Potential receipt numbers
+            
+            # Convert content score to estimated field count (similar to DynamicExtractor logic)
+            original_field_count = min(content_score, 5)  # Cap at reasonable number
 
         # Decision logic with multiple criteria (EXACT WORKING SCRIPT LOGIC)
         use_awk = False
