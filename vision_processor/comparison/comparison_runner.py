@@ -260,11 +260,11 @@ class ComparisonRunner:
                 if not model_path_obj.exists():
                     self.console.print(f"❌ Model path does not exist: {model_path}")
                     continue
-                
+
                 # Basic registration check already passed above
                 valid_models.append(model_name)
                 self.console.print(f"✅ {model_name} validation passed (V100 lightweight mode)")
-                
+
             except Exception as e:
                 self.console.print(f"❌ {model_name} validation failed: {e}")
 
