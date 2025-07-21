@@ -109,16 +109,28 @@ class FieldAnalyzer:
             for result in results:
                 model_totals[model_name] += 1
 
-                if field_name in result.extracted_fields:
-                    value = result.extracted_fields[field_name]
-                    all_values.append(str(value))
-                    model_detections[model_name] += 1
+                # Handle both dict and object formats
+                if isinstance(result, dict):
+                    # Dictionary format - check has_* fields
+                    has_field_key = f"has_{field_name.lower()}"
+                    if has_field_key in result and result[has_field_key]:
+                        # Field was detected, create synthetic value
+                        value = f"detected_{field_name.lower()}"
+                        all_values.append(str(value))
+                        model_detections[model_name] += 1
+                        valid_values += 1  # Assume detected fields are valid
+                else:
+                    # Object format
+                    if field_name in result.extracted_fields:
+                        value = result.extracted_fields[field_name]
+                        all_values.append(str(value))
+                        model_detections[model_name] += 1
 
-                    # Validate value
-                    if self.production_schema.validate_field_value(field_name, str(value)):
-                        valid_values += 1
-                    else:
-                        invalid_values += 1
+                        # Validate value
+                        if self.production_schema.validate_field_value(field_name, str(value)):
+                            valid_values += 1
+                        else:
+                            invalid_values += 1
 
         total_documents = sum(model_totals.values())
         if total_documents == 0:

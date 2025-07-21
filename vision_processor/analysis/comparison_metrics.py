@@ -148,8 +148,14 @@ class ComparisonMetrics:
                 # Default assumption - field should be present
                 true_label = field_name in PRODUCTION_SCHEMA.get_core_fields()
 
-            # Get prediction
-            pred_label = field_name in result.extracted_fields
+            # Get prediction - handle both dict and object formats
+            if isinstance(result, dict):
+                # Dictionary format - check has_* fields
+                has_field_key = f"has_{field_name.lower()}"
+                pred_label = has_field_key in result and result[has_field_key]
+            else:
+                # Object format
+                pred_label = field_name in result.extracted_fields
 
             y_true.append(true_label)
             y_pred.append(pred_label)
@@ -353,11 +359,19 @@ class ComparisonMetrics:
                 # Check compliance for this document
                 document_compliance = 0
                 for field in ato_critical_fields:
-                    if field in result.extracted_fields:
-                        # Validate the field value
-                        value = result.extracted_fields[field]
-                        if PRODUCTION_SCHEMA.validate_field_value(field, str(value)):
-                            document_compliance += 1
+                    # Handle both dict and object formats
+                    if isinstance(result, dict):
+                        # Dictionary format - check has_* fields
+                        has_field_key = f"has_{field.lower()}"
+                        if has_field_key in result and result[has_field_key]:
+                            document_compliance += 1  # Assume detected fields are valid for compliance
+                    else:
+                        # Object format
+                        if field in result.extracted_fields:
+                            # Validate the field value
+                            value = result.extracted_fields[field]
+                            if PRODUCTION_SCHEMA.validate_field_value(field, str(value)):
+                                document_compliance += 1
 
                 # Compliance score for this document (0-1)
                 document_score = document_compliance / len(ato_critical_fields)

@@ -285,85 +285,92 @@ class ComparisonRunner:
                     model_name, self.config.processing, model_path=model_path
                 )
 
-                # Load model
-                with model:
-                    self.console.print(f"✅ {model_name} loaded successfully")
+                # Explicitly load model (V100-compatible sequential loading)
+                model.load_model()
+                self.console.print(f"✅ {model_name} loaded successfully")
 
-                    # Get model-specific prompt
-                    prompts = self.config.get_prompts()
-                    prompt = prompts.get(model_name, prompts.get("default", ""))
+                # Get model-specific prompt
+                prompts = self.config.get_prompts()
+                prompt = prompts.get(model_name, prompts.get("default", ""))
 
-                    # Process each image
-                    for i, image_path in enumerate(
-                        track(image_paths, description=f"Processing with {model_name}")
-                    ):
-                        try:
-                            # Load image
-                            image = Image.open(image_path).convert("RGB")
+                # Process each image
+                for i, image_path in enumerate(
+                    track(image_paths, description=f"Processing with {model_name}")
+                ):
+                    try:
+                        # Load image
+                        image = Image.open(image_path).convert("RGB")
 
-                            # Run model inference
-                            response = model.process_image(
-                                image, prompt, max_new_tokens=self.config.processing.max_tokens
-                            )
+                        # Run model inference
+                        response = model.process_image(
+                            image, prompt, max_new_tokens=self.config.processing.max_tokens
+                        )
 
-                            # Clean response using repetition controller (matching original script)
-                            cleaned_response = self.repetition_controller.clean_response(
-                                response.raw_text, image_path.name
-                            )
+                        # Clean response using repetition controller (matching original script)
+                        cleaned_response = self.repetition_controller.clean_response(
+                            response.raw_text, image_path.name
+                        )
 
-                            # Extract fields using dynamic extractor (original script logic)
-                            extraction_result = self.extractor.extract_fields(
-                                cleaned_response, image_path.name, model_name, response.processing_time
-                            )
+                        # Extract fields using dynamic extractor (original script logic)
+                        extraction_result = self.extractor.extract_fields(
+                            cleaned_response, image_path.name, model_name, response.processing_time
+                        )
 
-                            # Convert DynamicExtractionResult to original dictionary format for compatibility
-                            analysis_dict = self._convert_to_original_format(extraction_result)
+                        # Convert DynamicExtractionResult to original dictionary format for compatibility
+                        analysis_dict = self._convert_to_original_format(extraction_result)
 
-                            model_results.append(analysis_dict)
+                        model_results.append(analysis_dict)
 
-                            # Print progress
-                            status = "✅" if extraction_result.is_successful else "❌"
-                            fields_str = f"{extraction_result.field_count} fields"
-                            time_str = f"{response.processing_time:.1f}s"
+                        # Print progress
+                        status = "✅" if extraction_result.is_successful else "❌"
+                        fields_str = f"{extraction_result.field_count} fields"
+                        time_str = f"{response.processing_time:.1f}s"
 
-                            self.console.print(
-                                f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {fields_str}"
-                            )
+                        self.console.print(
+                            f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {fields_str}"
+                        )
 
-                            # Cleanup every few images
-                            if (i + 1) % 5 == 0:
-                                gc.collect()
+                        # Cleanup every few images
+                        if (i + 1) % 5 == 0:
+                            gc.collect()
 
-                        except Exception as e:
-                            self.console.print(
-                                f"   {i + 1:2d}. {image_path.name:<15} ❌ Error: {str(e)[:30]}..."
-                            )
-                            # Create error result in original dictionary format
-                            error_result = {
-                                "img_name": image_path.name,
-                                "response": f"Error: {e}",
-                                "is_structured": False,
-                                "extraction_score": 0,
-                                "successful": False,
-                                "inference_time": 0.0,
-                                "doc_type": "UNKNOWN",
-                            }
-                            model_results.append(error_result)
+                    except Exception as e:
+                        self.console.print(
+                            f"   {i + 1:2d}. {image_path.name:<15} ❌ Error: {str(e)[:30]}..."
+                        )
+                        # Create error result in original dictionary format
+                        error_result = {
+                            "img_name": image_path.name,
+                            "response": f"Error: {e}",
+                            "is_structured": False,
+                            "extraction_score": 0,
+                            "successful": False,
+                            "extraction_time": 0.0,  # Fixed field name
+                            "doc_type": "UNKNOWN",
+                            "image_name": image_path.name,
+                            "model_name": model_name,
+                            "field_count": 0,
+                            "is_successful": False,
+                            "confidence_score": 0.0,
+                        }
+                        model_results.append(error_result)
 
             except Exception as e:
                 self.console.print(f"❌ Failed to load {model_name}: {e}")
                 continue
 
             finally:
-                # Cleanup model
-                gc.collect()
-                try:
-                    import torch
+                # Explicit model cleanup for V100 compatibility (matching original script)
+                if 'model' in locals() and model is not None:
+                    try:
+                        self.console.print(f"\n🧹 Cleaning up {model_name.upper()}")
+                        model.unload_model()
+                        del model
+                    except Exception as cleanup_error:
+                        self.console.print(f"⚠️  Cleanup warning for {model_name}: {cleanup_error}")
 
-                    if torch.cuda.is_available():
-                        torch.cuda.empty_cache()
-                except ImportError:
-                    pass
+                # Aggressive memory cleanup for V100 16GB limit
+                self._cleanup_gpu_memory()
 
             # Calculate model summary
             model_time = time.time() - model_start_time
@@ -520,6 +527,17 @@ class ComparisonRunner:
             ComparisonResults or None if comparison hasn't been run
         """
         return self.results
+
+    def _cleanup_gpu_memory(self):
+        """Aggressive memory cleanup for V100 16GB limit (matching original script)."""
+        gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+        except ImportError:
+            pass
 
     def export_dataframe(self) -> Optional[Any]:
         """Export results as pandas DataFrame.
