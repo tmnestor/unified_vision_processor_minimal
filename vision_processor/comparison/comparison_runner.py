@@ -590,7 +590,7 @@ class ComparisonRunner:
             self.console.print(f"   📊 Peak Process Memory: {summary.get('peak_process_memory_gb', 0):.1f}GB")
             self.console.print(f"   📊 Average Process Memory: {summary.get('avg_process_memory_gb', 0):.1f}GB")
 
-            if 'peak_gpu_memory_gb' in summary:
+            if 'peak_gpu_memory_gb' in summary and summary['gpu_total_memory_gb']:
                 self.console.print(f"   🎮 Peak GPU Memory: {summary['peak_gpu_memory_gb']:.1f}GB / {summary['gpu_total_memory_gb']:.1f}GB")
                 self.console.print(f"   🎮 Average GPU Memory: {summary['avg_gpu_memory_gb']:.1f}GB")
                 gpu_utilization = (summary['peak_gpu_memory_gb'] / summary['gpu_total_memory_gb']) * 100

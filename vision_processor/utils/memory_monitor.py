@@ -171,13 +171,14 @@ class MemoryMonitor:
             self.console.print(f"   🖥️  System RAM: {snapshot.system_used_gb:.1f}GB / {snapshot.system_total_gb:.1f}GB ({snapshot.system_percent:.1f}%)")
             self.console.print(f"   🔧 Process RAM: {snapshot.process_memory_gb:.1f}GB ({snapshot.process_memory_percent:.1f}%)")
 
-            if snapshot.gpu_memory_used_gb is not None:
-                self.console.print(f"   🎮 GPU Memory: {snapshot.gpu_memory_used_gb:.1f}GB / {snapshot.gpu_memory_total_gb:.1f}GB ({snapshot.gpu_memory_percent:.1f}%)")
+            if snapshot.gpu_memory_used_gb is not None and snapshot.gpu_memory_total_gb is not None:
+                gpu_percent = snapshot.gpu_memory_percent or 0.0
+                self.console.print(f"   🎮 GPU Memory: {snapshot.gpu_memory_used_gb:.1f}GB / {snapshot.gpu_memory_total_gb:.1f}GB ({gpu_percent:.1f}%)")
                 if snapshot.gpu_memory_reserved_gb:
                     self.console.print(f"   📦 GPU Reserved: {snapshot.gpu_memory_reserved_gb:.1f}GB")
         else:
             # Compact format
-            gpu_info = f", GPU: {snapshot.gpu_memory_used_gb:.1f}GB" if snapshot.gpu_memory_used_gb else ""
+            gpu_info = f", GPU: {snapshot.gpu_memory_used_gb:.1f}GB" if snapshot.gpu_memory_used_gb is not None else ""
             self.console.print(f"💾 {snapshot.label}: RAM {snapshot.process_memory_gb:.1f}GB{gpu_info}")
 
     def print_current_usage(self, label: str = "Current"):
@@ -212,7 +213,8 @@ class MemoryMonitor:
         self.console.print(f"   🔧 Process: {peak_process.process_memory_gb:.1f}GB ({peak_process.process_memory_percent:.1f}%) at '{peak_process.label}'")
 
         if peak_gpu:
-            self.console.print(f"   🎮 GPU: {peak_gpu.gpu_memory_used_gb:.1f}GB ({peak_gpu.gpu_memory_percent:.1f}%) at '{peak_gpu.label}'")
+            gpu_percent = peak_gpu.gpu_memory_percent or 0.0
+            self.console.print(f"   🎮 GPU: {peak_gpu.gpu_memory_used_gb:.1f}GB ({gpu_percent:.1f}%) at '{peak_gpu.label}'")
 
     def print_memory_timeline(self):
         """Print a timeline of memory usage."""
@@ -224,7 +226,7 @@ class MemoryMonitor:
 
         for snapshot in self.snapshots:
             elapsed = snapshot.timestamp - self.start_time
-            gpu_info = f" GPU:{snapshot.gpu_memory_used_gb:.1f}GB" if snapshot.gpu_memory_used_gb else ""
+            gpu_info = f" GPU:{snapshot.gpu_memory_used_gb:.1f}GB" if snapshot.gpu_memory_used_gb is not None else ""
 
             self.console.print(
                 f"   {elapsed:6.1f}s: {snapshot.label:<25} "
