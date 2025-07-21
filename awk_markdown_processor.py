@@ -346,9 +346,10 @@ class AWKMarkdownProcessor:
                     value = match.group(2).strip()
 
                     if key and value:
-                        key = self._normalize_key(key)
-                        self.context.extracted_fields[key] = value
-                        result_lines.append(f"{key}: {value}")
+                        # Apply business pattern normalization for known business fields
+                        normalized_key, normalized_value = self._normalize_business_field(key, value, line)
+                        self.context.extracted_fields[normalized_key] = normalized_value
+                        result_lines.append(f"{normalized_key}: {normalized_value}")
                         break
 
         self.context.processing_notes.append(f"Structured processing: {len(result_lines)} pairs extracted")
@@ -376,6 +377,65 @@ class AWKMarkdownProcessor:
             key = re.sub(key_config["remove_special_chars"], "", key)
 
         return key
+
+    def _normalize_business_field(self, key: str, value: str, full_line: str) -> tuple[str, str]:
+        """Normalize business fields using business pattern matching."""
+
+        # Check if this field matches any business patterns
+        business_patterns = self.config["fallback_patterns"].get("business_patterns", {})
+
+        # Handle ABN specifically - most important for detection improvement
+        if "abn" in key.lower() or re.search(r"(\d{2}\s*\d{3}\s*\d{3}\s*\d{3}|\d{11})", value):
+            # This looks like an ABN field
+            for pattern in business_patterns.get("ABN", []):
+                matches = re.findall(pattern, full_line, re.IGNORECASE)
+                if matches:
+                    # Extract the ABN number properly
+                    abn_value = matches[0] if isinstance(matches[0], str) else matches[0][0]
+                    return "ABN", abn_value
+
+        # Handle other common business field normalizations
+        field_mappings = {
+            # Business identification
+            "business_name": "STORE",
+            "company_name": "STORE",
+            "supplier": "STORE",
+            "business_abn": "ABN",
+            "company_abn": "ABN",
+            "abn_number": "ABN",
+            # Financial fields
+            "total_amount": "TOTAL",
+            "amount_total": "TOTAL",
+            "final_total": "TOTAL",
+            "gst_amount": "GST",
+            "tax_amount": "GST",
+            # Dates and identifiers
+            "invoice_date": "DATE",
+            "receipt_date": "DATE",
+            "transaction_date": "DATE",
+            "receipt_no": "RECEIPT_NUMBER",
+            "invoice_no": "INVOICE_NUMBER",
+            "ref_number": "RECEIPT_NUMBER",
+        }
+
+        # Normalize key name
+        normalized_key = self._normalize_key(key)
+        key_lower = key.lower().replace(" ", "_").replace("-", "_")
+
+        # Apply business field mapping
+        if key_lower in field_mappings:
+            normalized_key = field_mappings[key_lower]
+
+        # Additional ABN detection from value patterns
+        if normalized_key == "ABN" or re.search(r"(\d{2}\s*\d{3}\s*\d{3}\s*\d{3}|\d{11})", value):
+            # Ensure ABN is properly formatted
+            clean_abn = re.sub(r"[^\d]", "", value)
+            if len(clean_abn) == 11:
+                # Format as standard ABN: XX XXX XXX XXX
+                formatted_abn = f"{clean_abn[:2]} {clean_abn[2:5]} {clean_abn[5:8]} {clean_abn[8:11]}"
+                return "ABN", formatted_abn
+
+        return normalized_key, value
 
     def _apply_fallback_patterns(self, text: str) -> str:
         """Apply fallback patterns in tier order."""
