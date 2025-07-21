@@ -231,7 +231,7 @@ class InternVLModel(BaseVisionModel):
             model_loading_args["torch_dtype"] = torch.float32
             logger.info("Loading model on CPU (will be slow)...")
         elif self.num_gpus == 1:
-            model_loading_args["torch_dtype"] = torch.bfloat16
+            model_loading_args["torch_dtype"] = torch.float16
 
             # Use device configuration from YAML config (FAIL FAST - no fallbacks)
             device_map = self._get_device_map_from_config()
@@ -249,7 +249,7 @@ class InternVLModel(BaseVisionModel):
             logger.info(
                 f"Multi-GPU mode requested, distributing across {self.num_gpus} GPUs",
             )
-            model_loading_args["torch_dtype"] = torch.bfloat16
+            model_loading_args["torch_dtype"] = torch.float16
             device_map = self._split_model(self.model_path)
             model_loading_args["device_map"] = device_map
             logger.info(f"Device mapping: {device_map}")
@@ -257,7 +257,7 @@ class InternVLModel(BaseVisionModel):
             logger.warning(
                 f"Multi-GPU detected ({self.num_gpus} GPUs), but using single GPU mode (safer)",
             )
-            model_loading_args["torch_dtype"] = torch.bfloat16
+            model_loading_args["torch_dtype"] = torch.float16
             # Force single GPU mode instead of device mapping
             model_loading_args["device_map"] = {"": 0}  # Put everything on GPU 0
             logger.info(
@@ -468,9 +468,9 @@ class InternVLModel(BaseVisionModel):
             pixel_values = transform(image).unsqueeze(0)  # Shape: [1, 3, 448, 448]
 
             # Critical: Move to appropriate device and dtype BEFORE inference
-            # This ensures pixel_values matches the model's device
+            # This ensures pixel_values matches the model's device and dtype
             if self.device.type == "cuda":
-                pixel_values = pixel_values.cuda().to(torch.bfloat16)
+                pixel_values = pixel_values.cuda().to(torch.float16)
             else:
                 pixel_values = pixel_values.to(torch.float32)
 
