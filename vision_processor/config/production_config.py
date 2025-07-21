@@ -31,6 +31,47 @@ class ModelPathConfig:
 
 
 @dataclass
+class DeviceMapConfig:
+    """Device mapping configuration for a specific model."""
+
+    strategy: str = "single_gpu"  # single_gpu, multi_gpu, auto
+    device_map: Any = field(default_factory=lambda: {"": 0})  # PyTorch device_map
+    quantization_compatible: bool = True
+
+
+@dataclass
+class DeviceConfig:
+    """Device configuration for V100 production deployment."""
+
+    gpu_strategy: str = "single_gpu"  # single_gpu, multi_gpu, auto
+    target_gpu: int = 0  # Which GPU to use for single_gpu mode
+    v100_mode: bool = True  # Enable V100 production optimizations
+    memory_limit_gb: int = 16  # GPU memory limit
+
+    # Per-model device mapping configurations
+    device_maps: Dict[str, DeviceMapConfig] = field(default_factory=dict)
+
+    def get_device_map_for_model(self, model_name: str) -> Any:
+        """Get device map configuration for a specific model."""
+        if model_name in self.device_maps:
+            return self.device_maps[model_name].device_map
+
+        # Default single GPU configuration
+        if self.gpu_strategy == "single_gpu":
+            return {"": self.target_gpu}
+        elif self.gpu_strategy == "auto":
+            return "auto"
+        else:
+            return None
+
+    def should_use_quantization_safe_loading(self, model_name: str) -> bool:
+        """Check if model should use quantization-safe loading."""
+        if model_name in self.device_maps:
+            return self.device_maps[model_name].quantization_compatible
+        return True  # Default to safe loading
+
+
+@dataclass
 class ProcessingConfig:
     """Processing configuration with defaults optimized for V100."""
 
@@ -132,6 +173,7 @@ class ProductionConfig:
         self.processing = self._init_processing_config(overrides)
         self.extraction = self._init_extraction_config(overrides)
         self.analysis = self._init_analysis_config(overrides)
+        self.device_config = self._init_device_config(overrides)
 
         # Dataset and output paths
         self.datasets_path = self._get_config_value(
@@ -219,6 +261,29 @@ class ProductionConfig:
             calculate_f1_scores=yaml_analysis.get("calculate_f1_scores", True),
             generate_field_analysis=yaml_analysis.get("generate_field_analysis", True),
             generate_performance_metrics=yaml_analysis.get("generate_performance_metrics", True),
+        )
+
+    def _init_device_config(self, overrides: Dict) -> DeviceConfig:
+        """Initialize device configuration from YAML."""
+        yaml_device = self.yaml_config.get("device_config", {})
+
+        # Parse device maps for each model
+        device_maps = {}
+        yaml_device_maps = yaml_device.get("device_maps", {})
+
+        for model_name, device_map_config in yaml_device_maps.items():
+            device_maps[model_name] = DeviceMapConfig(
+                strategy=device_map_config.get("strategy", "single_gpu"),
+                device_map=device_map_config.get("device_map", {"": 0}),
+                quantization_compatible=device_map_config.get("quantization_compatible", True)
+            )
+
+        return DeviceConfig(
+            gpu_strategy=yaml_device.get("gpu_strategy", "single_gpu"),
+            target_gpu=yaml_device.get("target_gpu", 0),
+            v100_mode=yaml_device.get("v100_mode", True),
+            memory_limit_gb=yaml_device.get("memory_limit_gb", 16),
+            device_maps=device_maps
         )
 
     def get_prompts(self) -> Dict[str, str]:

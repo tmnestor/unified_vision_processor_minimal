@@ -14,6 +14,40 @@ defaults:
   output_dir: "results"  # Default output directory
   models: "llama,internvl"  # Default models to compare
   trust_remote_code: true  # Enable custom model architectures (InternVL requires this)
+
+# Device configuration for V100 production deployment
+device_config:
+  # GPU allocation strategy
+  gpu_strategy: "single_gpu"  # Options: single_gpu, multi_gpu, auto
+  target_gpu: 0  # Which GPU to use for single_gpu mode
+  
+  # V100 production constraints (16GB VRAM, 64GB RAM)
+  v100_mode: true  # Enable V100 production optimizations
+  memory_limit_gb: 16  # GPU memory limit for V100
+  
+  # Device mapping configurations per model
+  device_maps:
+    llama:
+      strategy: "single_gpu"  # Force everything on one GPU
+      device_map: {"": 0}  # PyTorch device_map format
+      quantization_compatible: true
+      
+    internvl:
+      strategy: "single_gpu"  # Force everything on one GPU  
+      device_map: {"": 0}  # PyTorch device_map format
+      quantization_compatible: true
+      
+  # Alternative configurations (commented for reference)
+  # multi_gpu_example:
+  #   llama:
+  #     strategy: "multi_gpu"
+  #     device_map: "auto"  # Let PyTorch decide
+  #   internvl:
+  #     strategy: "split_layers"
+  #     device_map:
+  #       "vision_model": 0
+  #       "language_model.model.layers.0": 0
+  #       "language_model.model.layers.1": 1
   
 # Model paths
 model_paths:

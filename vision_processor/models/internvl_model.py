@@ -75,6 +75,52 @@ class InternVLModel(BaseVisionModel):
 
         return device
 
+    def _get_device_map_from_config(self):
+        """Get device map configuration from production config.
+
+        FAILS EXPLICITLY if YAML config is not available - no silent fallbacks.
+        """
+        # FAIL FAST: Production config must be available
+        if not hasattr(self, "config"):
+            raise RuntimeError(
+                "❌ FATAL: No production config found for InternVL model\n"
+                "💡 Expected: config parameter passed during model creation\n"
+                "💡 Fix: Ensure config is passed via model_registry.create_model()\n"
+                "💡 YAML file: model_comparison.yaml with device_config section"
+            )
+
+        if not hasattr(self.config, "device_config"):
+            raise RuntimeError(
+                "❌ FATAL: No device_config found in production config\n"
+                "💡 Expected: device_config section in YAML configuration\n"
+                "💡 Fix: Add device_config section to model_comparison.yaml\n"
+                "💡 Example:\n"
+                "   device_config:\n"
+                "     gpu_strategy: 'single_gpu'\n"
+                "     device_maps:\n"
+                "       internvl:\n"
+                "         device_map: {'': 0}"
+            )
+
+        device_config = self.config.device_config
+        device_map = device_config.get_device_map_for_model("internvl")
+
+        if device_map is None:
+            raise RuntimeError(
+                f"❌ FATAL: No device mapping found for internvl model\n"
+                f"💡 Expected: internvl entry in device_config.device_maps\n"
+                f"💡 Current device_maps: {list(device_config.device_maps.keys())}\n"
+                f"💡 Fix: Add internvl device mapping to model_comparison.yaml:\n"
+                f"   device_config:\n"
+                f"     device_maps:\n"
+                f"       internvl:\n"
+                f"         strategy: 'single_gpu'\n"
+                f"         device_map: {{'': 0}}\n"
+                f"         quantization_compatible: true"
+            )
+
+        return device_map
+
     def _split_model(self, model_name: str) -> dict[str, int]:
         """Create device mapping for multi-GPU configuration.
         Based on the model architecture, distributes layers across available GPUs.
@@ -162,8 +208,11 @@ class InternVLModel(BaseVisionModel):
             logger.info("Loading model on CPU (will be slow)...")
         elif self.num_gpus == 1:
             model_loading_args["torch_dtype"] = torch.bfloat16
-            # Force single GPU mode with explicit device mapping
-            model_loading_args["device_map"] = {"": 0}  # Everything on GPU 0
+
+            # Use device configuration from YAML config (FAIL FAST - no fallbacks)
+            device_map = self._get_device_map_from_config()
+            model_loading_args["device_map"] = device_map
+            logger.info(f"🔧 V100 Mode: Using YAML device configuration: {device_map}")
 
             if self.enable_quantization:
                 # Check if bitsandbytes is available
@@ -222,9 +271,11 @@ class InternVLModel(BaseVisionModel):
             ).eval()
 
             # Move to device if needed (single GPU only) - but not for quantized models
-            if (self.device.type == "cuda" and
-                "device_map" not in model_loading_args and
-                not model_loading_args.get("load_in_8bit", False)):
+            if (
+                self.device.type == "cuda"
+                and "device_map" not in model_loading_args
+                and not model_loading_args.get("load_in_8bit", False)
+            ):
                 self.model = self.model.cuda()
                 logger.info("Model moved to CUDA device")
             elif model_loading_args.get("load_in_8bit", False):

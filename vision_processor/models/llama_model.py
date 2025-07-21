@@ -117,6 +117,52 @@ class LlamaVisionModel(BaseVisionModel):
             logger.warning("BitsAndBytesConfig not available - falling back to FP16")
             return None
 
+    def _get_device_map_from_config(self):
+        """Get device map configuration from production config.
+
+        FAILS EXPLICITLY if YAML config is not available - no silent fallbacks.
+        """
+        # FAIL FAST: Production config must be available
+        if not hasattr(self, "config"):
+            raise RuntimeError(
+                "❌ FATAL: No production config found for Llama model\n"
+                "💡 Expected: config parameter passed during model creation\n"
+                "💡 Fix: Ensure config is passed via model_registry.create_model()\n"
+                "💡 YAML file: model_comparison.yaml with device_config section"
+            )
+
+        if not hasattr(self.config, "device_config"):
+            raise RuntimeError(
+                "❌ FATAL: No device_config found in production config\n"
+                "💡 Expected: device_config section in YAML configuration\n"
+                "💡 Fix: Add device_config section to model_comparison.yaml\n"
+                "💡 Example:\n"
+                "   device_config:\n"
+                "     gpu_strategy: 'single_gpu'\n"
+                "     device_maps:\n"
+                "       llama:\n"
+                "         device_map: {'': 0}"
+            )
+
+        device_config = self.config.device_config
+        device_map = device_config.get_device_map_for_model("llama")
+
+        if device_map is None:
+            raise RuntimeError(
+                f"❌ FATAL: No device mapping found for llama model\n"
+                f"💡 Expected: llama entry in device_config.device_maps\n"
+                f"💡 Current device_maps: {list(device_config.device_maps.keys())}\n"
+                f"💡 Fix: Add llama device mapping to model_comparison.yaml:\n"
+                f"   device_config:\n"
+                f"     device_maps:\n"
+                f"       llama:\n"
+                f"         strategy: 'single_gpu'\n"
+                f"         device_map: {{'': 0}}\n"
+                f"         quantization_compatible: true"
+            )
+
+        return device_map
+
     def _detect_device_mapping(self) -> str | dict[str, int]:
         """Detect optimal device mapping based on hardware."""
         if self.device.type == "cuda":
@@ -141,9 +187,11 @@ class LlamaVisionModel(BaseVisionModel):
         # Clean memory before loading
         self._cleanup_memory()
 
-        # Get device configuration
-        device_map = self._detect_device_mapping()
+        # Get device configuration from YAML config (FAIL FAST - no fallbacks)
+        device_map = self._get_device_map_from_config()
         quantization_config = self._get_quantization_config()
+
+        logger.info(f"🔧 V100 Mode: Using device configuration: {device_map}")
 
         # Configure loading parameters
         model_loading_args = {
