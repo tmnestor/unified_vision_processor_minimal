@@ -68,15 +68,30 @@ class DynamicFieldExtractor:
         Returns:
             DynamicExtractionResult with fields found
         """
-        # Step 1: Detect if we have structured key-value pairs
-        if self._has_valid_keyvalue_pairs(response):
-            # Structured extraction
+        # Step 1: Intelligent field extraction method selection
+        structured_fields = self._get_field_names_from_response(response)
+        raw_markdown_fields = self._extract_fields_from_raw_markdown(response)
+
+        # Enhanced decision logic: prefer raw markdown when it can extract significantly more fields
+        if (
+            len(structured_fields) >= 5 and  # Structured extraction has good coverage
+            self._has_valid_keyvalue_pairs(response)  # AND proper key-value format
+        ):
+            # Use structured extraction for well-formatted responses
             using_raw_markdown = False
-            detected_fields = self._get_field_names_from_response(response)
-        else:
-            # Raw markdown fallback
+            detected_fields = structured_fields
+        elif len(raw_markdown_fields) > len(structured_fields) * 2:
+            # Raw markdown can extract significantly more fields (2x+ advantage)
             using_raw_markdown = True
-            detected_fields = self._extract_fields_from_raw_markdown(response)
+            detected_fields = raw_markdown_fields
+        elif len(structured_fields) >= 3 and self._has_valid_keyvalue_pairs(response):
+            # Use structured extraction for moderate coverage with proper format
+            using_raw_markdown = False
+            detected_fields = structured_fields
+        else:
+            # Default to raw markdown for enhanced field detection
+            using_raw_markdown = True
+            detected_fields = raw_markdown_fields
 
         # Step 2: Extract each detected field
         extracted_fields = {}
