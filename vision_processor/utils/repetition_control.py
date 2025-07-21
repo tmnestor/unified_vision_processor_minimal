@@ -475,11 +475,14 @@ class UltraAggressiveRepetitionController(RepetitionController):
         # Step 3: Remove safety warnings
         response = self._remove_safety_warnings(response)
 
-        # Step 4: Clean repetitive content
-        response = self._remove_repetitive_content(response)
+        # Step 4: Ultra-aggressive repetition removal
+        response = self._ultra_aggressive_word_removal(response)
+        response = self._ultra_aggressive_phrase_removal(response)
+        response = self._ultra_aggressive_sentence_removal(response)
 
-        # Step 5: Final cleanup
-        response = self._final_cleanup(response)
+        # Step 5: Clean artifacts and final validation
+        response = self._clean_artifacts_aggressive(response)
+        response = self._final_validation_truncate(response)
 
         return response.strip()
 
