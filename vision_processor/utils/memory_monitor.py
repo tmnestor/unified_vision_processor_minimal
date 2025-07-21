@@ -78,8 +78,15 @@ class MemoryMonitor:
             used_bytes = torch.cuda.memory_allocated(0)
             reserved_bytes = torch.cuda.memory_reserved(0)
 
-            # Get total memory
+            # Get total memory for GPU 0 specifically
             total_bytes = torch.cuda.get_device_properties(0).total_memory
+            
+            # Debug: Check if memory is spread across multiple GPUs
+            if torch.cuda.device_count() > 1:
+                total_used_all_gpus = sum(torch.cuda.memory_allocated(i) for i in range(torch.cuda.device_count()))
+                if total_used_all_gpus != used_bytes:
+                    # Memory is spread across multiple GPUs - this is a problem for V100!
+                    print(f"🚨 WARNING: Memory detected on multiple GPUs! Total across all GPUs: {total_used_all_gpus / (1024**3):.1f}GB")
 
             # Convert to GB
             used_gb = used_bytes / (1024**3)
@@ -172,10 +179,16 @@ class MemoryMonitor:
             self.console.print(f"   🔧 Process RAM: {snapshot.process_memory_gb:.1f}GB ({snapshot.process_memory_percent:.1f}%)")
 
             if snapshot.gpu_memory_used_gb is not None and snapshot.gpu_memory_total_gb is not None:
-                gpu_percent = snapshot.gpu_memory_percent or 0.0
-                self.console.print(f"   🎮 GPU Memory: {snapshot.gpu_memory_used_gb:.1f}GB / {snapshot.gpu_memory_total_gb:.1f}GB ({gpu_percent:.1f}%)")
-                if snapshot.gpu_memory_reserved_gb:
-                    self.console.print(f"   📦 GPU Reserved: {snapshot.gpu_memory_reserved_gb:.1f}GB")
+                # Calculate percentage based on reserved memory (what PyTorch actually claims)
+                reserved_gb = snapshot.gpu_memory_reserved_gb or snapshot.gpu_memory_used_gb
+                reserved_percent = (reserved_gb / snapshot.gpu_memory_total_gb * 100) if snapshot.gpu_memory_total_gb else 0.0
+                
+                self.console.print(f"   🎮 GPU Reserved: {reserved_gb:.1f}GB / {snapshot.gpu_memory_total_gb:.1f}GB ({reserved_percent:.1f}%)")
+                self.console.print(f"   📊 GPU Allocated: {snapshot.gpu_memory_used_gb:.1f}GB (active tensors)")
+                
+                # V100 Production Warning
+                if reserved_gb > 16.0:
+                    self.console.print(f"   ⚠️  WARNING: Reserved memory ({reserved_gb:.1f}GB) exceeds V100 limit (16GB)", style="bold red")
         else:
             # Compact format
             gpu_info = f", GPU: {snapshot.gpu_memory_used_gb:.1f}GB" if snapshot.gpu_memory_used_gb is not None else ""
