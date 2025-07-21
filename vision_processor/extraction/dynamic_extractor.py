@@ -126,7 +126,7 @@ class DynamicFieldExtractor:
         all_scores = [field_results.get(key, False) for key in field_results.keys()]
         extraction_score = sum(all_scores)
         is_successful = extraction_score >= self.min_fields_for_success
-        
+
         # Debug: Log the final results
         print(f"   Final extraction results: {extraction_score} fields, success: {is_successful}")
         print(f"   Field results: {field_results}")
@@ -214,12 +214,12 @@ class DynamicFieldExtractor:
         synthetic_fields = []
 
         # ALL FIELDS FROM THE PROMPT - check if content suggests these fields exist
-        
+
         # Basic financial fields
         if re.search(r"\$\d+\.\d{2}|\d+\.\d{2}", response):
             synthetic_fields.extend(["TOTAL", "SUBTOTAL", "GST", "AMOUNT"])
 
-        # Date/time fields  
+        # Date/time fields
         if re.search(r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", response):
             synthetic_fields.append("DATE")
         if re.search(r"\b\d{1,2}:\d{2}", response):
@@ -248,11 +248,11 @@ class DynamicFieldExtractor:
         # Payment and document metadata
         if re.search(r"\b(CASH|CARD|EFTPOS|CREDIT|DEBIT)\b", response, re.IGNORECASE):
             synthetic_fields.append("PAYMENT_METHOD")
-        
+
         # Names and status
         if re.search(r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b", response):
             synthetic_fields.append("PAYER_NAME")
-        
+
         # Always include document type for classification
         synthetic_fields.append("DOCUMENT_TYPE")
         synthetic_fields.append("STATUS")

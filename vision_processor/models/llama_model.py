@@ -372,7 +372,7 @@ class LlamaVisionModel(BaseVisionModel):
                 image_name = Path(image_path).name
             else:
                 image_name = "unknown_image"
-            
+
             # Preprocess image
             image = self._preprocess_image(image_path)
 
