@@ -107,7 +107,7 @@ class DynamicFieldExtractor:
             # CRITICAL: Working script counts field as successful if DETECTED, not if value extracted
             field_results[f"has_{field_name.lower()}"] = field_detected
             field_matches[field_name.lower()] = field_match
-            
+
             # Only add to extracted_fields if we have a value (for compatibility)
             if field_detected and field_match:
                 extracted_fields[field_name] = field_match
