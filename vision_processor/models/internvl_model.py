@@ -38,6 +38,13 @@ class InternVLModel(BaseVisionModel):
     - Cross-platform compatibility
     """
 
+    def __init__(self, *args, **kwargs):
+        """Initialize InternVLModel with production config support."""
+        super().__init__(*args, **kwargs)
+
+        # Extract config from kwargs and store as direct attribute
+        self.config = kwargs.get("config")
+
     def _get_capabilities(self) -> ModelCapabilities:
         """Return InternVL capabilities."""
         return ModelCapabilities(

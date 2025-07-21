@@ -43,6 +43,9 @@ class LlamaVisionModel(BaseVisionModel):
         """Initialize LlamaVisionModel with repetition control."""
         super().__init__(*args, **kwargs)
 
+        # Extract config from kwargs and store as direct attribute
+        self.config = kwargs.get("config")
+
         # Initialize ultra-aggressive repetition controller
         # Extract configuration from kwargs
         repetition_config = kwargs.get("repetition_control", {})
