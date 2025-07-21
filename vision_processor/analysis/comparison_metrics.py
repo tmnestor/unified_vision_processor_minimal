@@ -246,10 +246,10 @@ class ComparisonMetrics:
         # Debug: Show what fields we found
         print(f"🔍 Fields detected in {model_name} results: {list(detected_fields)[:10]}...")
 
-        # Calculate metrics for detected fields
-        for field_name in list(detected_fields)[:20]:  # Limit to first 20 to avoid too many calculations
+        # Calculate metrics for ALL detected fields - no artificial limits
+        for field_name in detected_fields:  # Use ALL fields, not just first 20
             metrics = self.calculate_f1_metrics(model_name, field_name)
-            if metrics and metrics.f1_score > 0:  # Only include fields with non-zero F1
+            if metrics:  # Include ALL fields, even zero F1 (honest assessment)
                 field_metrics[field_name] = metrics
 
         return field_metrics
@@ -381,7 +381,8 @@ class ComparisonMetrics:
         compliance_scores = {}
 
         # Define ATO critical fields using dynamic extractor field names
-        ato_critical_fields = ["ABN", "TOTAL", "AMOUNT", "DATE", "STORE", "BUSINESS_NAME"]
+        # REMOVED ARTIFICIAL BIAS: All extracted fields are equally important for information extraction
+        # ato_critical_fields = ["ABN", "TOTAL", "AMOUNT", "DATE", "STORE", "BUSINESS_NAME"]
 
         for model_name, results in self.model_results.items():
             if not results:
@@ -392,22 +393,25 @@ class ComparisonMetrics:
             total_documents = len(results)
 
             for result in results:
-                # Check compliance for this document
+                # Calculate compliance based on ALL extracted fields (no artificial field bias)
                 document_compliance = 0
-                for field in ato_critical_fields:
-                    # Handle dictionary format (what we actually receive)
-                    if isinstance(result, dict):
-                        # Dictionary format - check has_* fields
-                        has_field_key = f"has_{field.lower()}"
-                        if has_field_key in result and result[has_field_key]:
-                            document_compliance += 1  # Field was detected
-                    else:
-                        # Object format (legacy support)
-                        if hasattr(result, 'extracted_fields') and field in result.extracted_fields:
-                            document_compliance += 1
+                total_fields = 0
+                
+                if isinstance(result, dict):
+                    # Count ALL has_* fields that were detected
+                    for key, value in result.items():
+                        if key.startswith("has_"):
+                            total_fields += 1
+                            if value:  # Field was detected
+                                document_compliance += 1
+                else:
+                    # Object format (legacy support) - count all extracted fields
+                    if hasattr(result, 'extracted_fields'):
+                        total_fields = len(result.extracted_fields)
+                        document_compliance = total_fields  # All extracted fields count
 
-                # Compliance score for this document (0-1)
-                document_score = document_compliance / len(ato_critical_fields)
+                # Compliance score for this document (0-1) based on ALL fields
+                document_score = document_compliance / max(total_fields, 1)  # Avoid division by zero
                 total_compliance += document_score
 
             compliance_scores[model_name] = total_compliance / total_documents
@@ -420,18 +424,18 @@ class ComparisonMetrics:
         """Calculate performance on critical fields."""
         critical_field_performance = {}
 
-        # Use the same critical fields as ATO compliance
-        critical_fields = ["ABN", "TOTAL", "AMOUNT", "DATE", "STORE", "BUSINESS_NAME"]
+        # REMOVED ARTIFICIAL BIAS: All fields are critical for information extraction
+        # critical_fields = ["ABN", "TOTAL", "AMOUNT", "DATE", "STORE", "BUSINESS_NAME"]
 
         for model_name, model_metrics in all_f1_scores.items():
-            critical_f1_scores = [
+            # ALL fields are critical - no artificial distinction
+            all_f1_scores_list = [
                 metrics.f1_score
                 for field_name, metrics in model_metrics.items()
-                if field_name in critical_fields
             ]
 
-            if critical_f1_scores:
-                critical_field_performance[model_name] = statistics.mean(critical_f1_scores)
+            if all_f1_scores_list:
+                critical_field_performance[model_name] = statistics.mean(all_f1_scores_list)
             else:
                 critical_field_performance[model_name] = 0.0
 
@@ -617,17 +621,17 @@ class ComparisonMetrics:
                     f"Improve detection rate for: {', '.join(low_recall_fields[:2])}"
                 )
 
-            # ATO compliance specific
-            ato_critical_fields = ["ABN", "TOTAL", "AMOUNT"]
-            weak_ato_fields = [
-                field
-                for field in ato_critical_fields
-                if field in model_metrics and model_metrics[field].f1_score < 0.8
+            # REMOVED ARTIFICIAL ATO BIAS: All fields are equally important for information extraction
+            # Focus on overall weak performance instead of arbitrary "critical" fields
+            very_weak_fields = [
+                field_name
+                for field_name, metrics in model_metrics.items()
+                if metrics.f1_score < 0.3  # Only flag truly poor performance
             ]
 
-            if weak_ato_fields:
+            if very_weak_fields:
                 model_recommendations.append(
-                    f"Critical for ATO compliance: improve {', '.join(weak_ato_fields)}"
+                    f"Focus on very weak fields: improve {', '.join(very_weak_fields[:3])}"
                 )
 
             if not model_recommendations:
@@ -709,19 +713,18 @@ class ComparisonMetrics:
         winner_score = ato_scores[winner]
         winner_metrics = all_f1_scores[winner]
 
-        # Check ATO critical fields
-        ato_critical_fields = ["ABN", "TOTAL", "AMOUNT", "DATE", "STORE", "BUSINESS_NAME"]
-        ato_performance = {}
+        # REMOVED ARTIFICIAL ATO BIAS: Analyze ALL extracted fields equally
+        all_fields_performance = {}
 
-        for field in ato_critical_fields:
-            if field in winner_metrics:
-                ato_performance[field] = winner_metrics[field].f1_score
+        for field, metrics in winner_metrics.items():
+            all_fields_performance[field] = metrics.f1_score
 
-        strong_ato_fields = [field for field, score in ato_performance.items() if score > 0.8]
+        strong_fields = [field for field, score in all_fields_performance.items() if score > 0.8]
+        total_fields = len(all_fields_performance)
 
-        explanation = f"{winner} excels in ATO compliance ({winner_score:.3f}) because it reliably extracts "
-        explanation += f"{len(strong_ato_fields)} of {len(ato_critical_fields)} critical ATO fields including "
-        explanation += f"{', '.join([field.lower() for field in strong_ato_fields[:3]])}."
+        explanation = f"{winner} excels in information extraction ({winner_score:.3f}) because it reliably extracts "
+        explanation += f"{len(strong_fields)} of {total_fields} total fields with high accuracy, including "
+        explanation += f"{', '.join([field.lower() for field in strong_fields[:3]])}."
 
         return explanation
 
