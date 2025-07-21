@@ -162,8 +162,25 @@ class ComparisonMetrics:
         recall = recall_score(y_true, y_pred, zero_division=0)
         f1 = f1_score(y_true, y_pred, zero_division=0)
 
-        # Calculate confusion matrix components
-        tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+        # Calculate confusion matrix components (handle edge cases)
+        try:
+            cm = confusion_matrix(y_true, y_pred)
+            if cm.size == 1:
+                # Only one class present, handle manually
+                if y_true[0] and y_pred[0]:  # True positive case
+                    tn, fp, fn, tp = 0, 0, 0, cm[0, 0]
+                elif not y_true[0] and not y_pred[0]:  # True negative case
+                    tn, fp, fn, tp = cm[0, 0], 0, 0, 0
+                elif y_true[0] and not y_pred[0]:  # False negative case
+                    tn, fp, fn, tp = 0, 0, cm[0, 0], 0
+                else:  # False positive case
+                    tn, fp, fn, tp = 0, cm[0, 0], 0, 0
+            else:
+                tn, fp, fn, tp = cm.ravel()
+        except ValueError as e:
+            print(f"⚠️  Confusion matrix error for {field_name}: {e}")
+            tn, fp, fn, tp = 0, 0, 0, 0
+
         support = sum(y_true)
 
         return F1Metrics(

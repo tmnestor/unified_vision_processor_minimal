@@ -203,21 +203,13 @@ class LlamaVisionModel(BaseVisionModel):
             self.model.generation_config.max_new_tokens = 1024  # Use max_new_tokens instead of max_length
             self.model.generation_config.do_sample = False  # Deterministic for consistency
 
-            # Completely remove sampling parameters to avoid warnings when do_sample=False
-            # These parameters are not needed for deterministic generation
-            try:
-                # Remove the problematic parameters that cause warnings
-                if hasattr(self.model.generation_config, "temperature"):
-                    delattr(self.model.generation_config, "temperature")
-                if hasattr(self.model.generation_config, "top_p"):
-                    delattr(self.model.generation_config, "top_p")
-                if hasattr(self.model.generation_config, "top_k"):
-                    delattr(self.model.generation_config, "top_k")
+            # Set sampling parameters to None to suppress warnings (working approach)
+            self.model.generation_config.temperature = None
+            self.model.generation_config.top_p = None
+            self.model.generation_config.top_k = None
 
-                logger.info("Removed sampling parameters from generation config")
-            except Exception as e:
-                logger.warning(f"Could not remove sampling parameters: {e}")
             self.model.config.use_cache = True  # Enable KV cache
+            logger.info("Configured generation settings for deterministic inference")
 
             # Store metadata for inference
             self.model._llama_config = {
@@ -395,6 +387,9 @@ class LlamaVisionModel(BaseVisionModel):
                 **inputs,
                 "max_new_tokens": max_tokens,
                 "do_sample": False,  # Deterministic generation bypasses safety checks
+                "temperature": None,  # Explicitly disable to suppress warnings
+                "top_p": None,  # Explicitly disable to suppress warnings
+                "top_k": None,  # Explicitly disable to suppress warnings
                 "pad_token_id": self.processor.tokenizer.eos_token_id,
                 "eos_token_id": self.processor.tokenizer.eos_token_id,
                 "use_cache": True,
@@ -641,6 +636,9 @@ Output document type only."""
                 **inputs,
                 "max_new_tokens": max_tokens,
                 "do_sample": False,
+                "temperature": None,  # Explicitly disable to suppress warnings
+                "top_p": None,  # Explicitly disable to suppress warnings
+                "top_k": None,  # Explicitly disable to suppress warnings
                 "pad_token_id": self.processor.tokenizer.eos_token_id,
                 "eos_token_id": self.processor.tokenizer.eos_token_id,
                 "use_cache": True,

@@ -72,12 +72,13 @@ class RepetitionController:
 
         return False
 
-    def clean_response(self, response: str) -> str:
+    def clean_response(self, response: str, image_name: str = "") -> str:
         """
         Clean repetitive patterns from response text.
 
         Args:
             response: Raw model response
+            image_name: Name of the image being processed (for debugging)
 
         Returns:
             Cleaned response with repetition removed
@@ -158,6 +159,10 @@ class UltraAggressiveRepetitionController(RepetitionController):
         """
         super().__init__(word_threshold, phrase_threshold)
 
+        # Initialize AWK processor
+        self.awk_processor = None
+        self._init_awk_processor()
+
         # Known problematic patterns from Llama-3.2-Vision
         self.toxic_patterns = [
             r"THANK YOU FOR SHOPPING WITH US",
@@ -166,6 +171,30 @@ class UltraAggressiveRepetitionController(RepetitionController):
             r"\(\s*\)",  # Empty parentheses
             r"[.-]\s*THANK YOU",  # Dash/period before thank you
         ]
+
+    def _init_awk_processor(self):
+        """Initialize AWK processor for sophisticated markdown processing."""
+        try:
+            # Import AWK processor (defer import to avoid circular dependencies)
+            import sys
+            from pathlib import Path
+
+            # Add the root directory to path to import awk_markdown_processor
+            root_dir = Path(__file__).parent.parent.parent
+            sys.path.insert(0, str(root_dir))
+
+            from awk_markdown_processor import AWKMarkdownProcessor
+
+            # Try to initialize with config file
+            config_path = root_dir / "markdown_processing_config.yaml"
+            if config_path.exists():
+                self.awk_processor = AWKMarkdownProcessor(str(config_path))
+                print("✅ AWK processor initialized successfully")
+            else:
+                print(f"⚠️  AWK config not found: {config_path}")
+        except Exception as e:
+            print(f"⚠️  Failed to initialize AWK processor: {e}")
+            self.awk_processor = None
 
     def detect_repetitive_generation(self, text: str, min_words: int = 3) -> bool:
         """Ultra-sensitive repetition detection."""
@@ -234,12 +263,31 @@ class UltraAggressiveRepetitionController(RepetitionController):
 
         return False
 
-    def clean_response(self, response: str) -> str:
-        """Ultra-aggressive cleaning with early truncation."""
+    def clean_response(self, response: str, image_name: str = "") -> str:
+        """Ultra-aggressive cleaning with AWK processing and competitive strategy."""
         if not response or len(response.strip()) == 0:
             return ""
 
         original_length = len(response)
+
+        # Use competitive processing: try both AWK and original, choose the better result
+        if self.awk_processor:
+            try:
+                # Try AWK processing
+                awk_result = self.awk_processor.process(response, image_name)
+
+                # Try original processing
+                original_response = self._fallback_to_original_conversion(response, image_name)
+
+                # Choose the better result based on success and field count
+                if self._should_use_awk_result(awk_result, original_response, image_name):
+                    return awk_result.processed_text
+                else:
+                    return original_response
+            except Exception as e:
+                print(f"⚠️  AWK processing failed for {image_name}: {e}")
+                # Fall back to original processing
+                pass
 
         # Step 1: Early truncation at first major repetition
         response = self._early_truncate_at_repetition(response)
@@ -415,3 +463,45 @@ class UltraAggressiveRepetitionController(RepetitionController):
                 return truncated + "..."
 
         return text
+
+    def _fallback_to_original_conversion(self, response: str, image_name: str = "") -> str:
+        """Apply original cleaning strategy for comparison."""
+        # Step 1: Early truncation at first major repetition
+        response = self._early_truncate_at_repetition(response)
+
+        # Step 2: Remove toxic patterns aggressively
+        response = self._remove_toxic_patterns(response)
+
+        # Step 3: Remove safety warnings
+        response = self._remove_safety_warnings(response)
+
+        # Step 4: Clean repetitive content
+        response = self._remove_repetitive_content(response)
+
+        # Step 5: Final cleanup
+        response = self._final_cleanup(response)
+
+        return response.strip()
+
+    def _should_use_awk_result(self, awk_result, original_response: str, image_name: str = "") -> bool:
+        """Determine if AWK result is better than original processing."""
+        if not awk_result or not awk_result.success:
+            return False
+
+        # Count fields in AWK result
+        awk_field_count = len(awk_result.extracted_fields)
+
+        # Count fields in original response (basic heuristic)
+        original_field_count = len(
+            [line for line in original_response.split("\n") if ":" in line and len(line.strip()) > 0]
+        )
+
+        # Use AWK if it has significantly more fields or high confidence
+        if awk_field_count > original_field_count * 1.5:  # AWK much better
+            return True
+        elif awk_result.confidence_score >= 0.9:  # High confidence AWK
+            return True
+        elif awk_field_count >= original_field_count and awk_result.confidence_score >= 0.8:
+            return True
+
+        return False
