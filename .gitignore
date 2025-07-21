@@ -75,7 +75,6 @@ docs/_build/
 datasets_old/*
 # Archive for legacy code and directories
 archive/*
-
 # Claude Code related files
 CLAUDE.md
 *claude*
