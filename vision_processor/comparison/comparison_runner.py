@@ -520,13 +520,38 @@ class ComparisonRunner:
 
             self.console.print(f"   {model_name}: {success_rate:.1%} success, {exec_time:.1f}s total")
 
-        # Best performers
-        if self.results.comparison_metrics and self.results.comparison_metrics["summary"]:
-            best_performers = self.results.comparison_metrics["summary"].get("best_performers", {})
+        # Best performers with detailed explanations
+        if self.results.comparison_metrics and self.results.comparison_metrics.get("summary"):
+            summary = self.results.comparison_metrics["summary"]
+            best_performers = summary.get("best_performers", {})
+            performance_explanations = summary.get("performance_explanations", {})
+            
+            # Debug: Check what we have
+            print(f"🔍 Summary keys available: {list(summary.keys())}")
+            print(f"🔍 Performance explanations available: {len(performance_explanations) if performance_explanations else 0}")
+            
             if best_performers:
                 self.console.print("\n🥇 Best Performers:")
                 for metric, model in best_performers.items():
                     self.console.print(f"   {metric}: {model}")
+                
+                # Add detailed explanations if available
+                if performance_explanations:
+                    self.console.print("\n📊 Detailed Performance Explanations:")
+                    self.console.print("-" * 50)
+                    
+                    for category, details in performance_explanations.items():
+                        category_display = category.replace('_', ' ').title()
+                        self.console.print(f"\n🎯 [bold]{category_display}[/bold]:")
+                        self.console.print(f"   [green]Winner[/green]: {details['winner']} ([cyan]Score: {details['score']}[/cyan])")
+                        self.console.print(f"   [yellow]Why[/yellow]: {details['explanation']}")
+                        
+            # Processing time details if available
+            processing_times = self.results.comparison_metrics["summary"].get("processing_times", {})
+            if processing_times and "average_per_image" in processing_times:
+                self.console.print("\n⏱️  Processing Speed Comparison:")
+                for model, time_str in processing_times["average_per_image"].items():
+                    self.console.print(f"   {model}: {time_str} per image")
 
     def get_results(self) -> Optional[ComparisonResults]:
         """Get comparison results.
