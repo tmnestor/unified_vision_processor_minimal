@@ -95,11 +95,20 @@ class LlamaVisionModel(BaseVisionModel):
         # Store device manager for later use
         self.device_manager = device_manager
 
-        # Enable TF32 for GPU optimization on compatible hardware
+        # Force single GPU for fair V100 production comparison
         if device.type == "cuda":
+            # Force single GPU mode to match V100 production constraints
+            # This ensures fair comparison with InternVL model that's V100-optimized
+            available_gpus = torch.cuda.device_count()
+            self.num_gpus = 1  # Force single GPU regardless of available GPUs
+            logger.info(f"🔧 V100 Production Mode: Using 1 GPU (detected {available_gpus} available)")
+
+            # Enable TF32 for GPU optimization on compatible hardware
             torch.backends.cuda.matmul.allow_tf32 = True
             torch.backends.cudnn.allow_tf32 = True
             logger.info("TF32 enabled for GPU optimization")
+        else:
+            self.num_gpus = 0
 
         return device
 
@@ -109,13 +118,27 @@ class LlamaVisionModel(BaseVisionModel):
             return None
 
         try:
-            # Use int8 quantization for production V100 deployment
-            return BitsAndBytesConfig(
-                load_in_8bit=True,
-                llm_int8_enable_fp32_cpu_offload=True,
-                llm_int8_skip_modules=["vision_tower", "multi_modal_projector"],
-                llm_int8_threshold=6.0,
-            )
+            # Check if aggressive quantization is requested for V100 safety
+            use_4bit = getattr(self, "kwargs", {}).get("aggressive_quantization", False)
+
+            if use_4bit:
+                # Use 4-bit quantization for 11B model V100 deployment
+                logger.info("🔧 Using 4-bit quantization for aggressive memory reduction")
+                return BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_use_double_quant=True,
+                )
+            else:
+                # Use int8 quantization for standard V100 deployment
+                logger.info("🔧 Using 8-bit quantization for V100 deployment")
+                return BitsAndBytesConfig(
+                    load_in_8bit=True,
+                    llm_int8_enable_fp32_cpu_offload=True,
+                    llm_int8_skip_modules=["vision_tower", "multi_modal_projector"],
+                    llm_int8_threshold=6.0,
+                )
         except ImportError:
             logger.warning("BitsAndBytesConfig not available - falling back to FP16")
             return None
@@ -176,6 +199,60 @@ class LlamaVisionModel(BaseVisionModel):
             return "mps"
         return "cpu"
 
+    def _estimate_memory_usage(self, quantization_config: BitsAndBytesConfig | None) -> float:
+        """Estimate model memory usage in GB for V100 validation."""
+        # Base model size: Llama-3.2-11B ≈ 11B parameters
+        base_params = 11_000_000_000  # 11B parameters
+
+        if quantization_config:
+            if hasattr(quantization_config, "load_in_4bit") and quantization_config.load_in_4bit:
+                # 4-bit quantization: ~0.5 bytes per parameter
+                memory_gb = (base_params * 0.5) / (1024**3)
+                overhead = 1.5  # Quantization overhead
+                return memory_gb * overhead
+            elif hasattr(quantization_config, "load_in_8bit") and quantization_config.load_in_8bit:
+                # 8-bit quantization: ~1 byte per parameter
+                memory_gb = (base_params * 1.0) / (1024**3)
+                overhead = 1.3  # Quantization overhead
+                return memory_gb * overhead
+
+        # FP16: 2 bytes per parameter
+        memory_gb = (base_params * 2.0) / (1024**3)
+        overhead = 1.2  # Model overhead
+        return memory_gb * overhead
+
+    def _validate_v100_compliance(self, estimated_memory_gb: float) -> None:
+        """Validate that estimated memory usage complies with V100 limits."""
+        v100_limit_gb = 16.0
+        safety_margin = 0.85  # Use 85% of available memory for safety
+        effective_limit = v100_limit_gb * safety_margin
+
+        if estimated_memory_gb > effective_limit:
+            logger.error("❌ V100 COMPLIANCE FAILURE:")
+            logger.error(f"   Estimated memory: {estimated_memory_gb:.1f}GB")
+            logger.error(f"   V100 safe limit: {effective_limit:.1f}GB (85% of 16GB)")
+            logger.error(f"   Excess: {estimated_memory_gb - effective_limit:.1f}GB")
+            logger.error("")
+            logger.error("💡 SOLUTIONS:")
+            if not self.enable_quantization:
+                logger.error("   1. Enable quantization (set quantization=true)")
+            else:
+                use_4bit = getattr(self, "kwargs", {}).get("aggressive_quantization", False)
+                if not use_4bit:
+                    logger.error("   1. Enable aggressive 4-bit quantization")
+                    logger.error("   2. Use smaller model variant (e.g., 7B instead of 11B)")
+                else:
+                    logger.error("   1. Use smaller model variant (e.g., 7B instead of 11B)")
+
+            raise RuntimeError(
+                f"Model memory ({estimated_memory_gb:.1f}GB) exceeds V100 safe limit ({effective_limit:.1f}GB)"
+            )
+        else:
+            safety_percent = (effective_limit - estimated_memory_gb) / effective_limit * 100
+            logger.info(
+                f"✅ V100 Compliance: {estimated_memory_gb:.1f}GB / {v100_limit_gb:.1f}GB ({safety_percent:.1f}% safety margin)"
+            )
+
     def load_model(self) -> None:
         """Load Llama-3.2-Vision model with auto-configuration."""
         if self.is_loaded:
@@ -196,6 +273,10 @@ class LlamaVisionModel(BaseVisionModel):
 
         logger.info(f"🔧 V100 Mode: Using device configuration: {device_map}")
 
+        # V100 compliance validation
+        estimated_memory = self._estimate_memory_usage(quantization_config)
+        self._validate_v100_compliance(estimated_memory)
+
         # Configure loading parameters
         model_loading_args = {
             "low_cpu_mem_usage": True,
@@ -211,16 +292,24 @@ class LlamaVisionModel(BaseVisionModel):
         if self.device.type == "cpu":
             model_loading_args["device_map"] = None
             logger.info("Loading model on CPU (will be slow)...")
-        elif torch.cuda.device_count() == 1:
+        elif self.num_gpus == 1:
             model_loading_args["device_map"] = device_map
+
+            # Add quantization configuration if enabled
             if quantization_config:
                 model_loading_args["quantization_config"] = quantization_config
-                logger.info("Loading model on single GPU with quantization...")
+                use_4bit = getattr(self, "kwargs", {}).get("aggressive_quantization", False)
+                quant_type = "4-bit" if use_4bit else "8-bit"
+                logger.info(
+                    f"🔧 V100 Mode: Loading 11B model on single GPU with {quant_type} quantization..."
+                )
             else:
-                logger.info("Loading model on single GPU...")
-        else:  # Multi-GPU
+                logger.info("🔧 V100 Mode: Loading model on single GPU without quantization...")
+                logger.warning("⚠️  No quantization - 11B model may exceed V100 16GB limit")
+        else:  # Multi-GPU (should not happen in V100 production mode)
+            logger.warning(f"Multi-GPU mode detected ({self.num_gpus} GPUs) - this may exceed V100 limits")
             model_loading_args["device_map"] = device_map
-            logger.info(f"Loading model across {torch.cuda.device_count()} GPUs...")
+            logger.info(f"Loading model across {self.num_gpus} GPUs...")
 
         try:
             # Load processor first
