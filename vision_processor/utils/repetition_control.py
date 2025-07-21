@@ -522,7 +522,7 @@ class UltraAggressiveRepetitionController(RepetitionController):
         field_pattern = r"([A-Z_]+):\s*"
         detected_fields = list(set(re.findall(field_pattern, original_response)))
         original_field_count = len(detected_fields)
-        
+
         # If no structured fields, try raw markdown content detection
         if original_field_count == 0:
             # Count content indicators like ABN patterns, currency amounts, etc.
@@ -537,7 +537,7 @@ class UltraAggressiveRepetitionController(RepetitionController):
                 content_score += 1  # Date patterns
             if re.search(r"\b\d{4,}\b", original_response):
                 content_score += 1  # Potential receipt numbers
-            
+
             # Convert content score to estimated field count (similar to DynamicExtractor logic)
             original_field_count = min(content_score, 5)  # Cap at reasonable number
 
