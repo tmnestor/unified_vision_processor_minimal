@@ -204,6 +204,20 @@ class DynamicFieldExtractor:
             rf'{field_name}:\s*([^\n]+)',                                # Exact field name
             rf'{field_name.lower()}:\s*([^\n]+)',                        # Lowercase field name
         ]
+        
+        # Add specialized patterns for banking fields
+        if field_name.upper() == "BSB":
+            patterns.extend([
+                r'BSB[:\s]*(\d{3}-?\d{3})',  # BSB: XXX-XXX or XXXXXX
+                r'Branch[:\s]*(\d{3}-?\d{3})',  # Branch: XXX-XXX
+                r'Sort[:\s]*Code[:\s]*(\d{3}-?\d{3})',  # Sort Code: XXX-XXX
+            ])
+        elif field_name.upper() in ["ACCOUNT_NUMBER", "ACCOUNT"]:
+            patterns.extend([
+                r'Account[:\s]*Number[:\s]*(\d{6,12})',  # Account Number: XXXXXXXXX
+                r'Account[:\s]*(\d{6,12})',  # Account: XXXXXXXXX
+                r'Acc[:\s]*No[:\s]*(\d{6,12})',  # Acc No: XXXXXXXXX
+            ])
 
         for pattern in patterns:
             match = re.search(pattern, response, re.IGNORECASE)
@@ -243,6 +257,12 @@ class DynamicFieldExtractor:
             synthetic_fields.append("DATE")
         if re.search(r"\b\d{4,}\b", response):
             synthetic_fields.append("RECEIPT_NUMBER")
+        
+        # Enhanced: Add BSB and ACCOUNT_NUMBER detection for bank documents
+        if re.search(r"\b\d{3}-?\d{3}\b", response) or re.search(r"\bBSB\b", response, re.IGNORECASE):
+            synthetic_fields.append("BSB")
+        if re.search(r"\bACCOUNT.*NUMBER\b|\bACCOUNT[:\s]*\d{6,12}\b", response, re.IGNORECASE):
+            synthetic_fields.append("ACCOUNT_NUMBER")
 
         return synthetic_fields
 
@@ -305,5 +325,36 @@ class DynamicFieldExtractor:
             match = re.search(r"\b(\d{4,})\b", response)
             if match:
                 return True, match.group(1)
+
+        elif field_name_upper == "BSB":
+            # Look for Australian BSB patterns (XXX-XXX or XXXXXX)
+            bsb_patterns = [
+                r"\b(\d{3}-\d{3})\b",  # Standard XXX-XXX format
+                r"\bBSB[:\s]*(\d{3}-\d{3})\b",  # BSB: XXX-XXX
+                r"\bBSB[:\s]*(\d{6})\b",  # BSB: XXXXXX (no dash)
+                r"\b(\d{6})\b(?=.*account)",  # 6 digits near "account" word
+            ]
+            for pattern in bsb_patterns:
+                match = re.search(pattern, response, re.IGNORECASE)
+                if match:
+                    bsb_digits = re.sub(r"\D", "", match.group(1))
+                    if len(bsb_digits) == 6:
+                        return True, f"{bsb_digits[:3]}-{bsb_digits[3:6]}"
+            
+        elif field_name_upper in ["ACCOUNT_NUMBER", "ACCOUNT"]:
+            # Look for Australian bank account numbers (typically 6-12 digits)
+            account_patterns = [
+                r"\bACCOUNT[:\s]*NUMBER[:\s]*(\d{6,12})\b",  # Account Number: XXXXXXXXX
+                r"\bACCOUNT[:\s]*(\d{6,12})\b",  # Account: XXXXXXXXX
+                r"\b(\d{6,12})\b(?=.*BSB)",  # Account number near BSB
+                r"\bACC[:\s]*(\d{6,12})\b",  # Acc: XXXXXXXXX
+            ]
+            for pattern in account_patterns:
+                match = re.search(pattern, response, re.IGNORECASE)
+                if match:
+                    account_num = match.group(1)
+                    # Validate it's a reasonable account number length
+                    if 6 <= len(account_num) <= 12:
+                        return True, account_num
 
         return False, None
