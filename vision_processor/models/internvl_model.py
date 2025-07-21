@@ -15,7 +15,7 @@ import torch
 import torchvision.transforms as T
 from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer, BitsAndBytesConfig
 
 from .base_model import BaseVisionModel, DeviceConfig, ModelCapabilities, ModelResponse
 from .model_utils import DeviceManager
@@ -128,6 +128,23 @@ class InternVLModel(BaseVisionModel):
 
         return device_map
 
+    def _get_quantization_config(self) -> BitsAndBytesConfig | None:
+        """Get quantization configuration if enabled."""
+        if not self.enable_quantization:
+            return None
+
+        try:
+            # Use int8 quantization for production V100 deployment
+            return BitsAndBytesConfig(
+                load_in_8bit=True,
+                llm_int8_enable_fp32_cpu_offload=True,
+                llm_int8_skip_modules=["vision_tower", "multi_modal_projector"],
+                llm_int8_threshold=6.0,
+            )
+        except ImportError:
+            logger.warning("BitsAndBytesConfig not available - falling back to FP16")
+            return None
+
     def _split_model(self, model_name: str) -> dict[str, int]:
         """Create device mapping for multi-GPU configuration.
         Based on the model architecture, distributes layers across available GPUs.
@@ -221,19 +238,11 @@ class InternVLModel(BaseVisionModel):
             model_loading_args["device_map"] = device_map
             logger.info(f"🔧 V100 Mode: Using YAML device configuration: {device_map}")
 
-            if self.enable_quantization:
-                # Check if bitsandbytes is available
-                try:
-                    import bitsandbytes  # noqa: F401
-
-                    model_loading_args["load_in_8bit"] = True
-                    logger.info(
-                        "🔧 V100 Mode: Loading model on single GPU with 8-bit quantization...",
-                    )
-                except ImportError:
-                    logger.warning(
-                        "bitsandbytes not available, loading without quantization",
-                    )
+            # Add quantization configuration if enabled
+            quantization_config = self._get_quantization_config()
+            if quantization_config:
+                model_loading_args["quantization_config"] = quantization_config
+                logger.info("🔧 V100 Mode: Loading model on single GPU with 8-bit quantization...")
             else:
                 logger.info("🔧 V100 Mode: Loading model on single GPU...")
         elif hasattr(self, "kwargs") and self.kwargs.get("force_multi_gpu", False):
@@ -255,9 +264,15 @@ class InternVLModel(BaseVisionModel):
                 "Loading model on single GPU (GPU 0) with device_map override...",
             )
 
-        # Add flash attention if requested
-        if hasattr(self, "kwargs") and self.kwargs.get("use_flash_attention", True):
-            model_loading_args["use_flash_attn"] = True
+        # Add flash attention if requested and available
+        if hasattr(self, "kwargs") and self.kwargs.get("use_flash_attention", False):
+            try:
+                # Only enable if flash_attn is available
+                import flash_attn  # noqa: F401
+                model_loading_args["use_flash_attn"] = True
+                logger.info("🔧 Flash Attention enabled")
+            except ImportError:
+                logger.info("🔧 Flash Attention not available - using standard attention")
 
         try:
             # Load tokenizer
@@ -281,11 +296,11 @@ class InternVLModel(BaseVisionModel):
             if (
                 self.device.type == "cuda"
                 and "device_map" not in model_loading_args
-                and not model_loading_args.get("load_in_8bit", False)
+                and "quantization_config" not in model_loading_args
             ):
                 self.model = self.model.cuda()
                 logger.info("Model moved to CUDA device")
-            elif model_loading_args.get("load_in_8bit", False):
+            elif "quantization_config" in model_loading_args:
                 logger.info("Quantized model - device placement handled automatically")
 
             self.is_loaded = True
