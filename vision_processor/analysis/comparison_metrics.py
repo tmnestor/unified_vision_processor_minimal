@@ -139,7 +139,8 @@ class ComparisonMetrics:
         y_pred = []
 
         for result in results:
-            image_name = result.image_name
+            # Handle both dictionary and object formats
+            image_name = result.get("image_name") if isinstance(result, dict) else result.image_name
 
             # Get ground truth for this image/field combination
             if image_name in self.ground_truth and field_name in self.ground_truth[image_name]:

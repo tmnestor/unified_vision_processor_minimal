@@ -326,7 +326,7 @@ class PerformanceAnalyzer:
                     # Handle object format
                     row = {
                         "model": model_name,
-                        "image": result.image_name,
+                        "image": result.get("image_name") if isinstance(result, dict) else result.image_name,
                         "inference_time": result.extraction_time,
                         "field_count": result.field_count,
                         "is_successful": result.is_successful,

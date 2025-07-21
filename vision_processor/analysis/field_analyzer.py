@@ -73,15 +73,15 @@ class FieldAnalyzer:
 
     def __init__(self):
         """Initialize field analyzer."""
-        self.model_results: Dict[str, List[ExtractionResult]] = {}
+        self.model_results: Dict[str, List[Any]] = {}
         self.production_schema = PRODUCTION_SCHEMA
 
-    def add_results(self, model_name: str, results: List[ExtractionResult]):
+    def add_results(self, model_name: str, results: List[Any]):
         """Add extraction results for a model.
 
         Args:
             model_name: Name of the model
-            results: List of extraction results
+            results: List of extraction results (can be ExtractionResult objects or dictionaries)
         """
         self.model_results[model_name] = results
 
