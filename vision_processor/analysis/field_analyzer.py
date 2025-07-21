@@ -13,7 +13,6 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import pandas as pd
 
 from ..config.production_schema import PRODUCTION_SCHEMA, FieldCategory, FieldType
-from ..extraction.production_extractor import ExtractionResult
 
 
 @dataclass
