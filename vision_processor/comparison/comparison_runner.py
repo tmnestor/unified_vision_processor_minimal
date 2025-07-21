@@ -252,12 +252,21 @@ class ComparisonRunner:
                 self.console.print(f"❌ No model path configured for: {model_name}")
                 continue
 
-            # Validate model
-            if self.model_validator.validate_model_loading(model_name, model_path, self.config.processing):
+            # V100 COMPATIBLE: Skip heavy validation to avoid loading both models simultaneously
+            # Just do basic path and registration validation
+            try:
+                # Check if path exists and is accessible
+                model_path_obj = Path(model_path)
+                if not model_path_obj.exists():
+                    self.console.print(f"❌ Model path does not exist: {model_path}")
+                    continue
+                
+                # Basic registration check already passed above
                 valid_models.append(model_name)
-                self.console.print(f"✅ {model_name} validation passed")
-            else:
-                self.console.print(f"❌ {model_name} validation failed")
+                self.console.print(f"✅ {model_name} validation passed (V100 lightweight mode)")
+                
+            except Exception as e:
+                self.console.print(f"❌ {model_name} validation failed: {e}")
 
         self.console.print(f"\n📋 Valid models: {valid_models}")
         return valid_models
