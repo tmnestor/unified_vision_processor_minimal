@@ -245,7 +245,7 @@ class UltraAggressiveRepetitionController(RepetitionController):
         words = text.split()
         if len(words) < 12:  # Need substantial content for balanced check
             return False
-        
+
         # Check for 4+ word phrases repeated 3+ times (more restrictive)
         for i in range(len(words) - 12):  # Need at least 12 words for 4+4+4
             phrase = " ".join(words[i : i + 4]).lower()
