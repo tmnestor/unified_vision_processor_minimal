@@ -106,53 +106,86 @@ class PerformanceAnalyzer:
         if not results:
             return None
 
-        # Time metrics
-        inference_times = [r.extraction_time for r in results]
+        # Time metrics - handle both dict and object formats
+        inference_times = []
+        successful_results = []
+        field_counts = []
+        confidence_scores = []
+        core_field_counts = []
+        required_field_counts = []
 
-        # Success metrics
-        successful_results = [r for r in results if r.is_successful]
+        for r in results:
+            if isinstance(r, dict):
+                # Dictionary format from conversion
+                inference_times.append(r.get("extraction_time", 0))
+                if r.get("successful", False):
+                    successful_results.append(r)
+                field_counts.append(r.get("field_count", 0))
+                confidence_scores.append(r.get("confidence_score", 0))
+                # For dict format, we don't have core/required field breakdown
+                core_field_counts.append(0)
+                required_field_counts.append(0)
+            else:
+                # Object format
+                inference_times.append(r.extraction_time)
+                if r.is_successful:
+                    successful_results.append(r)
+                field_counts.append(r.field_count)
+                confidence_scores.append(r.confidence_score)
+                core_field_counts.append(len(r.core_fields_found))
+                required_field_counts.append(len(r.required_fields_found))
 
-        # Field metrics
-        field_counts = [r.field_count for r in results]
-        confidence_scores = [r.confidence_score for r in results]
+        # Calculate core fields detection rate - simplified for dict format
+        core_fields_detection_rate = 0.0
+        required_fields_detection_rate = 0.0
 
-        # Core and required field metrics
-        core_field_counts = [len(r.core_fields_found) for r in results]
-        required_field_counts = [len(r.required_fields_found) for r in results]
+        # For object format, calculate properly
+        if results and not isinstance(results[0], dict):
+            total_possible_core_fields = sum(
+                len(r.core_fields_found) + len(r.missing_core_fields) for r in results
+            )
+            core_fields_found = sum(len(r.core_fields_found) for r in results)
+            core_fields_detection_rate = (
+                core_fields_found / total_possible_core_fields if total_possible_core_fields > 0 else 0
+            )
 
-        # Calculate core fields detection rate
-        total_possible_core_fields = sum(
-            len(r.core_fields_found) + len(r.missing_core_fields) for r in results
-        )
-        core_fields_found = sum(len(r.core_fields_found) for r in results)
-        core_fields_detection_rate = (
-            core_fields_found / total_possible_core_fields if total_possible_core_fields > 0 else 0
-        )
+            total_possible_required_fields = sum(
+                len(r.required_fields_found) + len(r.missing_required_fields) for r in results
+            )
+            required_fields_found = sum(len(r.required_fields_found) for r in results)
+            required_fields_detection_rate = (
+                required_fields_found / total_possible_required_fields
+                if total_possible_required_fields > 0
+                else 0
+            )
 
-        # Calculate required fields detection rate
-        total_possible_required_fields = sum(
-            len(r.required_fields_found) + len(r.missing_required_fields) for r in results
-        )
-        required_fields_found = sum(len(r.required_fields_found) for r in results)
-        required_fields_detection_rate = (
-            required_fields_found / total_possible_required_fields
-            if total_possible_required_fields > 0
-            else 0
-        )
-
-        # Output quality metrics
-        structured_outputs = sum(1 for r in results if r.has_structured_output)
-        fallback_usages = sum(1 for r in results if r.raw_markdown_fallback_used)
+        # Output quality metrics - handle both dict and object formats
+        structured_outputs = 0
+        fallback_usages = 0
+        for r in results:
+            if isinstance(r, dict):
+                if r.get("is_structured", False):
+                    structured_outputs += 1
+                # Dict format doesn't track fallback usage
+            else:
+                if r.has_structured_output:
+                    structured_outputs += 1
+                if r.raw_markdown_fallback_used:
+                    fallback_usages += 1
 
         # Confidence categorization
         high_confidence = sum(1 for score in confidence_scores if score > 0.8)
         low_confidence = sum(1 for score in confidence_scores if score < 0.4)
 
-        # Processing notes summary
+        # Processing notes summary - handle both dict and object formats
         processing_notes_summary = {}
         for result in results:
-            for note in result.processing_notes:
-                processing_notes_summary[note] = processing_notes_summary.get(note, 0) + 1
+            if isinstance(result, dict):
+                # Dict format doesn't have processing notes
+                continue
+            else:
+                for note in result.processing_notes:
+                    processing_notes_summary[note] = processing_notes_summary.get(note, 0) + 1
 
         return ModelPerformanceMetrics(
             model_name=model_name,
@@ -274,23 +307,41 @@ class PerformanceAnalyzer:
 
         for model_name, results in self.model_results.items():
             for result in results:
-                row = {
-                    "model": model_name,
-                    "image": result.image_name,
-                    "inference_time": result.extraction_time,
-                    "field_count": result.field_count,
-                    "is_successful": result.is_successful,
-                    "confidence_score": result.confidence_score,
-                    "core_fields_found": len(result.core_fields_found),
-                    "required_fields_found": len(result.required_fields_found),
-                    "has_structured_output": result.has_structured_output,
-                    "fallback_used": result.raw_markdown_fallback_used,
-                    "categories_count": len(result.fields_by_category),
-                }
+                if isinstance(result, dict):
+                    # Handle dictionary format
+                    row = {
+                        "model": model_name,
+                        "image": result.get("image_name", ""),
+                        "inference_time": result.get("extraction_time", 0),
+                        "field_count": result.get("field_count", 0),
+                        "is_successful": result.get("successful", False),
+                        "confidence_score": result.get("confidence_score", 0),
+                        "core_fields_found": 0,  # Not available in dict format
+                        "required_fields_found": 0,  # Not available in dict format
+                        "has_structured_output": result.get("is_structured", False),
+                        "fallback_used": False,  # Not available in dict format
+                        "categories_count": 0,  # Not available in dict format
+                    }
+                else:
+                    # Handle object format
+                    row = {
+                        "model": model_name,
+                        "image": result.image_name,
+                        "inference_time": result.extraction_time,
+                        "field_count": result.field_count,
+                        "is_successful": result.is_successful,
+                        "confidence_score": result.confidence_score,
+                        "core_fields_found": len(result.core_fields_found),
+                        "required_fields_found": len(result.required_fields_found),
+                        "has_structured_output": result.has_structured_output,
+                        "fallback_used": result.raw_markdown_fallback_used,
+                        "categories_count": len(result.fields_by_category),
+                    }
 
-                # Add category-specific field counts
-                for category, fields in result.fields_by_category.items():
-                    row[f"{category}_fields"] = len(fields)
+                # Add category-specific field counts - only for object format
+                if not isinstance(result, dict):
+                    for category, fields in result.fields_by_category.items():
+                        row[f"{category}_fields"] = len(fields)
 
                 all_data.append(row)
 
