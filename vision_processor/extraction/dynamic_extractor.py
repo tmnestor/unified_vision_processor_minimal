@@ -157,16 +157,16 @@ class DynamicFieldExtractor:
         # Find all "FIELD:" patterns in the response
         field_pattern = r"([A-Z_]+):\s*"
         matches = re.findall(field_pattern, response)
-        
+
         # Additional pattern matching to catch more field variations (enhance detection)
         # Look for mixed case field patterns too
         additional_pattern = r"([A-Z][a-z_]*[A-Z_]*):\s*"
         additional_matches = re.findall(additional_pattern, response)
-        
+
         # Convert additional matches to uppercase and combine
         additional_matches_upper = [match.upper() for match in additional_matches]
         all_matches = matches + additional_matches_upper
-        
+
         return list(set(all_matches))  # Remove duplicates (EXACT WORKING SCRIPT)
 
     def _has_valid_keyvalue_pairs(self, text: str) -> bool:
@@ -204,7 +204,7 @@ class DynamicFieldExtractor:
             rf'{field_name}:\s*([^\n]+)',                                # Exact field name
             rf'{field_name.lower()}:\s*([^\n]+)',                        # Lowercase field name
         ]
-        
+
         for pattern in patterns:
             match = re.search(pattern, response, re.IGNORECASE)
             if match:
@@ -212,7 +212,7 @@ class DynamicFieldExtractor:
                 # More lenient validation - accept more values as valid
                 if value and len(value) > 0 and value.upper() not in [
                     "N/A",
-                    "NA", 
+                    "NA",
                     "NOT AVAILABLE",
                     "NOT FOUND",
                     "NONE",
