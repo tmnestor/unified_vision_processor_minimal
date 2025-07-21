@@ -293,20 +293,27 @@ class ComparisonMetrics:
         extraction_scores = {}
 
         for model_name in model_names:
-            model_extraction_metrics = self.calculate_model_extraction_metrics(model_name)
-            all_extraction_metrics[model_name] = model_extraction_metrics
+            try:
+                model_extraction_metrics = self.calculate_model_extraction_metrics(model_name)
+                all_extraction_metrics[model_name] = model_extraction_metrics
 
-            # Create a simple extraction capability score
-            # This rewards models that extract more information
-            if model_extraction_metrics:
-                extraction_score = (
-                    model_extraction_metrics["avg_fields_per_document"] * 0.6  # Primary: fields per doc
-                    + model_extraction_metrics["unique_field_types"] * 0.3  # Diversity of fields
-                    + (model_extraction_metrics["total_fields_extracted"] / 1000) * 0.1  # Volume bonus
-                )
-                extraction_scores[model_name] = extraction_score
-            else:
+                # Create a simple extraction capability score
+                # This rewards models that extract more information
+                if model_extraction_metrics and model_extraction_metrics.get("avg_fields_per_document", 0) > 0:
+                    extraction_score = (
+                        model_extraction_metrics["avg_fields_per_document"] * 0.6  # Primary: fields per doc
+                        + model_extraction_metrics["unique_field_types"] * 0.3  # Diversity of fields
+                        + (model_extraction_metrics["total_fields_extracted"] / 1000) * 0.1  # Volume bonus
+                    )
+                    extraction_scores[model_name] = extraction_score
+                    print(f"✅ {model_name.upper()} extraction score: {extraction_score:.3f}")
+                else:
+                    extraction_scores[model_name] = 0.0
+                    print(f"⚠️  {model_name.upper()} has no extraction metrics")
+            except Exception as e:
+                print(f"❌ Error calculating extraction metrics for {model_name}: {e}")
                 extraction_scores[model_name] = 0.0
+                all_extraction_metrics[model_name] = {}
 
         # Use extraction capability scores instead of artificial F1 scores
         overall_f1_scores = extraction_scores  # Use extraction scores as primary metric
@@ -316,25 +323,31 @@ class ComparisonMetrics:
         # Create a fake field_f1_scores for backwards compatibility
         field_f1_scores = {}
         for model_name in model_names:
-            if model_name in all_extraction_metrics:
-                for field_type in all_extraction_metrics[model_name].get("field_types_discovered", []):
-                    if field_type not in field_f1_scores:
-                        field_f1_scores[field_type] = {}
-                    # Create a simple extraction score for this field type
-                    consistency = all_extraction_metrics[model_name]["field_consistency"].get(field_type, 0)
-                    field_f1_scores[field_type][model_name] = F1Metrics(
-                        field_name=field_type,
-                        precision=consistency,
-                        recall=consistency,
-                        f1_score=consistency,
-                        true_positives=int(
-                            consistency * all_extraction_metrics[model_name]["documents_processed"]
-                        ),
-                        false_positives=0,
-                        false_negatives=0,
-                        true_negatives=0,
-                        support=all_extraction_metrics[model_name]["documents_processed"],
-                    )
+            if model_name in all_extraction_metrics and all_extraction_metrics[model_name]:
+                try:
+                    field_types = all_extraction_metrics[model_name].get("field_types_discovered", [])
+                    field_consistency = all_extraction_metrics[model_name].get("field_consistency", {})
+                    documents_processed = all_extraction_metrics[model_name].get("documents_processed", 1)
+                    
+                    for field_type in field_types:
+                        if field_type not in field_f1_scores:
+                            field_f1_scores[field_type] = {}
+                        # Create a simple extraction score for this field type
+                        consistency = field_consistency.get(field_type, 0)
+                        field_f1_scores[field_type][model_name] = F1Metrics(
+                            field_name=field_type,
+                            precision=consistency,
+                            recall=consistency,
+                            f1_score=consistency,
+                            true_positives=int(consistency * documents_processed),
+                            false_positives=0,
+                            false_negatives=0,
+                            true_negatives=0,
+                            support=documents_processed,
+                        )
+                except Exception as e:
+                    print(f"⚠️  Error creating field F1 metrics for {model_name}: {e}")
+                    continue
 
         # Calculate category-based performance using extraction metrics
         category_performance = self._calculate_category_performance(field_f1_scores)
