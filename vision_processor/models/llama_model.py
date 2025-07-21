@@ -203,7 +203,7 @@ class LlamaVisionModel(BaseVisionModel):
             # Note: Explicitly remove sampling parameters to avoid warnings when do_sample=False
             self.model.generation_config.max_new_tokens = 1024  # Use max_new_tokens instead of max_length
             self.model.generation_config.do_sample = False  # Deterministic for consistency
-            
+
             # Remove sampling parameters entirely to avoid warnings
             if hasattr(self.model.generation_config, 'temperature'):
                 delattr(self.model.generation_config, 'temperature')
