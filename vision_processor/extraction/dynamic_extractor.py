@@ -33,11 +33,13 @@ class DynamicExtractionResult:
     is_successful: bool
     extraction_score: int  # Number of fields found
 
+    # Processing metadata (required field)
+    processing_time: float
+
     # Working script compatibility - has_* fields
     field_results: Dict[str, bool] = None
 
-    # Processing metadata
-    processing_time: float
+    # Processing metadata (optional fields)
     using_raw_markdown: bool = False
     processing_notes: List[str] = None
 
