@@ -45,6 +45,14 @@ from rich.progress import track
 from rich.table import Table
 from sklearn.metrics import f1_score, precision_score, recall_score
 
+# Import AWK-like markdown processor
+try:
+    from awk_markdown_processor import AWKMarkdownProcessor
+    AWK_PROCESSOR_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ AWK processor not available: {e}")
+    AWK_PROCESSOR_AVAILABLE = False
+
 # Configure matplotlib for headless environment
 plt.switch_backend("Agg")  # Non-interactive backend for V100
 console = Console()
@@ -357,6 +365,16 @@ class UltraAggressiveRepetitionController:
             r"[.-]\s*THANK YOU",
         ]
 
+        # Initialize AWK-like markdown processor if available
+        self.awk_processor = None
+        if AWK_PROCESSOR_AVAILABLE:
+            try:
+                self.awk_processor = AWKMarkdownProcessor("markdown_processing_config.yaml")
+                console.print("✅ AWK-style markdown processor initialized", style="green")
+            except Exception as e:
+                console.print(f"⚠️ AWK processor initialization failed: {e}", style="yellow")
+                self.awk_processor = None
+
     def clean_response(self, response: str, image_name: str = "") -> str:
         """Clean business document extraction response with automatic raw markdown fallback"""
         if not response or len(response.strip()) == 0:
@@ -364,19 +382,27 @@ class UltraAggressiveRepetitionController:
 
         original_response = response
 
-        # Try converting markdown to key-value format
-        converted_response = self._convert_markdown_to_keyvalue(response)
-
-        # Check if conversion was successful by looking for key-value pairs
-        if self._has_valid_keyvalue_pairs(converted_response):
-            # Conversion successful, continue with normal cleaning
-            response = converted_response
+        # Try AWK-style markdown processing first
+        if self.awk_processor:
+            try:
+                awk_result = self.awk_processor.process(response, image_name)
+                if awk_result.success and awk_result.processed_text.strip():
+                    console.print(
+                        f"[green]🔧 AWK processor success for {image_name} (confidence: {awk_result.confidence_score:.2f})[/green]"
+                    )
+                    response = awk_result.processed_text
+                else:
+                    # AWK processing didn't produce good results, try original method
+                    console.print(
+                        f"[yellow]⚠️ AWK processor low confidence for {image_name}, trying original method[/yellow]"
+                    )
+                    response = self._fallback_to_original_conversion(response, image_name)
+            except Exception as e:
+                console.print(f"[red]❌ AWK processor error for {image_name}: {e}[/red]")
+                response = self._fallback_to_original_conversion(response, image_name)
         else:
-            # Conversion failed, use raw markdown fallback
-            console.print(
-                f"[yellow]📄 Key-value conversion failed for {image_name}, using raw markdown fallback[/yellow]"
-            )
-            response = original_response
+            # No AWK processor available, use original method
+            response = self._fallback_to_original_conversion(response, image_name)
 
         response = self._remove_business_patterns(response)
         response = self._remove_word_repetition(response)
@@ -388,6 +414,23 @@ class UltraAggressiveRepetitionController:
         response = re.sub(r"[!]{2,}", "!", response)
 
         return response.strip()
+
+    def _fallback_to_original_conversion(self, response: str, image_name: str) -> str:
+        """Fallback to original markdown conversion method."""
+        # Try converting markdown to key-value format using original method
+        converted_response = self._convert_markdown_to_keyvalue(response)
+
+        # Check if conversion was successful by looking for key-value pairs
+        if self._has_valid_keyvalue_pairs(converted_response):
+            # Conversion successful
+            console.print(f"[cyan]📝 Original conversion succeeded for {image_name}[/cyan]")
+            return converted_response
+        else:
+            # Conversion failed, use raw markdown fallback
+            console.print(
+                f"[yellow]📄 Key-value conversion failed for {image_name}, using raw markdown fallback[/yellow]"
+            )
+            return response
 
     def _has_valid_keyvalue_pairs(self, text: str) -> bool:
         """Check if text contains valid key-value pairs after conversion"""
