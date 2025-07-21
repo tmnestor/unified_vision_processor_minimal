@@ -8,7 +8,7 @@ precision, recall, and custom business metrics for Australian tax documents.
 import statistics
 import warnings
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
@@ -124,7 +124,7 @@ class ComparisonMetrics:
             # ABN and receipt numbers less common
             ground_truth[image_name]["ABN"] = image_name in abn_documents or i % 4 == 0  # 25% have ABN
             ground_truth[image_name]["RECEIPT_NUMBER"] = i % 3 == 0  # Every 3rd document has receipt number
-            
+
             # Banking fields only in bank documents
             ground_truth[image_name]["BSB"] = i % 10 == 0  # 10% are bank documents
             ground_truth[image_name]["ACCOUNT_NUMBER"] = i % 10 == 0  # Same as BSB
@@ -230,11 +230,11 @@ class ComparisonMetrics:
         # Instead of using production schema fields, use fields actually found in the results
         if model_name not in self.model_results or not self.model_results[model_name]:
             return field_metrics
-        
+
         # Get all has_* fields from the first few results to see what's available
         sample_results = self.model_results[model_name][:5]  # Sample first 5 results
         detected_fields = set()
-        
+
         for result in sample_results:
             if isinstance(result, dict):
                 # Extract field names from has_* keys
@@ -242,10 +242,10 @@ class ComparisonMetrics:
                     if key.startswith("has_") and result[key]:  # Only include detected fields
                         field_name = key[4:].upper()  # Remove "has_" prefix and uppercase
                         detected_fields.add(field_name)
-        
+
         # Debug: Show what fields we found
         print(f"🔍 Fields detected in {model_name} results: {list(detected_fields)[:10]}...")
-        
+
         # Calculate metrics for detected fields
         for field_name in list(detected_fields)[:20]:  # Limit to first 20 to avoid too many calculations
             metrics = self.calculate_f1_metrics(model_name, field_name)
