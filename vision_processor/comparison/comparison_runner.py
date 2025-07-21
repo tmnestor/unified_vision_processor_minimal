@@ -525,27 +525,27 @@ class ComparisonRunner:
             summary = self.results.comparison_metrics["summary"]
             best_performers = summary.get("best_performers", {})
             performance_explanations = summary.get("performance_explanations", {})
-            
+
             # Debug: Check what we have
             print(f"🔍 Summary keys available: {list(summary.keys())}")
             print(f"🔍 Performance explanations available: {len(performance_explanations) if performance_explanations else 0}")
-            
+
             if best_performers:
                 self.console.print("\n🥇 Best Performers:")
                 for metric, model in best_performers.items():
                     self.console.print(f"   {metric}: {model}")
-                
+
                 # Add detailed explanations if available
                 if performance_explanations:
                     self.console.print("\n📊 Detailed Performance Explanations:")
                     self.console.print("-" * 50)
-                    
+
                     for category, details in performance_explanations.items():
                         category_display = category.replace('_', ' ').title()
                         self.console.print(f"\n🎯 [bold]{category_display}[/bold]:")
                         self.console.print(f"   [green]Winner[/green]: {details['winner']} ([cyan]Score: {details['score']}[/cyan])")
                         self.console.print(f"   [yellow]Why[/yellow]: {details['explanation']}")
-                        
+
             # Processing time details if available
             processing_times = self.results.comparison_metrics["summary"].get("processing_times", {})
             if processing_times and "average_per_image" in processing_times:
