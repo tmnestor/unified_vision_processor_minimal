@@ -100,15 +100,15 @@ format_processors:
   structured_keyvalue:
     patterns:
       # Enhanced patterns to match all real Llama output formats
-      standard_kv: "^([A-Z_]+):\\s*(.+)$"
-      flexible_kv: "^([a-zA-Z][a-zA-Z\\s_()]*):\\s*(.+)$"
-      mixed_case_kv: "^([A-Z][a-zA-Z_\\s]*):\\s*(.+)$"
+      standard_kv: "^([A-Z_]+):\\\\s*(.+)$"
+      flexible_kv: "^([a-zA-Z][a-zA-Z\\\\s_()]*):\\\\s*(.+)$"
+      mixed_case_kv: "^([A-Z][a-zA-Z_\\\\s]*):\\\\s*(.+)$"
       bracketed_kv: "^([A-Z_]+):\\s*\\[([^\\]]+)\\]$"
-      parentheses_kv: "^([A-Z_]+)\\s*\\(([^)]+)\\):\\s*(.+)$"
-      complex_key: "^([A-Z][A-Za-z_\\s\\-()]+):\\s*(.+)$"
+      parentheses_kv: "^([A-Z_]+)\\\\s*\\\\(([^)]+)\\\\):\\\\s*(.+)$"
+      complex_key: "^([A-Z][A-Za-z_\\s()-]+):\\s*(.+)$"
       # Handle keys that appear mid-line
-      inline_kv: "\\n([A-Z_]+):\\s*([^\\n]+)"
-      inline_mixed: "\\n([A-Z][A-Za-z_\\s]+):\\s*([^\\n]+)"
+      inline_kv: "\\\\n([A-Z_]+):\\\\s*([^\\\\n]+)"
+      inline_mixed: "\\\\n([A-Z][A-Za-z_\\\\s]+):\\\\s*([^\\\\n]+)"
     key_normalization:
       uppercase: true
       replace_spaces: "_"

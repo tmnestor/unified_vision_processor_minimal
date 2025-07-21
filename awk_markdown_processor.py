@@ -180,7 +180,7 @@ class AWKMarkdownProcessor:
         self.context.processing_notes.append(f"Detected format: {detected_format}")
 
         # Initialize context
-        self.context.total_lines = len(text.split("\\n"))
+        self.context.total_lines = len(text.split("\n"))
         self.context.state = self._format_to_initial_state(detected_format)
 
         return text
@@ -218,16 +218,16 @@ class AWKMarkdownProcessor:
     def _normalize_whitespace(self, text: str) -> str:
         """Normalize whitespace while preserving structure."""
         # Preserve line breaks but clean up spaces
-        lines = text.split("\\n")
+        lines = text.split("\n")
         cleaned_lines = []
 
         for line in lines:
             # Remove excessive spaces but preserve single spaces
-            cleaned = re.sub(r"[ \\t]+", " ", line.strip())
+            cleaned = re.sub(r"[ \t]+", " ", line.strip())
             if cleaned:  # Only keep non-empty lines
                 cleaned_lines.append(cleaned)
 
-        return "\\n".join(cleaned_lines)
+        return "\n".join(cleaned_lines)
 
     def _detect_format(self, text: str) -> str:
         """Detect markdown format using configured patterns."""
@@ -282,7 +282,7 @@ class AWKMarkdownProcessor:
 
     def _process_markdown_table(self, text: str, config: Dict[str, Any]) -> str:
         """Process markdown table format."""
-        lines = text.split("\\n")
+        lines = text.split("\n")
         result_lines = []
 
         for line in lines:
@@ -308,11 +308,11 @@ class AWKMarkdownProcessor:
                     result_lines.append(f"{key}: {value}")
 
         self.context.processing_notes.append(f"Table processing: {len(result_lines)} rows extracted")
-        return "\\n".join(result_lines)
+        return "\n".join(result_lines)
 
     def _process_bullet_list(self, text: str, config: Dict[str, Any]) -> str:
         """Process bullet list format."""
-        lines = text.split("\\n")
+        lines = text.split("\n")
         result_lines = []
 
         for line in lines:
@@ -330,11 +330,11 @@ class AWKMarkdownProcessor:
                         break
 
         self.context.processing_notes.append(f"Bullet processing: {len(result_lines)} items extracted")
-        return "\\n".join(result_lines)
+        return "\n".join(result_lines)
 
     def _process_structured_keyvalue(self, text: str, config: Dict[str, Any]) -> str:
         """Process structured key-value format."""
-        lines = text.split("\\n")
+        lines = text.split("\n")
         result_lines = []
 
         for line in lines:
@@ -352,7 +352,7 @@ class AWKMarkdownProcessor:
                         break
 
         self.context.processing_notes.append(f"Structured processing: {len(result_lines)} pairs extracted")
-        return "\\n".join(result_lines)
+        return "\n".join(result_lines)
 
     def _process_plain_text(self, text: str) -> str:
         """Process plain text using fallback patterns."""
@@ -406,7 +406,7 @@ class AWKMarkdownProcessor:
                         result_lines.append(f"{field_name}: {value_str}")
 
         self.context.processing_notes.append(f"Fallback processing: {len(result_lines)} patterns matched")
-        return "\\n".join(result_lines)
+        return "\n".join(result_lines)
 
     def _validate_extractions(self):
         """Validate extracted fields according to rules."""
@@ -434,7 +434,7 @@ class AWKMarkdownProcessor:
     def _clean_artifacts(self, text: str) -> str:
         """Clean common artifacts from processed text."""
         # Remove empty lines
-        lines = [line.strip() for line in text.split("\\n") if line.strip()]
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
 
         # Remove duplicate key-value pairs
         seen = set()
@@ -444,7 +444,7 @@ class AWKMarkdownProcessor:
                 seen.add(line)
                 unique_lines.append(line)
 
-        return "\\n".join(unique_lines)
+        return "\n".join(unique_lines)
 
     def _format_output(self, text: str) -> str:
         """Format output according to configuration."""
@@ -469,18 +469,27 @@ class AWKMarkdownProcessor:
         if not text or not self.context.extracted_fields:
             return 0.0
 
-        # Base score on number of extracted fields
-        field_score = min(len(self.context.extracted_fields) / 5.0, 1.0) * 0.6
+        num_fields = len(self.context.extracted_fields)
 
-        # Format detection confidence
-        format_score = 0.3 if self.context.detected_format != "plain_text" else 0.1
+        # More realistic field scoring - diminishing returns after 3 fields
+        if num_fields <= 3:
+            field_score = num_fields * 0.15  # 0.15, 0.30, 0.45
+        elif num_fields <= 6:
+            field_score = 0.45 + (num_fields - 3) * 0.08  # 0.53, 0.61, 0.69
+        else:
+            field_score = 0.69 + (num_fields - 6) * 0.03  # 0.72, 0.75, etc., capped at 0.80
 
-        # Validation score
+        field_score = min(field_score, 0.80)  # Cap at 80%
+
+        # Format detection confidence - more conservative
+        format_score = 0.15 if self.context.detected_format != "plain_text" else 0.05
+
+        # Validation score - only small bonus for no warnings
         validation_score = (
-            0.1 if not any("warning" in note for note in self.context.processing_notes) else 0.0
+            0.05 if not any("warning" in note for note in self.context.processing_notes) else 0.0
         )
 
-        return field_score + format_score + validation_score
+        return min(field_score + format_score + validation_score, 0.95)  # Cap total at 95%
 
     def _validate_final_result(self, text: str) -> bool:
         """Final validation of processing result."""

@@ -48,6 +48,7 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 # Import AWK-like markdown processor
 try:
     from awk_markdown_processor import AWKMarkdownProcessor
+
     AWK_PROCESSOR_AVAILABLE = True
 except ImportError as e:
     print(f"⚠️ AWK processor not available: {e}")
@@ -382,21 +383,18 @@ class UltraAggressiveRepetitionController:
 
         original_response = response
 
-        # Try AWK-style markdown processing first
+        # Use competitive processing: try both AWK and original, choose the better result
         if self.awk_processor:
             try:
+                # Try AWK processing
                 awk_result = self.awk_processor.process(response, image_name)
-                if awk_result.success and awk_result.processed_text.strip():
-                    console.print(
-                        f"[green]🔧 AWK processor success for {image_name} (confidence: {awk_result.confidence_score:.2f})[/green]"
-                    )
-                    response = awk_result.processed_text
-                else:
-                    # AWK processing didn't produce good results, try original method
-                    console.print(
-                        f"[yellow]⚠️ AWK processor low confidence for {image_name}, trying original method[/yellow]"
-                    )
-                    response = self._fallback_to_original_conversion(response, image_name)
+
+                # Try original processing
+                original_response = self._fallback_to_original_conversion(response, image_name)
+
+                # Compare results and choose the better one
+                response = self._choose_best_processing_result(awk_result, original_response, image_name)
+
             except Exception as e:
                 console.print(f"[red]❌ AWK processor error for {image_name}: {e}[/red]")
                 response = self._fallback_to_original_conversion(response, image_name)
@@ -431,6 +429,73 @@ class UltraAggressiveRepetitionController:
                 f"[yellow]📄 Key-value conversion failed for {image_name}, using raw markdown fallback[/yellow]"
             )
             return response
+
+    def _choose_best_processing_result(self, awk_result, original_response: str, image_name: str) -> str:
+        """Compare AWK and original processing results and choose the better one."""
+
+        # Count fields in AWK result
+        awk_field_count = len(awk_result.extracted_fields) if awk_result.success else 0
+
+        # Count fields in original result
+        original_field_count = self._count_keyvalue_pairs(original_response)
+
+        # Decision logic with multiple criteria
+        use_awk = False
+        reason = ""
+
+        if not awk_result.success:
+            # AWK failed, use original
+            use_awk = False
+            reason = "AWK processing failed"
+        elif awk_field_count == 0:
+            # AWK extracted no fields, use original
+            use_awk = False
+            reason = "AWK extracted 0 fields"
+        elif original_field_count == 0:
+            # Original extracted no fields, use AWK
+            use_awk = True
+            reason = "original extracted 0 fields"
+        elif awk_field_count >= original_field_count + 2:
+            # AWK significantly better (2+ more fields)
+            use_awk = True
+            reason = f"AWK much better ({awk_field_count} vs {original_field_count} fields)"
+        elif original_field_count >= awk_field_count + 2:
+            # Original significantly better (2+ more fields)
+            use_awk = False
+            reason = f"original much better ({original_field_count} vs {awk_field_count} fields)"
+        elif awk_field_count >= original_field_count and awk_result.confidence_score >= 0.6:
+            # AWK equal or better + high confidence
+            use_awk = True
+            reason = f"AWK better/equal with high confidence ({awk_field_count} fields, {awk_result.confidence_score:.2f} conf)"
+        else:
+            # Default to original for all other cases
+            use_awk = False
+            reason = f"default to original ({original_field_count} vs {awk_field_count} fields, {awk_result.confidence_score:.2f} conf)"
+
+        # Apply decision and log
+        if use_awk:
+            console.print(f"[green]🏆 Using AWK result for {image_name}: {reason}[/green]")
+            return awk_result.processed_text
+        else:
+            console.print(f"[blue]🏆 Using original result for {image_name}: {reason}[/blue]")
+            return original_response
+
+    def _count_keyvalue_pairs(self, text: str) -> int:
+        """Count the number of key-value pairs in processed text."""
+        if not text or not text.strip():
+            return 0
+
+        # Count lines that look like KEY: VALUE format
+        lines = text.strip().split("\n")
+        count = 0
+        for line in lines:
+            line = line.strip()
+            if ":" in line and len(line.split(":", 1)) == 2:
+                key, value = line.split(":", 1)
+                if key.strip() and value.strip():
+                    count += 1
+
+        return count
 
     def _has_valid_keyvalue_pairs(self, text: str) -> bool:
         """Check if text contains valid key-value pairs after conversion"""
