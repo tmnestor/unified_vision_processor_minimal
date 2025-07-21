@@ -428,10 +428,9 @@ class ComparisonRunner:
             "confidence_score": extraction_result.extraction_score / 10.0,  # Normalize to 0-1 range
         }
 
-        # Add has_* fields for each extracted field (matching original logic)
-        for field_name, _field_value in extraction_result.extracted_fields.items():
-            has_field_key = f"has_{field_name.lower()}"
-            result[has_field_key] = True  # Field was detected and extracted
+        # Add has_* fields from working script logic (EXACT MATCH)
+        if extraction_result.field_results:
+            result.update(extraction_result.field_results)
 
         return result
 

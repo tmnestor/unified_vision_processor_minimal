@@ -33,6 +33,9 @@ class DynamicExtractionResult:
     is_successful: bool
     extraction_score: int  # Number of fields found
 
+    # Working script compatibility - has_* fields
+    field_results: Dict[str, bool] = None
+
     # Processing metadata
     processing_time: float
     using_raw_markdown: bool = False
@@ -41,6 +44,8 @@ class DynamicExtractionResult:
     def __post_init__(self):
         if self.processing_notes is None:
             self.processing_notes = []
+        if self.field_results is None:
+            self.field_results = {}
 
 
 class DynamicFieldExtractor:
@@ -88,9 +93,10 @@ class DynamicFieldExtractor:
         initial_structured_fields = self._get_field_names_from_response(response)
         using_raw_markdown = len(initial_structured_fields) == 0 and len(detected_fields) > 0
 
-        # Step 2: Extract each detected field
+        # Step 2: Extract each detected field (EXACT WORKING SCRIPT LOGIC)
         extracted_fields = {}
         field_matches = {}
+        field_results = {}
 
         for field_name in detected_fields:
             if using_raw_markdown:
@@ -98,12 +104,18 @@ class DynamicFieldExtractor:
             else:
                 field_detected, field_match = self._extract_and_validate_field_simple(field_name, response)
 
+            # CRITICAL: Working script counts field as successful if DETECTED, not if value extracted
+            field_results[f"has_{field_name.lower()}"] = field_detected
+            field_matches[field_name.lower()] = field_match
+            
+            # Only add to extracted_fields if we have a value (for compatibility)
             if field_detected and field_match:
                 extracted_fields[field_name] = field_match
-                field_matches[field_name.lower()] = field_match
 
-        # Step 3: Calculate success metrics
-        extraction_score = len(extracted_fields)
+        # Step 3: Calculate success metrics (EXACT WORKING SCRIPT LOGIC)
+        # Count number of True values in field_results (detected fields)
+        all_scores = [field_results.get(key, False) for key in field_results.keys()]
+        extraction_score = sum(all_scores)
         is_successful = extraction_score >= self.min_fields_for_success
 
         return DynamicExtractionResult(
@@ -115,6 +127,7 @@ class DynamicFieldExtractor:
             field_count=extraction_score,
             is_successful=is_successful,
             extraction_score=extraction_score,
+            field_results=field_results,  # Working script compatibility
             processing_time=processing_time,
             using_raw_markdown=using_raw_markdown,
             processing_notes=[
