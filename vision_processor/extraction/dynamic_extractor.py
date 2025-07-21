@@ -204,7 +204,7 @@ class DynamicFieldExtractor:
             rf'{field_name}:\s*([^\n]+)',                                # Exact field name
             rf'{field_name.lower()}:\s*([^\n]+)',                        # Lowercase field name
         ]
-        
+
         # Add specialized patterns for banking fields
         if field_name.upper() == "BSB":
             patterns.extend([
@@ -257,7 +257,7 @@ class DynamicFieldExtractor:
             synthetic_fields.append("DATE")
         if re.search(r"\b\d{4,}\b", response):
             synthetic_fields.append("RECEIPT_NUMBER")
-        
+
         # Enhanced: Add BSB and ACCOUNT_NUMBER detection for bank documents
         if re.search(r"\b\d{3}-?\d{3}\b", response) or re.search(r"\bBSB\b", response, re.IGNORECASE):
             synthetic_fields.append("BSB")
@@ -340,7 +340,7 @@ class DynamicFieldExtractor:
                     bsb_digits = re.sub(r"\D", "", match.group(1))
                     if len(bsb_digits) == 6:
                         return True, f"{bsb_digits[:3]}-{bsb_digits[3:6]}"
-            
+
         elif field_name_upper in ["ACCOUNT_NUMBER", "ACCOUNT"]:
             # Look for Australian bank account numbers (typically 6-12 digits)
             account_patterns = [
