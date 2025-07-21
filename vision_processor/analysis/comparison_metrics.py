@@ -67,6 +67,9 @@ class ModelComparisonMetrics:
     # Ranking and recommendations
     model_rankings: Dict[str, int]  # By metric
     performance_recommendations: Dict[str, List[str]]
+    
+    # Detailed explanations
+    performance_explanations: Dict[str, Dict[str, str]]
 
 
 class ComparisonMetrics:
@@ -311,6 +314,12 @@ class ComparisonMetrics:
 
         # Generate performance recommendations
         performance_recommendations = self._generate_performance_recommendations(all_f1_scores, model_names)
+        
+        # Generate detailed performance explanations
+        performance_explanations = self._generate_performance_explanations(
+            overall_f1_scores, ato_compliance_scores, critical_field_performance, 
+            avg_processing_times, all_f1_scores
+        )
 
         return ModelComparisonMetrics(
             model_names=model_names,
@@ -327,6 +336,7 @@ class ComparisonMetrics:
             confidence_intervals=confidence_intervals,
             model_rankings=model_rankings,
             performance_recommendations=performance_recommendations,
+            performance_explanations=performance_explanations,
         )
 
     def _calculate_category_performance(
@@ -621,6 +631,122 @@ class ComparisonMetrics:
 
         return recommendations
 
+    def _generate_performance_explanations(
+        self,
+        overall_f1_scores: Dict[str, float],
+        ato_compliance_scores: Dict[str, float], 
+        critical_field_performance: Dict[str, float],
+        avg_processing_times: Dict[str, float],
+        all_f1_scores: Dict[str, Dict[str, F1Metrics]]
+    ) -> Dict[str, Dict[str, str]]:
+        """Generate detailed explanations for why each model performs better."""
+        explanations = {}
+        
+        # Find best performers
+        best_f1 = max(overall_f1_scores.keys(), key=lambda x: overall_f1_scores[x])
+        best_ato = max(ato_compliance_scores.keys(), key=lambda x: ato_compliance_scores[x])
+        best_critical = max(critical_field_performance.keys(), key=lambda x: critical_field_performance[x])
+        best_speed = min(avg_processing_times.keys(), key=lambda x: avg_processing_times[x]) if avg_processing_times else "N/A"
+        
+        # Generate explanations for each category
+        explanations["overall_f1"] = {
+            "winner": best_f1,
+            "score": f"{overall_f1_scores[best_f1]:.3f}",
+            "explanation": self._explain_f1_performance(best_f1, overall_f1_scores, all_f1_scores)
+        }
+        
+        explanations["ato_compliance"] = {
+            "winner": best_ato,
+            "score": f"{ato_compliance_scores[best_ato]:.3f}",
+            "explanation": self._explain_ato_performance(best_ato, ato_compliance_scores, all_f1_scores)
+        }
+        
+        explanations["critical_fields"] = {
+            "winner": best_critical,
+            "score": f"{critical_field_performance[best_critical]:.3f}",
+            "explanation": self._explain_critical_field_performance(best_critical, critical_field_performance, all_f1_scores)
+        }
+        
+        if best_speed != "N/A":
+            explanations["processing_speed"] = {
+                "winner": best_speed,
+                "score": f"{avg_processing_times[best_speed]:.2f}s",
+                "explanation": self._explain_speed_performance(best_speed, avg_processing_times)
+            }
+        
+        return explanations
+    
+    def _explain_f1_performance(self, winner: str, overall_scores: Dict[str, float], all_f1_scores: Dict[str, Dict[str, F1Metrics]]) -> str:
+        """Explain why a model has the best overall F1 score."""
+        winner_score = overall_scores[winner]
+        winner_metrics = all_f1_scores[winner]
+        
+        # Analyze strengths
+        strong_fields = [field for field, metrics in winner_metrics.items() if metrics.f1_score > 0.8]
+        moderate_fields = [field for field, metrics in winner_metrics.items() if 0.6 <= metrics.f1_score <= 0.8]
+        weak_fields = [field for field, metrics in winner_metrics.items() if metrics.f1_score < 0.6]
+        
+        explanation = f"{winner} achieves the highest overall F1 score ({winner_score:.3f}) due to: "
+        
+        if strong_fields:
+            explanation += f"excellent performance on {len(strong_fields)} fields ({', '.join(strong_fields[:3])}{'...' if len(strong_fields) > 3 else ''}), "
+        
+        if moderate_fields:
+            explanation += f"good performance on {len(moderate_fields)} additional fields, "
+        
+        explanation += f"with only {len(weak_fields)} fields showing lower performance."
+        
+        return explanation
+    
+    def _explain_ato_performance(self, winner: str, ato_scores: Dict[str, float], all_f1_scores: Dict[str, Dict[str, F1Metrics]]) -> str:
+        """Explain why a model has the best ATO compliance."""
+        winner_score = ato_scores[winner]
+        winner_metrics = all_f1_scores[winner]
+        
+        # Check ATO critical fields
+        ato_critical_fields = ["supplierABN_a_pgs", "total_a_li", "tax_a_li", "date_a_li", "supplier_a_pgs"]
+        ato_performance = {}
+        
+        for field in ato_critical_fields:
+            if field in winner_metrics:
+                ato_performance[field] = winner_metrics[field].f1_score
+        
+        strong_ato_fields = [field for field, score in ato_performance.items() if score > 0.8]
+        
+        explanation = f"{winner} excels in ATO compliance ({winner_score:.3f}) because it reliably extracts "
+        explanation += f"{len(strong_ato_fields)} of {len(ato_critical_fields)} critical ATO fields including "
+        explanation += f"{', '.join([field.replace('_a_pgs', '').replace('_a_li', '') for field in strong_ato_fields[:3]])}."
+        
+        return explanation
+    
+    def _explain_critical_field_performance(self, winner: str, critical_scores: Dict[str, float], all_f1_scores: Dict[str, Dict[str, F1Metrics]]) -> str:
+        """Explain why a model performs best on critical fields."""
+        winner_score = critical_scores[winner]
+        
+        explanation = f"{winner} demonstrates superior critical field extraction ({winner_score:.3f}) "
+        explanation += "through consistent detection of high-priority business document fields "
+        explanation += "essential for automated accounting and tax compliance processing."
+        
+        return explanation
+    
+    def _explain_speed_performance(self, winner: str, speed_scores: Dict[str, float]) -> str:
+        """Explain why a model is fastest."""
+        winner_speed = speed_scores[winner]
+        
+        # Compare to other models
+        other_speeds = [speed for model, speed in speed_scores.items() if model != winner]
+        if other_speeds:
+            avg_other_speed = statistics.mean(other_speeds)
+            speedup = avg_other_speed / winner_speed
+            
+            explanation = f"{winner} processes images fastest ({winner_speed:.2f}s average) - "
+            explanation += f"{speedup:.1f}x faster than other models, enabling efficient batch processing "
+            explanation += "of large document volumes in production environments."
+        else:
+            explanation = f"{winner} demonstrates efficient processing at {winner_speed:.2f}s per image."
+        
+        return explanation
+
     def get_metrics_summary(self) -> Dict[str, Any]:
         """Get comprehensive metrics summary.
 
@@ -662,6 +788,7 @@ class ComparisonMetrics:
                     key=lambda x: comparison.avg_processing_times[x],
                 ) if comparison.avg_processing_times else "N/A",
             },
+            "performance_explanations": comparison.performance_explanations,
             "significant_differences": comparison.significant_differences,
             "recommendations": comparison.performance_recommendations,
         }
