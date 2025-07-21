@@ -6,6 +6,7 @@ precision, recall, and custom business metrics for Australian tax documents.
 """
 
 import statistics
+import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -14,6 +15,9 @@ from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_
 
 from ..config.production_schema import PRODUCTION_SCHEMA, FieldCategory
 from ..extraction.production_extractor import ExtractionResult
+
+# Suppress sklearn warnings about single-label confusion matrices
+warnings.filterwarnings("ignore", message="A single label was found in 'y_true' and 'y_pred'", category=UserWarning)
 
 
 @dataclass
@@ -51,6 +55,10 @@ class ModelComparisonMetrics:
     # Business-specific metrics
     ato_compliance_scores: Dict[str, float]
     critical_field_performance: Dict[str, float]
+
+    # Performance timing metrics
+    avg_processing_times: Dict[str, float]
+    processing_time_stats: Dict[str, Dict[str, float]]
 
     # Statistical significance
     significant_differences: Dict[str, bool]
@@ -287,6 +295,9 @@ class ComparisonMetrics:
         # Calculate critical field performance
         critical_field_performance = self._calculate_critical_field_performance(all_f1_scores)
 
+        # Calculate processing time metrics
+        avg_processing_times, processing_time_stats = self._calculate_processing_time_metrics()
+
         # Determine statistical significance (simplified)
         significant_differences = self._test_statistical_significance(overall_f1_scores)
 
@@ -310,6 +321,8 @@ class ComparisonMetrics:
             category_performance=category_performance,
             ato_compliance_scores=ato_compliance_scores,
             critical_field_performance=critical_field_performance,
+            avg_processing_times=avg_processing_times,
+            processing_time_stats=processing_time_stats,
             significant_differences=significant_differences,
             confidence_intervals=confidence_intervals,
             model_rankings=model_rankings,
@@ -407,6 +420,62 @@ class ComparisonMetrics:
                 critical_field_performance[model_name] = 0.0
 
         return critical_field_performance
+
+    def _calculate_processing_time_metrics(self) -> Tuple[Dict[str, float], Dict[str, Dict[str, float]]]:
+        """Calculate processing time metrics for each model."""
+        avg_processing_times = {}
+        processing_time_stats = {}
+
+        for model_name, results in self.model_results.items():
+            if not results:
+                avg_processing_times[model_name] = 0.0
+                processing_time_stats[model_name] = {
+                    "min": 0.0,
+                    "max": 0.0,
+                    "median": 0.0,
+                    "std": 0.0,
+                    "total": 0.0,
+                }
+                continue
+
+            # Extract processing times from results
+            processing_times = []
+            for result in results:
+                # Handle both dict and object formats
+                if isinstance(result, dict):
+                    # Dictionary format - check various time field names
+                    time_value = (
+                        result.get("extraction_time") or
+                        result.get("processing_time") or
+                        result.get("inference_time") or
+                        0.0
+                    )
+                else:
+                    # Object format
+                    time_value = getattr(result, "processing_time", 0.0)
+
+                processing_times.append(float(time_value))
+
+            if processing_times:
+                avg_processing_times[model_name] = statistics.mean(processing_times)
+                processing_time_stats[model_name] = {
+                    "min": min(processing_times),
+                    "max": max(processing_times),
+                    "median": statistics.median(processing_times),
+                    "std": statistics.stdev(processing_times) if len(processing_times) > 1 else 0.0,
+                    "total": sum(processing_times),
+                }
+            else:
+                avg_processing_times[model_name] = 0.0
+                processing_time_stats[model_name] = {
+                    "min": 0.0,
+                    "max": 0.0,
+                    "median": 0.0,
+                    "std": 0.0,
+                    "total": 0.0,
+                }
+
+        return avg_processing_times, processing_time_stats
 
     def _test_statistical_significance(self, overall_f1_scores: Dict[str, float]) -> Dict[str, bool]:
         """Test statistical significance of differences (simplified).
@@ -570,6 +639,12 @@ class ComparisonMetrics:
             "ato_compliance": {
                 model: f"{score:.3f}" for model, score in comparison.ato_compliance_scores.items()
             },
+            "processing_times": {
+                "average_per_image": {
+                    model: f"{time:.2f}s" for model, time in comparison.avg_processing_times.items()
+                },
+                "detailed_stats": comparison.processing_time_stats,
+            },
             "best_performers": {
                 "overall_f1": max(
                     comparison.overall_f1_scores.keys(), key=lambda x: comparison.overall_f1_scores[x]
@@ -582,6 +657,10 @@ class ComparisonMetrics:
                     comparison.critical_field_performance.keys(),
                     key=lambda x: comparison.critical_field_performance[x],
                 ),
+                "fastest_processing": min(
+                    comparison.avg_processing_times.keys(),
+                    key=lambda x: comparison.avg_processing_times[x],
+                ) if comparison.avg_processing_times else "N/A",
             },
             "significant_differences": comparison.significant_differences,
             "recommendations": comparison.performance_recommendations,
