@@ -30,6 +30,15 @@ IMAGENET_STD = (0.229, 0.224, 0.225)
 class InternVLModel(BaseVisionModel):
     """InternVL3 implementation with multi-GPU support and advanced features.
 
+    Supports InternVL Version 3 models only from https://huggingface.co/OpenGVLab/InternVL
+    - InternVL3-1B (0.9B parameters)
+    - InternVL3-2B (2B parameters)
+    - InternVL3-8B (8B parameters - primary model)
+    - InternVL3-9B (9B parameters)
+    - InternVL3-14B (15B parameters)
+    - InternVL3-38B (38B parameters)
+    - InternVL3-78B (78B parameters)
+
     Features:
     - Multi-GPU auto-configuration
     - 8-bit quantization for single GPU
@@ -152,16 +161,16 @@ class InternVLModel(BaseVisionModel):
         device_map = {}
         world_size = self.num_gpus
 
-        # Model layer counts for different InternVL models
+        # Model layer counts for InternVL Version 3 models only
+        # Reference: https://huggingface.co/collections/OpenGVLab/internvl3-67f7f690be79c2fe9d74fe9d
         num_layers_mapping = {
-            "InternVL2-1B": 24,
-            "InternVL2-2B": 24,
-            "InternVL2-4B": 32,
-            "InternVL2-8B": 32,
-            "InternVL2-26B": 48,
-            "InternVL2-40B": 60,
-            "InternVL2-Llama3-76B": 80,
-            "InternVL3-8B": 28,
+            "InternVL3-1B": 24,   # 0.9B parameters
+            "InternVL3-2B": 24,   # 2B parameters
+            "InternVL3-8B": 28,   # 8B parameters (primary)
+            "InternVL3-9B": 32,   # 9B parameters
+            "InternVL3-14B": 40,  # 15B parameters
+            "InternVL3-38B": 60,  # 38B parameters
+            "InternVL3-78B": 80,  # 78B parameters
         }
 
         # Extract model size from path
@@ -172,10 +181,11 @@ class InternVLModel(BaseVisionModel):
                 break
 
         if model_size is None:
-            # Default to InternVL3-8B
+            # Default to InternVL3-8B (the primary InternVL3 model)
             logger.warning(
-                f"Could not determine model size from {model_name}, defaulting to InternVL3-8B",
+                f"Could not determine InternVL3 model size from {model_name}, defaulting to InternVL3-8B",
             )
+            logger.info("Supported InternVL3 models: InternVL3-1B, InternVL3-2B, InternVL3-8B, InternVL3-9B, InternVL3-14B, InternVL3-38B, InternVL3-78B")
             model_size = "InternVL3-8B"
 
         num_layers = num_layers_mapping[model_size]
