@@ -520,7 +520,16 @@ class UltraAggressiveRepetitionController(RepetitionController):
         # Count fields in original response using same logic as DynamicExtractor
         import re
         field_pattern = r"([A-Z_]+):\s*"
-        detected_fields = list(set(re.findall(field_pattern, original_response)))
+        matches = re.findall(field_pattern, original_response)
+        
+        # Additional pattern matching to catch more field variations (enhance detection)
+        additional_pattern = r"([A-Z][a-z_]*[A-Z_]*):\s*"
+        additional_matches = re.findall(additional_pattern, original_response)
+        
+        # Convert additional matches to uppercase and combine
+        additional_matches_upper = [match.upper() for match in additional_matches]
+        all_matches = matches + additional_matches_upper
+        detected_fields = list(set(all_matches))
         original_field_count = len(detected_fields)
 
         # If no structured fields, try raw markdown content detection

@@ -157,7 +157,17 @@ class DynamicFieldExtractor:
         # Find all "FIELD:" patterns in the response
         field_pattern = r"([A-Z_]+):\s*"
         matches = re.findall(field_pattern, response)
-        return list(set(matches))  # Remove duplicates (EXACT WORKING SCRIPT)
+        
+        # Additional pattern matching to catch more field variations (enhance detection)
+        # Look for mixed case field patterns too
+        additional_pattern = r"([A-Z][a-z_]*[A-Z_]*):\s*"
+        additional_matches = re.findall(additional_pattern, response)
+        
+        # Convert additional matches to uppercase and combine
+        additional_matches_upper = [match.upper() for match in additional_matches]
+        all_matches = matches + additional_matches_upper
+        
+        return list(set(all_matches))  # Remove duplicates (EXACT WORKING SCRIPT)
 
     def _has_valid_keyvalue_pairs(self, text: str) -> bool:
         """Check if text contains valid key-value pairs after conversion (original logic)."""
@@ -187,77 +197,54 @@ class DynamicFieldExtractor:
         self, field_name: str, response: str
     ) -> Tuple[bool, Optional[str]]:
         """Extract and validate a specific field from the response (original logic)."""
-        # Try structured extraction first
-        pattern = rf'(?:{field_name}|{field_name.lower()}):\s*"?([^"\n]+)"?'
-        match = re.search(pattern, response, re.IGNORECASE)
-
-        if match:
-            value = match.group(1).strip()
-            # Simplified validation - just check if value exists and isn't N/A (EXACT WORKING SCRIPT)
-            if value and value.upper() not in [
-                "N/A",
-                "NA",
-                "NOT AVAILABLE",
-                "NOT FOUND",
-                "NONE",
-                "-",
-                "UNKNOWN",
-                "NULL",
-                "EMPTY",
-            ]:
-                return True, value
+        # Try structured extraction first - more flexible pattern matching
+        patterns = [
+            rf'(?:{field_name}|{field_name.lower()}):\s*"?([^"\n]+)"?',  # Original pattern
+            rf'(?:{field_name}|{field_name.lower()})\s*:\s*([^\n]+)',    # More flexible spacing
+            rf'{field_name}:\s*([^\n]+)',                                # Exact field name
+            rf'{field_name.lower()}:\s*([^\n]+)',                        # Lowercase field name
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, response, re.IGNORECASE)
+            if match:
+                value = match.group(1).strip()
+                # More lenient validation - accept more values as valid
+                if value and len(value) > 0 and value.upper() not in [
+                    "N/A",
+                    "NA", 
+                    "NOT AVAILABLE",
+                    "NOT FOUND",
+                    "NONE",
+                    "-",
+                    "UNKNOWN",
+                    "NULL",
+                    "EMPTY",
+                    "NOT VISIBLE",
+                ]:
+                    return True, value
 
         return False, None
 
     def _extract_fields_from_raw_markdown(self, response: str) -> List[str]:
-        """Extract synthetic field names from raw markdown content (MATCH PROMPT EXPECTATIONS)."""
+        """Extract synthetic field names from raw markdown content (EXACT WORKING SCRIPT LOGIC)."""
         synthetic_fields = []
 
-        # ALL FIELDS FROM THE PROMPT - check if content suggests these fields exist
-
-        # Basic financial fields
-        if re.search(r"\$\d+\.\d{2}|\d+\.\d{2}", response):
-            synthetic_fields.extend(["TOTAL", "SUBTOTAL", "GST", "AMOUNT"])
-
-        # Date/time fields
-        if re.search(r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", response):
-            synthetic_fields.append("DATE")
-        if re.search(r"\b\d{1,2}:\d{2}", response):
-            synthetic_fields.append("TIME")
-
-        # Business identification
+        # Check for specific content types and create synthetic fields (EXACT WORKING SCRIPT)
         if re.search(r"\b\d{2,3}[\s-]\d{3}[\s-]\d{3}[\s-]\d{3}\b", response):
             synthetic_fields.append("ABN")
+        if re.search(r"\$\d+\.\d{2}", response):
+            synthetic_fields.append("TOTAL")
+            synthetic_fields.append("AMOUNT")
         if re.search(r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b", response):
-            synthetic_fields.extend(["SUPPLIER", "BUSINESS_NAME"])
-
-        # Reference numbers
+            synthetic_fields.append("STORE")
+            synthetic_fields.append("BUSINESS_NAME")
+        if re.search(r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", response):
+            synthetic_fields.append("DATE")
         if re.search(r"\b\d{4,}\b", response):
-            synthetic_fields.extend(["RECEIPT_NUMBER", "INVOICE_NUMBER", "CARD_NUMBER", "AUTH_CODE"])
+            synthetic_fields.append("RECEIPT_NUMBER")
 
-        # Address and contact
-        if re.search(r"\b\d+\s+[A-Z][a-z]+\s+(ST|RD|AVE)", response, re.IGNORECASE):
-            synthetic_fields.extend(["BUSINESS_ADDRESS", "PAYER_ADDRESS"])
-        if re.search(r"\b\d{2,4}[\s-]\d{3,4}[\s-]\d{3,4}\b|@", response):
-            synthetic_fields.extend(["BUSINESS_PHONE", "PAYER_PHONE", "PAYER_EMAIL"])
-
-        # Items and quantities
-        if len(response.split()) > 10:  # Substantial content likely has items
-            synthetic_fields.extend(["ITEMS", "QUANTITIES", "PRICES"])
-
-        # Payment and document metadata
-        if re.search(r"\b(CASH|CARD|EFTPOS|CREDIT|DEBIT)\b", response, re.IGNORECASE):
-            synthetic_fields.append("PAYMENT_METHOD")
-
-        # Names and status
-        if re.search(r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b", response):
-            synthetic_fields.append("PAYER_NAME")
-
-        # Always include document type for classification
-        synthetic_fields.append("DOCUMENT_TYPE")
-        synthetic_fields.append("STATUS")
-
-        return list(set(synthetic_fields))  # Remove duplicates
+        return synthetic_fields
 
     def _detect_raw_markdown_content(self, response: str) -> int:
         """Detect meaningful content indicators in raw markdown format (WORKING SCRIPT LOGIC)."""
