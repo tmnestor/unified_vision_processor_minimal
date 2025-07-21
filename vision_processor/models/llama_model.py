@@ -200,10 +200,17 @@ class LlamaVisionModel(BaseVisionModel):
             logger.info(f"Model loaded successfully on {self.device}")
 
             # Configure generation settings for stable inference (based on working implementation)
-            # Note: Parameters like temperature, top_p, top_k are passed directly to generate() calls
-            # to avoid GenerationConfig attribute errors
+            # Note: Explicitly remove sampling parameters to avoid warnings when do_sample=False
             self.model.generation_config.max_new_tokens = 1024  # Use max_new_tokens instead of max_length
             self.model.generation_config.do_sample = False  # Deterministic for consistency
+            
+            # Remove sampling parameters entirely to avoid warnings
+            if hasattr(self.model.generation_config, 'temperature'):
+                delattr(self.model.generation_config, 'temperature')
+            if hasattr(self.model.generation_config, 'top_p'):
+                delattr(self.model.generation_config, 'top_p')
+            if hasattr(self.model.generation_config, 'top_k'):
+                delattr(self.model.generation_config, 'top_k')
 
             self.model.config.use_cache = True  # Enable KV cache
             logger.info("Configured generation settings for deterministic inference")
