@@ -197,32 +197,35 @@ class UltraAggressiveRepetitionController(RepetitionController):
             self.awk_processor = None
 
     def detect_repetitive_generation(self, text: str, min_words: int = 3) -> bool:
-        """Ultra-sensitive repetition detection."""
+        """Conservative repetition detection (BALANCED FOR FIELD EXTRACTION)."""
         words = text.split()
 
         # Much stricter minimum content requirement
         if len(words) < min_words:
             return True
 
-        # Check for known toxic patterns first
+        # Check for known toxic patterns first (these are truly problematic)
         if self._has_toxic_patterns(text):
             return True
 
-        # Ultra-aggressive word repetition check (15% threshold vs 30%)
+        # More balanced word repetition check (25% threshold - business docs have repeated field names)
         word_counts = {}
         for word in words:
             word_lower = word.lower().strip(".,!?()[]{}\"'")
-            if len(word_lower) > 2:  # Ignore very short words
+            if len(word_lower) > 3:  # Ignore short words like "ABN", "GST" that appear naturally
                 word_counts[word_lower] = word_counts.get(word_lower, 0) + 1
 
-        total_words = len([w for w in words if len(w.strip(".,!?()[]{}\"'")) > 2])
+        total_words = len([w for w in words if len(w.strip(".,!?()[]{}\"'")) > 3])
         if total_words > 0:
-            for _word, count in word_counts.items():
-                if count > total_words * self.word_threshold:  # 15% threshold
-                    return True
+            for word, count in word_counts.items():
+                # More tolerant threshold - field extraction needs repeated field names
+                if count > total_words * 0.25:  # 25% vs original 15%
+                    # Don't flag common business document words
+                    if word not in ["receipt", "invoice", "total", "amount", "store", "date", "payment"]:
+                        return True
 
-        # Ultra-aggressive phrase repetition
-        if self._detect_aggressive_phrase_repetition(text):
+        # More balanced phrase repetition (only flag truly repetitive phrases)
+        if self._detect_balanced_phrase_repetition(text):
             return True
 
         return False
@@ -233,6 +236,25 @@ class UltraAggressiveRepetitionController(RepetitionController):
             matches = re.findall(pattern, text, flags=re.IGNORECASE)
             if len(matches) >= 2:  # Even 2 occurrences is too many
                 return True
+
+        return False
+
+    def _detect_balanced_phrase_repetition(self, text: str) -> bool:
+        """Balanced phrase repetition detection for field extraction (WORKING SCRIPT LOGIC)."""
+        # More lenient than aggressive - only flag truly repetitive phrases
+        words = text.split()
+        if len(words) < 12:  # Need substantial content for balanced check
+            return False
+        
+        # Check for 4+ word phrases repeated 3+ times (more restrictive)
+        for i in range(len(words) - 12):  # Need at least 12 words for 4+4+4
+            phrase = " ".join(words[i : i + 4]).lower()
+            remainder = " ".join(words[i + 4 :]).lower()
+            if phrase in remainder:
+                # Count occurrences - need 3+ for balanced detection
+                phrase_count = remainder.count(phrase) + 1
+                if phrase_count >= 3:  # 3+ repetitions indicates real problem
+                    return True
 
         return False
 
@@ -439,25 +461,26 @@ class UltraAggressiveRepetitionController(RepetitionController):
 
         return text
 
-    def _final_validation_truncate(self, text: str, max_length: int = 800) -> str:
-        """Final validation with aggressive truncation."""
-        # If still repetitive after all cleaning, something is very wrong
+    def _final_validation_truncate(self, text: str, max_length: int = 1500) -> str:
+        """Final validation with conservative truncation (WORKING SCRIPT COMPATIBLE)."""
+        # If still repetitive after all cleaning, be more conservative about truncation
         if self.detect_repetitive_generation(text):
-            print("⚠️ Still repetitive after ultra-aggressive cleaning - truncating heavily")
-            # Find last good sentence in first half
-            half_point = len(text) // 2
-            truncated = text[:half_point]
+            print("⚠️ Still repetitive after ultra-aggressive cleaning - conservative truncation")
+            # Instead of cutting in half, just remove the most repetitive part
+            # Try cutting the last quarter instead of half to preserve more content
+            quarter_point = len(text) * 3 // 4  # Keep 75% instead of 50%
+            truncated = text[:quarter_point]
             last_period = truncated.rfind(".")
-            if last_period > half_point * 0.5:
+            if last_period > quarter_point * 0.8:  # More conservative
                 return truncated[: last_period + 1]
             else:
-                return truncated[:half_point] + "..."
+                return truncated + "..."
 
-        # Aggressive length limit
+        # Much more generous length limit (800 was too restrictive for 15.9 fields)
         if len(text) > max_length:
             truncated = text[:max_length]
             last_period = truncated.rfind(".")
-            if last_period > max_length * 0.7:
+            if last_period > max_length * 0.8:  # More conservative
                 return truncated[: last_period + 1]
             else:
                 return truncated + "..."
@@ -487,7 +510,7 @@ class UltraAggressiveRepetitionController(RepetitionController):
         return response.strip()
 
     def _should_use_awk_result(self, awk_result, original_response: str, image_name: str = "") -> bool:
-        """Determine if AWK result is better than original processing."""
+        """Determine if AWK result is better than original processing (EXACT WORKING SCRIPT LOGIC)."""
         if not awk_result or not awk_result.success:
             return False
 
@@ -499,12 +522,43 @@ class UltraAggressiveRepetitionController(RepetitionController):
             [line for line in original_response.split("\n") if ":" in line and len(line.strip()) > 0]
         )
 
-        # Use AWK if it has significantly more fields or high confidence
-        if awk_field_count > original_field_count * 1.5:  # AWK much better
-            return True
-        elif awk_result.confidence_score >= 0.9:  # High confidence AWK
-            return True
-        elif awk_field_count >= original_field_count and awk_result.confidence_score >= 0.8:
-            return True
+        # Decision logic with multiple criteria (EXACT WORKING SCRIPT LOGIC)
+        use_awk = False
+        reason = ""
 
-        return False
+        if not awk_result.success:
+            # AWK failed, use original
+            use_awk = False
+            reason = "AWK processing failed"
+        elif awk_field_count == 0:
+            # AWK extracted no fields, use original
+            use_awk = False
+            reason = "AWK extracted 0 fields"
+        elif original_field_count == 0:
+            # Original extracted no fields, use AWK
+            use_awk = True
+            reason = "original extracted 0 fields"
+        elif awk_field_count >= original_field_count + 2:
+            # AWK significantly better (2+ more fields)
+            use_awk = True
+            reason = f"AWK much better ({awk_field_count} vs {original_field_count} fields)"
+        elif original_field_count >= awk_field_count + 2:
+            # Original significantly better (2+ more fields)
+            use_awk = False
+            reason = f"original much better ({original_field_count} vs {awk_field_count} fields)"
+        elif awk_field_count >= original_field_count and awk_result.confidence_score >= 0.6:
+            # AWK equal or better + high confidence (WORKING SCRIPT: 0.6 threshold!)
+            use_awk = True
+            reason = f"AWK better/equal with high confidence ({awk_field_count} fields, {awk_result.confidence_score:.2f} conf)"
+        else:
+            # Default to original for all other cases
+            use_awk = False
+            reason = f"default to original ({original_field_count} vs {awk_field_count} fields, {awk_result.confidence_score:.2f} conf)"
+
+        # Log decision for debugging (matching working script)
+        if use_awk:
+            print(f"🏆 Using AWK result for {image_name}: {reason}")
+        else:
+            print(f"🏆 Using original result for {image_name}: {reason}")
+
+        return use_awk
