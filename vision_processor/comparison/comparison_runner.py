@@ -526,9 +526,6 @@ class ComparisonRunner:
             best_performers = summary.get("best_performers", {})
             performance_explanations = summary.get("performance_explanations", {})
 
-            # Debug: Check what we have
-            print(f"🔍 Summary keys available: {list(summary.keys())}")
-            print(f"🔍 Performance explanations available: {len(performance_explanations) if performance_explanations else 0}")
 
             if best_performers:
                 self.console.print("\n🥇 Best Performers:")
