@@ -162,6 +162,9 @@ class InternVLModel(BaseVisionModel):
             logger.info("Loading model on CPU (will be slow)...")
         elif self.num_gpus == 1:
             model_loading_args["torch_dtype"] = torch.bfloat16
+            # Force single GPU mode with explicit device mapping
+            model_loading_args["device_map"] = {"": 0}  # Everything on GPU 0
+
             if self.enable_quantization:
                 # Check if bitsandbytes is available
                 try:
@@ -169,14 +172,14 @@ class InternVLModel(BaseVisionModel):
 
                     model_loading_args["load_in_8bit"] = True
                     logger.info(
-                        "Loading model on single GPU with 8-bit quantization...",
+                        "🔧 V100 Mode: Loading model on single GPU with 8-bit quantization...",
                     )
                 except ImportError:
                     logger.warning(
                         "bitsandbytes not available, loading without quantization",
                     )
             else:
-                logger.info("Loading model on single GPU...")
+                logger.info("🔧 V100 Mode: Loading model on single GPU...")
         elif hasattr(self, "kwargs") and self.kwargs.get("force_multi_gpu", False):
             logger.info(
                 f"Multi-GPU mode requested, distributing across {self.num_gpus} GPUs",
@@ -218,10 +221,14 @@ class InternVLModel(BaseVisionModel):
                 **model_loading_args,
             ).eval()
 
-            # Move to device if needed (single GPU only)
-            if self.device.type == "cuda" and "device_map" not in model_loading_args:
+            # Move to device if needed (single GPU only) - but not for quantized models
+            if (self.device.type == "cuda" and
+                "device_map" not in model_loading_args and
+                not model_loading_args.get("load_in_8bit", False)):
                 self.model = self.model.cuda()
                 logger.info("Model moved to CUDA device")
+            elif model_loading_args.get("load_in_8bit", False):
+                logger.info("Quantized model - device placement handled automatically")
 
             self.is_loaded = True
             logger.info(f"Model loaded successfully on {self.device}")
