@@ -396,7 +396,7 @@ class ComparisonMetrics:
                 # Calculate compliance based on ALL extracted fields (no artificial field bias)
                 document_compliance = 0
                 total_fields = 0
-                
+
                 if isinstance(result, dict):
                     # Count ALL has_* fields that were detected
                     for key, value in result.items():
