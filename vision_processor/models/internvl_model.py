@@ -63,9 +63,13 @@ class InternVLModel(BaseVisionModel):
         # Store device manager for later use
         self.device_manager = device_manager
 
-        # Determine number of GPUs for multi-GPU setup
+        # Force single GPU for fair V100 production comparison
         if device.type == "cuda":
-            self.num_gpus = torch.cuda.device_count()
+            # Force single GPU mode to match V100 production constraints
+            # This ensures fair comparison with Llama model that's V100-optimized
+            available_gpus = torch.cuda.device_count()
+            self.num_gpus = 1  # Force single GPU regardless of available GPUs
+            logger.info(f"🔧 V100 Production Mode: Using 1 GPU (detected {available_gpus} available)")
         else:
             self.num_gpus = 0
 

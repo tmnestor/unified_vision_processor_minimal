@@ -58,7 +58,7 @@ prompts:
   #   Extract data from this image in markdown format.
 
   llama: |
-    Extract data from this image in KEY-VALUE format.
+    <|image|>Extract data from this business document in KEY-VALUE format.
     
     Output format:
     DATE: [date from receipt]

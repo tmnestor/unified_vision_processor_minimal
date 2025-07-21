@@ -21,6 +21,7 @@ from ..analysis.performance_analyzer import PerformanceAnalyzer
 from ..config.model_registry import get_model_registry
 from ..config.production_config import ProductionConfig
 from ..extraction.dynamic_extractor import DynamicExtractionResult, DynamicFieldExtractor
+from ..utils.memory_monitor import MemoryMonitor
 from ..utils.repetition_control import UltraAggressiveRepetitionController
 from .model_validator import ModelValidator
 
@@ -91,6 +92,9 @@ class ComparisonRunner:
         self.config = config
         self.console = Console()
 
+        # Initialize memory monitor
+        self.memory_monitor = MemoryMonitor(self.console)
+
         # Initialize components
         self.model_registry = get_model_registry()
         self.model_validator = ModelValidator(self.model_registry)
@@ -122,23 +126,32 @@ class ComparisonRunner:
         self.console.print(f"📁 Dataset: {self.config.datasets_path}")
         self.console.print(f"📊 Output: {self.config.output_dir}")
 
+        # Take initial memory snapshot
+        self.memory_monitor.take_snapshot("Startup")
+        self.memory_monitor.print_current_usage("🚀 Initial State")
+
         # Step 1: Validate configuration and environment
         self._validate_environment()
+        self.memory_monitor.take_snapshot("Environment Validated")
 
         # Step 2: Discover and validate dataset
         dataset_info = self._discover_and_validate_dataset()
+        self.memory_monitor.take_snapshot("Dataset Loaded")
 
         # Step 3: Validate models
         valid_models = self._validate_models()
+        self.memory_monitor.take_snapshot("Models Validated")
 
         if not valid_models:
             raise RuntimeError("No valid models found for comparison")
 
         # Step 4: Run extraction for each model
         extraction_results = self._run_extractions(valid_models, dataset_info.verified_images)
+        self.memory_monitor.cleanup_and_measure("All Models Processed")
 
         # Step 5: Perform comprehensive analysis
         analysis_results = self._run_analysis(extraction_results)
+        self.memory_monitor.take_snapshot("Analysis Complete")
 
         # Step 6: Calculate timing and success metrics
         total_time = time.time() - start_time
@@ -159,7 +172,7 @@ class ComparisonRunner:
             model_success_rates=success_metrics["model_success_rates"],
         )
 
-        # Step 7: Print summary
+        # Step 7: Print summary with memory analysis
         self._print_completion_summary()
 
         return self.results
@@ -297,6 +310,7 @@ class ComparisonRunner:
                 # Explicitly load model (V100-compatible sequential loading)
                 model.load_model()
                 self.console.print(f"✅ {model_name} loaded successfully")
+                self.memory_monitor.print_current_usage(f"📦 {model_name} Loaded")
 
                 # Get model-specific prompt
                 prompts = self.config.get_prompts()
@@ -339,9 +353,12 @@ class ComparisonRunner:
                             f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {fields_str}"
                         )
 
-                        # Cleanup every few images
+                        # Cleanup and memory check every few images
                         if (i + 1) % 5 == 0:
                             gc.collect()
+                            # Take memory snapshot periodically
+                            if (i + 1) % 10 == 0:  # Every 10 images
+                                self.memory_monitor.take_snapshot(f"{model_name} - Image {i + 1}")
 
                     except Exception as e:
                         self.console.print(
@@ -380,6 +397,7 @@ class ComparisonRunner:
 
                 # Aggressive memory cleanup for V100 16GB limit
                 self._cleanup_gpu_memory()
+                self.memory_monitor.cleanup_and_measure(f"🧹 {model_name} Cleaned Up")
 
             # Calculate model summary
             model_time = time.time() - model_start_time
@@ -549,6 +567,37 @@ class ComparisonRunner:
                 self.console.print("\n⏱️  Processing Speed Comparison:")
                 for model, time_str in processing_times["average_per_image"].items():
                     self.console.print(f"   {model}: {time_str} per image")
+
+        # Memory Usage Analysis
+        self._print_memory_summary()
+
+    def _print_memory_summary(self):
+        """Print comprehensive memory usage summary."""
+        self.console.print(f"\n{'=' * 70}")
+        self.console.print("💾 MEMORY USAGE ANALYSIS", style="bold cyan")
+        self.console.print(f"{'=' * 70}")
+
+        # Print peak usage
+        self.memory_monitor.print_peak_usage()
+
+        # Print timeline
+        self.memory_monitor.print_memory_timeline()
+
+        # Print summary statistics
+        summary = self.memory_monitor.get_memory_summary()
+        if summary:
+            self.console.print("\n📈 [bold]Memory Statistics:[/bold]")
+            self.console.print(f"   📊 Peak Process Memory: {summary.get('peak_process_memory_gb', 0):.1f}GB")
+            self.console.print(f"   📊 Average Process Memory: {summary.get('avg_process_memory_gb', 0):.1f}GB")
+
+            if 'peak_gpu_memory_gb' in summary:
+                self.console.print(f"   🎮 Peak GPU Memory: {summary['peak_gpu_memory_gb']:.1f}GB / {summary['gpu_total_memory_gb']:.1f}GB")
+                self.console.print(f"   🎮 Average GPU Memory: {summary['avg_gpu_memory_gb']:.1f}GB")
+                gpu_utilization = (summary['peak_gpu_memory_gb'] / summary['gpu_total_memory_gb']) * 100
+                self.console.print(f"   🎮 Peak GPU Utilization: {gpu_utilization:.1f}%")
+
+            self.console.print(f"   ⏱️  Monitoring Duration: {summary.get('monitoring_duration_s', 0):.1f}s")
+            self.console.print(f"   📸 Total Snapshots: {summary.get('total_snapshots', 0)}")
 
     def get_results(self) -> Optional[ComparisonResults]:
         """Get comparison results.
