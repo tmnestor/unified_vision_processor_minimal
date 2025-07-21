@@ -328,7 +328,7 @@ class ComparisonMetrics:
                     field_types = all_extraction_metrics[model_name].get("field_types_discovered", [])
                     field_consistency = all_extraction_metrics[model_name].get("field_consistency", {})
                     documents_processed = all_extraction_metrics[model_name].get("documents_processed", 1)
-                    
+
                     for field_type in field_types:
                         if field_type not in field_f1_scores:
                             field_f1_scores[field_type] = {}
