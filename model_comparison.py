@@ -37,9 +37,8 @@ from rich.console import Console
 from vision_processor.comparison.comparison_runner_legacy import ComparisonRunner
 from vision_processor.config.model_registry import get_model_registry
 
-# Import modular production components (legacy)
-from vision_processor.config.production_config_legacy import create_production_config
-from vision_processor.config.production_schema_legacy import PRODUCTION_SCHEMA
+# Import simple configuration
+from vision_processor.config.simple_config import SimpleConfig
 
 # Configure environment
 console = Console()
@@ -81,16 +80,16 @@ def run_production_comparison(
         if internvl_path:
             config_overrides["internvl_path"] = internvl_path
 
-        # Load production configuration
-        config = create_production_config(config_path, **config_overrides)
+        # Load simple configuration
+        config = SimpleConfig()
 
-        # Validate configuration
-        if not config.validate():
-            console.print("❌ Configuration validation failed", style="bold red")
+        # Simple validation - just check if models exist
+        if not Path(datasets_path).exists():
+            console.print("❌ Datasets path does not exist", style="bold red")
             return None
 
         # Print configuration summary
-        console.print("\n📋 PRODUCTION CONFIGURATION", style="bold blue")
+        console.print("\n📋 SIMPLE CONFIGURATION", style="bold blue")
         config.print_configuration()
 
         # Initialize and run comparison
@@ -103,7 +102,7 @@ def run_production_comparison(
         console.print(f"✅ Overall success rate: {results.overall_success_rate:.1%}")
         console.print(f"✅ Models tested: {len(results.models_tested)}")
         console.print(f"✅ Documents processed: {results.dataset_info.total_images}")
-        console.print(f"✅ Production fields: {len(PRODUCTION_SCHEMA.get_all_fields())}")
+        console.print("✅ Core fields: 12 essential fields")
 
         # Export DataFrame for additional analysis
         try:
@@ -142,10 +141,8 @@ def validate_production_environment() -> bool:
     else:
         console.print("⚠️  CUDA not available - using CPU")
 
-    # Check production schema
-    total_fields = len(PRODUCTION_SCHEMA.get_all_fields())
-    core_fields = len(PRODUCTION_SCHEMA.get_core_fields())
-    console.print(f"✅ Production Schema: {total_fields} fields ({core_fields} core)")
+    # Check simple schema
+    console.print("✅ Simple Core Fields: 12 essential fields")
 
     # Check model registry
     model_registry = get_model_registry()

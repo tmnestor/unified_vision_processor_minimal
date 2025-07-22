@@ -14,7 +14,7 @@ import torch
 from PIL import Image
 
 from ..config.model_registry import ModelRegistry
-from ..config.production_config_legacy import ProcessingConfig
+from ..config.simple_config import SimpleConfig
 from ..models.base_model import BaseVisionModel, DeviceConfig
 
 
@@ -31,7 +31,7 @@ class ModelValidator:
         self.validation_results: Dict[str, Dict] = {}
 
     def validate_model_loading(
-        self, model_name: str, model_path: str, processing_config: ProcessingConfig
+        self, model_name: str, model_path: str, processing_config: SimpleConfig
     ) -> bool:
         """Validate that a model can be loaded successfully.
 
@@ -162,7 +162,7 @@ class ModelValidator:
         return False
 
     def validate_all_models(
-        self, model_names: List[str], model_paths: Dict[str, str], processing_config: ProcessingConfig
+        self, model_names: List[str], model_paths: Dict[str, str], processing_config: SimpleConfig
     ) -> Tuple[List[str], List[str]]:
         """Validate multiple models.
 

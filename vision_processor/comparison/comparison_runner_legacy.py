@@ -17,7 +17,7 @@ from rich.progress import track
 
 from ..analysis.simple_metrics import SimpleMetricsCalculator
 from ..config.model_registry import get_model_registry
-from ..config.production_config_legacy import ProductionConfig
+from ..config.simple_config import SimpleConfig
 from ..extraction.dynamic_extractor import DynamicExtractionResult, DynamicFieldExtractor
 from ..utils.memory_monitor import MemoryMonitor
 from ..utils.repetition_control import UltraAggressiveRepetitionController
@@ -51,7 +51,7 @@ class ComparisonResults:
     """Complete comparison results."""
 
     # Configuration
-    config: ProductionConfig
+    config: SimpleConfig
     dataset_info: DatasetInfo
     models_tested: List[str]
 
@@ -81,7 +81,7 @@ class ComparisonResults:
 class ComparisonRunner:
     """Main orchestrator for model comparison pipeline."""
 
-    def __init__(self, config: ProductionConfig):
+    def __init__(self, config: SimpleConfig):
         """Initialize comparison runner.
 
         Args:
@@ -96,9 +96,9 @@ class ComparisonRunner:
         # Initialize components
         self.model_registry = get_model_registry()
         self.model_validator = ModelValidator(self.model_registry)
-        # Use dynamic extractor for original script compatibility
+        # Use dynamic extractor with simple default
         self.extractor = DynamicFieldExtractor(
-            min_fields_for_success=config.extraction.min_total_fields,
+            min_fields_for_success=3,  # Simple default
         )
         # Initialize repetition controller (matching original script)
         self.repetition_controller = UltraAggressiveRepetitionController()
@@ -117,10 +117,8 @@ class ComparisonRunner:
         """
         start_time = time.time()
 
-        self.console.print("🏆 PRODUCTION MODEL COMPARISON PIPELINE", style="bold blue")
-        self.console.print(f"📋 Models: {', '.join(self.config.models)}")
-        self.console.print(f"📁 Dataset: {self.config.datasets_path}")
-        self.console.print(f"📊 Output: {self.config.output_dir}")
+        self.console.print("🏆 SIMPLE MODEL COMPARISON PIPELINE", style="bold blue")
+        # Model details will be shown when they're loaded
 
         # Take initial memory snapshot
         self.memory_monitor.take_snapshot("Startup")

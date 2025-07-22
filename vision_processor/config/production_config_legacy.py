@@ -288,60 +288,35 @@ class ProductionConfig:
         )
 
     def get_prompts(self) -> Dict[str, str]:
-        """Get model-specific prompts with production field integration."""
+        """Get model-specific prompts with simple core fields."""
         base_prompts = self.yaml_config.get("prompts", {})
 
-        # Get production field list for prompt generation
-        production_fields = PRODUCTION_SCHEMA.get_all_fields()
+        # Simple prompt focusing on core fields only
+        simple_prompt = """Extract data from this image in KEY-VALUE format.
 
-        # Default prompts with production schema
-        default_prompt_template = self._create_production_prompt_template(production_fields)
+Required output format (extract any visible fields):
+
+ABN: [Australian Business Number]
+ACCOUNT_NUMBER: [Bank account number]
+AMOUNT: [Total amount]
+BSB: [Bank BSB number]
+BUSINESS_NAME: [Business name]
+DATE: [Date]
+DESCRIPTION: [Description]
+GST: [GST amount]
+INVOICE_NUMBER: [Invoice number]
+RECEIPT_NUMBER: [Receipt number]
+SUPPLIER_NAME: [Supplier name]
+TOTAL: [Total amount]
+
+Extract all visible text and format as KEY: VALUE pairs only.
+Use the exact field names above. Only include fields that are visible in the image."""
 
         return {
-            "internvl": base_prompts.get("internvl", default_prompt_template),
-            "llama": base_prompts.get("llama", default_prompt_template),
+            "internvl": base_prompts.get("internvl", simple_prompt),
+            "llama": base_prompts.get("llama", simple_prompt),
         }
 
-    def _create_production_prompt_template(self, fields: List[str]) -> str:
-        """Create prompt template using production fields."""
-        # Group fields by category for better prompt organization
-        categorized_fields = {}
-        for field_name in fields:
-            definition = PRODUCTION_SCHEMA.get_field_definition(field_name)
-            if definition:
-                category = definition.category.value
-                if category not in categorized_fields:
-                    categorized_fields[category] = []
-                categorized_fields[category].append(field_name)
-
-        prompt_parts = [
-            "Extract data from this image in KEY-VALUE format.",
-            "",
-            "Required output format (extract any visible fields):",
-        ]
-
-        # Add fields grouped by category
-        for category, category_fields in categorized_fields.items():
-            if category_fields:
-                prompt_parts.append(f"\n# {category.upper()} FIELDS:")
-                for field in sorted(category_fields):
-                    definition = PRODUCTION_SCHEMA.get_field_definition(field)
-                    example = (
-                        definition.format_example
-                        if definition and definition.format_example
-                        else "[value if visible]"
-                    )
-                    prompt_parts.append(f"{field.upper()}: {example}")
-
-        prompt_parts.extend(
-            [
-                "",
-                "Extract all visible text and format as KEY: VALUE pairs only.",
-                "Use 'N/A' for fields that are not visible or not applicable.",
-            ]
-        )
-
-        return "\n".join(prompt_parts)
 
     def get_model_config(self, model_name: str) -> Dict[str, Any]:
         """Get complete configuration for a specific model."""
