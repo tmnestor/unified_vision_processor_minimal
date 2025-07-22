@@ -275,7 +275,7 @@ class ProductionConfig:
             device_maps[model_name] = DeviceMapConfig(
                 strategy=device_map_config.get("strategy", "single_gpu"),
                 device_map=device_map_config.get("device_map", {"": 0}),
-                quantization_compatible=device_map_config.get("quantization_compatible", True)
+                quantization_compatible=device_map_config.get("quantization_compatible", True),
             )
 
         return DeviceConfig(
@@ -283,7 +283,7 @@ class ProductionConfig:
             target_gpu=yaml_device.get("target_gpu", 0),
             v100_mode=yaml_device.get("v100_mode", True),
             memory_limit_gb=yaml_device.get("memory_limit_gb", 16),
-            device_maps=device_maps
+            device_maps=device_maps,
         )
 
     def get_prompts(self) -> Dict[str, str]:

@@ -5,16 +5,15 @@ Integrates InternVL multi-GPU optimization with Llama processing capabilities.
 """
 
 import logging
+from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from ..models.base_model import BaseVisionModel, DeviceConfig
 
 if TYPE_CHECKING:
     from .simple_config import SimpleConfig
-
-# Define ModelType enum locally since we don't have unified_config
-from enum import Enum
+    from .unified_config import UnifiedConfig
 
 
 class ModelType(Enum):
@@ -62,7 +61,7 @@ class ModelFactory:
     @classmethod
     def create_model(
         cls,
-        config: "SimpleConfig" = None,
+        config: Union["SimpleConfig", "UnifiedConfig", None] = None,
         model_type: ModelType | str = None,
         model_path: str | Path | None = None,
         **kwargs,
@@ -70,7 +69,7 @@ class ModelFactory:
         """Create a vision model instance with optimal configuration.
 
         Args:
-            config: SimpleConfig object with settings
+            config: SimpleConfig or UnifiedConfig object with settings
             model_type: Type of model to create (overrides config if provided)
             model_path: Path to model files (overrides config if provided)
             **kwargs: Additional model parameters
@@ -83,10 +82,30 @@ class ModelFactory:
             ModelCreationError: If model creation fails
 
         """
-        # Get values from SimpleConfig if provided
+        # Get values from config if provided
         if config:
-            model_type = model_type or config.model_type
-            model_path = model_path or config.model_path
+            # Handle UnifiedConfig
+            if hasattr(config, "models") and hasattr(config, "get_model_config"):
+                # UnifiedConfig - need to determine which model to use
+                if model_type:
+                    model_name = model_type if isinstance(model_type, str) else model_type.value
+                    # Map model type to config name
+                    model_name_map = {"llama32_vision": "llama", "internvl3": "internvl"}
+                    config_name = model_name_map.get(model_name, model_name)
+                    if config_name in config.models:
+                        model_cfg = config.get_model_config(config_name)
+                        model_path = model_path or model_cfg.path
+                else:
+                    # Default to first configured model
+                    if config.models:
+                        first_model = list(config.models.keys())[0]
+                        model_cfg = config.get_model_config(first_model)
+                        model_type = model_type or first_model
+                        model_path = model_path or model_cfg.path
+            else:
+                # SimpleConfig
+                model_type = model_type or config.model_type
+                model_path = model_path or config.model_path
 
         # Validate path first
         if model_path is None or (isinstance(model_path, str) and not model_path.strip()):
@@ -137,7 +156,7 @@ class ModelFactory:
     def _prepare_model_config(
         cls,
         model_type: ModelType,
-        config: Optional["SimpleConfig"],
+        config: Optional[Union["SimpleConfig", "UnifiedConfig"]],
         **kwargs,
     ) -> dict:
         """Prepare model-specific configuration."""
@@ -148,39 +167,75 @@ class ModelFactory:
             "memory_limit_mb": None,
         }
 
-        # Apply simple config if provided
+        # Apply config if provided
         if config:
-            # Convert device_config to enum if it's a string
-            device_config = config.device_config
-            if isinstance(device_config, str):
-                try:
-                    device_config = DeviceConfig(device_config)
-                except ValueError:
-                    # Handle common string mappings
-                    device_mapping = {
-                        "cpu": DeviceConfig.CPU,
-                        "cuda": DeviceConfig.SINGLE_GPU,
-                        "cuda:0": DeviceConfig.SINGLE_GPU,
-                        "auto": DeviceConfig.AUTO,
-                        "multi_gpu": DeviceConfig.MULTI_GPU,
-                        "mps": DeviceConfig.AUTO,  # MPS will be detected by AUTO
-                    }
-                    device_config = device_mapping.get(device_config.lower(), DeviceConfig.AUTO)
-                    logger.warning(
-                        f"Converted device config string '{config.device_config}' to {device_config}"
-                    )
+            # Handle UnifiedConfig
+            if hasattr(config, "models") and hasattr(config, "processing"):
+                # UnifiedConfig
+                # Map model type to config name
+                model_name_map = {ModelType.LLAMA32_VISION: "llama", ModelType.INTERNVL3: "internvl"}
+                config_name = model_name_map.get(model_type, model_type.value)
 
-            model_config.update(
-                {
-                    "device_config": device_config,
-                    "enable_quantization": config.enable_quantization,
-                    "memory_limit_mb": config.memory_limit_mb,
-                    "gpu_memory_fraction": config.gpu_memory_fraction,
-                    "enable_gradient_checkpointing": config.enable_gradient_checkpointing,
-                    "use_flash_attention": config.use_flash_attention,
-                    "trust_remote_code": config.trust_remote_code,
-                },
-            )
+                # Get model-specific config if available
+                if config_name in config.models:
+                    model_cfg = config.models[config_name]
+                    device_config = model_cfg.device_map
+
+                    # Convert device_map to DeviceConfig enum
+                    if isinstance(device_config, dict):
+                        if device_config == {"": 0}:
+                            device_config = DeviceConfig.SINGLE_GPU
+                        else:
+                            device_config = DeviceConfig.MULTI_GPU
+                    elif device_config == "auto":
+                        device_config = DeviceConfig.AUTO
+                    else:
+                        device_config = DeviceConfig.AUTO
+
+                    model_config.update(
+                        {
+                            "device_config": device_config,
+                            "enable_quantization": model_cfg.quantization_enabled,
+                            "memory_limit_mb": config.processing.memory_limit_mb,
+                            "gpu_memory_fraction": 0.9,  # Default
+                            "enable_gradient_checkpointing": config.processing.enable_gradient_checkpointing,
+                            "use_flash_attention": config.processing.use_flash_attention,
+                            "trust_remote_code": model_cfg.trust_remote_code,
+                        },
+                    )
+            else:
+                # SimpleConfig
+                # Convert device_config to enum if it's a string
+                device_config = config.device_config
+                if isinstance(device_config, str):
+                    try:
+                        device_config = DeviceConfig(device_config)
+                    except ValueError:
+                        # Handle common string mappings
+                        device_mapping = {
+                            "cpu": DeviceConfig.CPU,
+                            "cuda": DeviceConfig.SINGLE_GPU,
+                            "cuda:0": DeviceConfig.SINGLE_GPU,
+                            "auto": DeviceConfig.AUTO,
+                            "multi_gpu": DeviceConfig.MULTI_GPU,
+                            "mps": DeviceConfig.AUTO,  # MPS will be detected by AUTO
+                        }
+                        device_config = device_mapping.get(device_config.lower(), DeviceConfig.AUTO)
+                        logger.warning(
+                            f"Converted device config string '{config.device_config}' to {device_config}"
+                        )
+
+                model_config.update(
+                    {
+                        "device_config": device_config,
+                        "enable_quantization": config.enable_quantization,
+                        "memory_limit_mb": config.memory_limit_mb,
+                        "gpu_memory_fraction": config.gpu_memory_fraction,
+                        "enable_gradient_checkpointing": config.enable_gradient_checkpointing,
+                        "use_flash_attention": config.use_flash_attention,
+                        "trust_remote_code": config.trust_remote_code,
+                    },
+                )
 
         # Apply model-specific optimizations
         if model_type == ModelType.INTERNVL3:
@@ -194,27 +249,59 @@ class ModelFactory:
         return model_config
 
     @classmethod
-    def _get_internvl_config(cls, config: Optional["SimpleConfig"]) -> dict:
+    def _get_internvl_config(cls, config: Optional[Union["SimpleConfig", "UnifiedConfig"]]) -> dict:
         """Get InternVL-specific configuration optimizations."""
-        internvl_config = {
-            # Multi-GPU optimization settings
-            "enable_multi_gpu": config.enable_multi_gpu if config else False,
-            "gpu_memory_fraction": config.gpu_memory_fraction if config else 0.9,
-            "enable_gradient_checkpointing": config.enable_gradient_checkpointing if config else True,
-            # InternVL-specific features
-            "enable_highlight_detection": True,
-            "enable_enhanced_parsing": True,
-            "enable_computer_vision": True,
-            # Performance optimizations
-            "use_flash_attention": config.use_flash_attention if config else True,
-            "enable_compilation": False,  # Disable for compatibility
-            "trust_remote_code": config.trust_remote_code if config else True,
-        }
+        # Handle UnifiedConfig vs SimpleConfig
+        if config and hasattr(config, "processing"):
+            # UnifiedConfig
+            internvl_config = {
+                # Multi-GPU optimization settings
+                "enable_multi_gpu": False,  # Can be overridden by device_map
+                "gpu_memory_fraction": 0.9,
+                "enable_gradient_checkpointing": config.processing.enable_gradient_checkpointing,
+                # InternVL-specific features
+                "enable_highlight_detection": True,
+                "enable_enhanced_parsing": True,
+                "enable_computer_vision": True,
+                # Performance optimizations
+                "use_flash_attention": config.processing.use_flash_attention,
+                "enable_compilation": False,  # Disable for compatibility
+                "trust_remote_code": True,
+            }
+        elif config:
+            # SimpleConfig
+            internvl_config = {
+                # Multi-GPU optimization settings
+                "enable_multi_gpu": config.enable_multi_gpu,
+                "gpu_memory_fraction": config.gpu_memory_fraction,
+                "enable_gradient_checkpointing": config.enable_gradient_checkpointing,
+                # InternVL-specific features
+                "enable_highlight_detection": True,
+                "enable_enhanced_parsing": True,
+                "enable_computer_vision": True,
+                # Performance optimizations
+                "use_flash_attention": config.use_flash_attention,
+                "enable_compilation": False,  # Disable for compatibility
+                "trust_remote_code": config.trust_remote_code,
+            }
+        else:
+            # No config
+            internvl_config = {
+                "enable_multi_gpu": False,
+                "gpu_memory_fraction": 0.9,
+                "enable_gradient_checkpointing": True,
+                "enable_highlight_detection": True,
+                "enable_enhanced_parsing": True,
+                "enable_computer_vision": True,
+                "use_flash_attention": True,
+                "enable_compilation": False,
+                "trust_remote_code": True,
+            }
 
         return internvl_config
 
     @classmethod
-    def _get_llama_config(cls, config: Optional["SimpleConfig"]) -> dict:
+    def _get_llama_config(cls, config: Optional[Union["SimpleConfig", "UnifiedConfig"]]) -> dict:
         """Get Llama-3.2-Vision specific configuration."""
         llama_config = {
             # Llama-specific optimizations - simplified for single-step
@@ -236,7 +323,7 @@ class ModelFactory:
     def _apply_optimizations(
         cls,
         model: BaseVisionModel,
-        config: Optional["SimpleConfig"],
+        config: Optional[Union["SimpleConfig", "UnifiedConfig"]],
     ) -> None:
         """Apply post-creation optimizations to the model."""
         try:
@@ -257,7 +344,7 @@ class ModelFactory:
     def _apply_cuda_optimizations(
         cls,
         model: BaseVisionModel,
-        _config: Optional["SimpleConfig"],
+        _config: Optional[Union["SimpleConfig", "UnifiedConfig"]],
     ) -> None:
         """Apply CUDA-specific optimizations."""
         import torch
@@ -294,7 +381,7 @@ class ModelFactory:
     def _apply_mps_optimizations(
         cls,
         model: BaseVisionModel,
-        _config: Optional["SimpleConfig"],
+        _config: Optional[Union["SimpleConfig", "UnifiedConfig"]],
     ) -> None:
         """Apply MPS (Apple Silicon) optimizations."""
         # MPS optimizations for Mac M1 development
@@ -310,7 +397,7 @@ class ModelFactory:
     def _apply_cpu_optimizations(
         cls,
         model: BaseVisionModel,
-        _config: Optional["SimpleConfig"],
+        _config: Optional[Union["SimpleConfig", "UnifiedConfig"]],
     ) -> None:
         """Apply CPU-specific optimizations."""
         try:

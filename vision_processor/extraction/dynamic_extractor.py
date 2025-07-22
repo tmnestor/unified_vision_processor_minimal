@@ -200,42 +200,51 @@ class DynamicFieldExtractor:
         # Try structured extraction first - more flexible pattern matching
         patterns = [
             rf'(?:{field_name}|{field_name.lower()}):\s*"?([^"\n]+)"?',  # Original pattern
-            rf'(?:{field_name}|{field_name.lower()})\s*:\s*([^\n]+)',    # More flexible spacing
-            rf'{field_name}:\s*([^\n]+)',                                # Exact field name
-            rf'{field_name.lower()}:\s*([^\n]+)',                        # Lowercase field name
+            rf"(?:{field_name}|{field_name.lower()})\s*:\s*([^\n]+)",  # More flexible spacing
+            rf"{field_name}:\s*([^\n]+)",  # Exact field name
+            rf"{field_name.lower()}:\s*([^\n]+)",  # Lowercase field name
         ]
 
         # Add specialized patterns for banking fields
         if field_name.upper() == "BSB":
-            patterns.extend([
-                r'BSB[:\s]*(\d{3}-?\d{3})',  # BSB: XXX-XXX or XXXXXX
-                r'Branch[:\s]*(\d{3}-?\d{3})',  # Branch: XXX-XXX
-                r'Sort[:\s]*Code[:\s]*(\d{3}-?\d{3})',  # Sort Code: XXX-XXX
-            ])
+            patterns.extend(
+                [
+                    r"BSB[:\s]*(\d{3}-?\d{3})",  # BSB: XXX-XXX or XXXXXX
+                    r"Branch[:\s]*(\d{3}-?\d{3})",  # Branch: XXX-XXX
+                    r"Sort[:\s]*Code[:\s]*(\d{3}-?\d{3})",  # Sort Code: XXX-XXX
+                ]
+            )
         elif field_name.upper() in ["ACCOUNT_NUMBER", "ACCOUNT"]:
-            patterns.extend([
-                r'Account[:\s]*Number[:\s]*(\d{6,12})',  # Account Number: XXXXXXXXX
-                r'Account[:\s]*(\d{6,12})',  # Account: XXXXXXXXX
-                r'Acc[:\s]*No[:\s]*(\d{6,12})',  # Acc No: XXXXXXXXX
-            ])
+            patterns.extend(
+                [
+                    r"Account[:\s]*Number[:\s]*(\d{6,12})",  # Account Number: XXXXXXXXX
+                    r"Account[:\s]*(\d{6,12})",  # Account: XXXXXXXXX
+                    r"Acc[:\s]*No[:\s]*(\d{6,12})",  # Acc No: XXXXXXXXX
+                ]
+            )
 
         for pattern in patterns:
             match = re.search(pattern, response, re.IGNORECASE)
             if match:
                 value = match.group(1).strip()
                 # More lenient validation - accept more values as valid
-                if value and len(value) > 0 and value.upper() not in [
-                    "N/A",
-                    "NA",
-                    "NOT AVAILABLE",
-                    "NOT FOUND",
-                    "NONE",
-                    "-",
-                    "UNKNOWN",
-                    "NULL",
-                    "EMPTY",
-                    "NOT VISIBLE",
-                ]:
+                if (
+                    value
+                    and len(value) > 0
+                    and value.upper()
+                    not in [
+                        "N/A",
+                        "NA",
+                        "NOT AVAILABLE",
+                        "NOT FOUND",
+                        "NONE",
+                        "-",
+                        "UNKNOWN",
+                        "NULL",
+                        "EMPTY",
+                        "NOT VISIBLE",
+                    ]
+                ):
                     return True, value
 
         return False, None

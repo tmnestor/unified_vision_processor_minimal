@@ -1,0 +1,54 @@
+# Example Unified Configuration File
+# ===================================
+# This demonstrates the new unified configuration system
+# that replaces SimpleConfig and ProductionConfig
+
+# Model configurations
+models:
+  llama:
+    path: "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision-Instruct"
+    device_map: {"": 0}  # Single GPU
+    quantization_enabled: true
+    trust_remote_code: true
+    max_memory: {0: "15GB"}
+    
+  internvl:
+    path: "/home/jovyan/nfs_share/models/InternVL3-8B"
+    device_map: {"": 0}  # Single GPU for V100
+    quantization_enabled: true
+    trust_remote_code: true
+    max_memory: {0: "15GB"}
+
+# Processing configuration
+processing:
+  max_tokens: 256
+  batch_size: 1
+  enable_gradient_checkpointing: true
+  use_flash_attention: true
+  memory_limit_mb: 15360  # 15GB for V100
+  
+  # Repetition control settings
+  repetition_control_enabled: true
+  repetition_word_threshold: 0.15
+  repetition_phrase_threshold: 2
+  repetition_max_tokens_limit: 384
+
+# Extraction configuration
+extraction:
+  min_core_fields: 5
+  min_total_fields: 3
+  enable_fallback_patterns: true
+  enable_raw_markdown_fallback: true
+  strict_validation: false
+  priority_categories:
+    - SUPPLIER
+    - FINANCIAL
+    - TEMPORAL
+
+# Analysis configuration
+analysis:
+  output_format: table
+  generate_charts: true
+  generate_csv: true
+  chart_dpi: 300
+  log_level: INFO
