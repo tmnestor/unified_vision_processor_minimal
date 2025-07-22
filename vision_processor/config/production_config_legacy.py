@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-from .production_schema import PRODUCTION_SCHEMA, FieldCategory
+# Note: Production schema removed in refactoring - using simple core fields now
 from .simple_config import SimpleConfig
 
 

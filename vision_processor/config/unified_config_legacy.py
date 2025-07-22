@@ -19,7 +19,7 @@ import yaml
 from dotenv import load_dotenv
 from rich.console import Console
 
-from .production_schema import PRODUCTION_SCHEMA, FieldCategory
+# Note: Production schema removed in refactoring - using simple core fields now
 
 console = Console()
 
