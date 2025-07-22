@@ -8,8 +8,9 @@
 - **Result**: `core_fields_found` now properly counts extracted fields
 
 ### 2. 7-Step Pipeline Orchestrator ❌
-- **Removed**: Complex 7-step processing pipeline
-- **Reason**: Overcomplication - the existing extractors already handle the processing
+- **Removed**: Complex 7-step processing pipeline (Classification → Primary Extraction → AWK Fallback → Validation → ATO Compliance → Confidence Scoring → Recommendations)
+- **Simplified to**: Just Primary Extraction + AWK Fallback
+- **Reason**: Massive overcomplication - only need primary extraction with AWK as a fallback
 
 ### 3. Schema Field Mapping ❌ → ✅  
 - **Before**: Complex mapping from extracted fields to production schema names
