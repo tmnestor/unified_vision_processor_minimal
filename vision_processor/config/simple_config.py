@@ -248,3 +248,10 @@ class SimpleConfig:
         if "quantization" in kwargs and kwargs["quantization"] is not None:
             self.enable_quantization = kwargs["quantization"]
             print(f"🔄 Overriding quantization to: {self.enable_quantization}")
+
+    def get_prompts(self) -> dict[str, str]:
+        """Get model-specific prompts from YAML configuration."""
+        return self.yaml_config.get("prompts", {
+            "llama": "Extract data from this image in KEY-VALUE format.",
+            "internvl": "Extract data from this image in KEY-VALUE format."
+        })
