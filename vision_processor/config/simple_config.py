@@ -103,12 +103,30 @@ class SimpleConfig:
             'max_tokens': 256,
         })()
 
+        # Create device config object with device map method
+        yaml_device_config = self.yaml_config.get("device_config", {})
+        device_maps = yaml_device_config.get("device_maps", {})
+
+        class SimpleDeviceConfig:
+            def __init__(self, device_maps_dict):
+                self.device_maps = device_maps_dict
+                self.original_device_config = os.getenv("VISION_DEVICE_CONFIG", "auto")
+
+            def get_device_map_for_model(self, model_name: str):
+                # Check if we have specific device map for this model in YAML
+                if model_name in self.device_maps:
+                    return self.device_maps[model_name].get("device_map", {"": 0})
+                # Default to single GPU
+                return {"": 0}
+
+        self.device_config = SimpleDeviceConfig(device_maps)
+
     def print_configuration(self):
         """Print current configuration for debugging."""
         print("🔧 Vision Processor Configuration:")
         print(f"  Model Type: {self.model_type}")
         print(f"  Model Path: {self.model_path}")
-        print(f"  Device Config: {self.device_config}")
+        print(f"  Device Config: {self.device_config.original_device_config}")
         print(f"  Multi-GPU: {self.enable_multi_gpu}")
         print(f"  GPU Memory Fraction: {self.gpu_memory_fraction}")
         print(f"  Memory Limit: {self.memory_limit_mb}MB")
@@ -143,8 +161,9 @@ class SimpleConfig:
 
         # Check device config
         valid_devices = ["auto", "cpu", "cuda", "cuda:0", "cuda:1", "mps"]
-        if self.device_config not in valid_devices and not self.device_config.startswith("cuda:"):
-            print(f"❌ Invalid device config: {self.device_config}")
+        device_str = self.device_config.original_device_config
+        if device_str not in valid_devices and not device_str.startswith("cuda:"):
+            print(f"❌ Invalid device config: {device_str}")
             return False
 
         # Check memory settings
@@ -172,7 +191,7 @@ class SimpleConfig:
         return {
             "model_type": self.model_type,
             "model_path": self.model_path,
-            "device_config": self.device_config,
+            "device_config": self.device_config.original_device_config,
             "enable_multi_gpu": self.enable_multi_gpu,
             "gpu_memory_fraction": self.gpu_memory_fraction,
             "memory_limit_mb": self.memory_limit_mb,
@@ -221,8 +240,10 @@ class SimpleConfig:
             print(f"🔄 Overriding output format to: {self.output_format}")
 
         if "device" in kwargs and kwargs["device"]:
-            self.device_config = kwargs["device"]
-            print(f"🔄 Overriding device config to: {self.device_config}")
+            # Update the original device config and recreate the device config object
+            device_str = kwargs["device"]
+            self.device_config.original_device_config = device_str
+            print(f"🔄 Overriding device config to: {device_str}")
 
         if "quantization" in kwargs and kwargs["quantization"] is not None:
             self.enable_quantization = kwargs["quantization"]
