@@ -88,7 +88,7 @@ class SimpleConfig:
         self.output_dir = defaults.get("output_dir", "results")
         models_str = defaults.get("models", "llama,internvl")
         self.models = [m.strip() for m in models_str.split(",")]
-        
+
         # Load model paths from YAML
         yaml_model_paths = self.yaml_config.get("model_paths", {})
         self.model_paths = type('ModelPaths', (), yaml_model_paths)()
