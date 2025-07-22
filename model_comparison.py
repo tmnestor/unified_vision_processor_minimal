@@ -349,45 +349,24 @@ def validate_models(
 
 @app.command()
 def show_schema():
-    """Show the production field schema"""
-    console.print("🏷️  PRODUCTION FIELD SCHEMA", style="bold blue")
-
-    total_fields = len(PRODUCTION_SCHEMA.get_all_fields())
-    core_fields = len(PRODUCTION_SCHEMA.get_core_fields())
-    required_fields = len(PRODUCTION_SCHEMA.get_required_fields())
-
-    console.print(f"📊 Total Fields: {total_fields}")
-    console.print(f"📊 Core Fields: {core_fields}")
-    console.print(f"📊 Required Fields: {required_fields}")
-
-    # Show field distribution by category
-    from vision_processor.config.production_schema_legacy import FieldCategory
-
-    console.print("\n📋 Field Distribution by Category:")
-
-    for category in FieldCategory:
-        fields_in_category = PRODUCTION_SCHEMA.get_fields_by_category(category)
-        if fields_in_category:
-            console.print(f"   {category.value}: {len(fields_in_category)} fields")
-
-            # Show a few example fields
-            examples = fields_in_category[:3]
-            if len(fields_in_category) > 3:
-                examples_str = ", ".join(examples) + f", ... (+{len(fields_in_category) - 3} more)"
-            else:
-                examples_str = ", ".join(examples)
-            console.print(f"      Examples: {examples_str}")
-
-    # Show core fields
-    console.print(f"\n🎯 Core Fields ({core_fields}):")
-    core_field_list = PRODUCTION_SCHEMA.get_core_fields()
-    for i, field in enumerate(core_field_list):
-        console.print(f"   {i + 1:2d}. {field}")
-        if i >= 9:  # Show first 10
-            remaining = len(core_field_list) - 10
-            if remaining > 0:
-                console.print(f"       ... and {remaining} more")
-            break
+    """Show the simple core fields schema"""
+    console.print("🏷️  SIMPLE CORE FIELDS", style="bold blue")
+    
+    # Define the simple core fields directly (from base_extractor.py)
+    core_fields = {
+        "DATE", "TOTAL", "GST", "ABN", "SUPPLIER_NAME",
+        "INVOICE_NUMBER", "AMOUNT", "DESCRIPTION",
+        "BSB", "ACCOUNT_NUMBER", "BUSINESS_NAME", "RECEIPT_NUMBER"
+    }
+    
+    console.print(f"📊 Total Core Fields: {len(core_fields)}")
+    console.print("\n🎯 Core Fields for Australian Tax Documents:")
+    
+    for i, field in enumerate(sorted(core_fields), 1):
+        console.print(f"   {i:2d}. {field}")
+    
+    console.print("\n💡 Note: This simplified system focuses on essential fields only")
+    console.print("💡 No complex categorization - just the fields that matter most")
 
 
 if __name__ == "__main__":
