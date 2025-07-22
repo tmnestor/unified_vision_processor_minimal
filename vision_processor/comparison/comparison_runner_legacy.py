@@ -15,7 +15,7 @@ from PIL import Image
 from rich.console import Console
 from rich.progress import track
 
-from ..analysis.simple_metrics import SimpleMetricsCalculator
+from ..analysis.simple_metrics import InformationExtractionCalculator
 from ..config.model_registry import get_model_registry
 from ..config.simple_config import SimpleConfig
 from ..extraction.dynamic_extractor import DynamicExtractionResult, DynamicFieldExtractor
@@ -103,8 +103,8 @@ class ComparisonRunner:
         # Initialize repetition controller (matching original script)
         self.repetition_controller = UltraAggressiveRepetitionController()
 
-        # Initialize simple metrics calculator
-        self.metrics_calculator = SimpleMetricsCalculator()
+        # Initialize Information Extraction Capability calculator
+        self.metrics_calculator = InformationExtractionCalculator()
 
         # Results storage
         self.results: Optional[ComparisonResults] = None
@@ -457,6 +457,7 @@ class ComparisonRunner:
             "confidence_score": extraction_result.extraction_score / 10.0,  # Normalize to 0-1 range
             "core_fields_found": core_fields_found,  # Add core fields count
             "fields": extraction_result.extracted_fields,  # Add the actual fields for CSV export
+            "extracted_fields": extraction_result.extracted_fields,  # For InformationExtractionCalculator compatibility
         }
 
         # Add has_* fields from working script logic (EXACT MATCH)
@@ -467,37 +468,56 @@ class ComparisonRunner:
 
     def _run_analysis(self, extraction_results: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
         """Run comprehensive analysis on extraction results."""
-        self.console.print("\n📊 COMPREHENSIVE ANALYSIS", style="bold green")
+        self.console.print("\n📊 INFORMATION EXTRACTION CAPABILITY ANALYSIS", style="bold green")
 
-        # Results are stored in the ComparisonResults object
-        # No additional processing needed for simplified metrics
+        # Add results to the metrics calculator
+        for model_name, results in extraction_results.items():
+            self.metrics_calculator.add_results(model_name, results)
 
         analysis_results = {}
 
-        # Performance analysis
-        self.console.print("📈 Running performance analysis...")
+        # Information Extraction Capability analysis
+        self.console.print("📈 Calculating Information Extraction Capability metrics...")
+        model_comparison = self.metrics_calculator.compare_models()
+        detailed_analysis = self.metrics_calculator.get_detailed_analysis()
+        capability_ranking = self.metrics_calculator.get_extraction_capability_ranking()
+
         analysis_results["performance"] = {
-            "comparison": {},
-            "issues": [],
-            "summary": {},
+            "comparison": model_comparison,
+            "ranking": capability_ranking,
+            "detailed_breakdown": detailed_analysis,
         }
 
-        # Field analysis
-        self.console.print("🏷️  Running field analysis...")
+        # Field analysis focusing on extraction quality
+        self.console.print("🏷️  Running field extraction analysis...")
         analysis_results["field"] = {
-            "summary": {},
-            "problematic_fields": [],
-            "recommendations": [],
+            "summary": detailed_analysis.get("metrics_breakdown", {}),
+            "field_weights": detailed_analysis.get("field_weights_used", {}),
+            "best_performer": detailed_analysis.get("best_performer", {}),
         }
 
-        # Comparison metrics
-        self.console.print("🔢 Calculating comparison metrics...")
+        # Comparison metrics with Information Extraction Capability focus
+        self.console.print("🔢 Generating comparison summary...")
+        best_performer = detailed_analysis.get("best_performer", {})
         analysis_results["metrics"] = {
-            "comparison": {},
-            "summary": {},
+            "comparison": model_comparison,
+            "summary": {
+                "best_performers": {
+                    "overall_capability": best_performer.get("model", "N/A"),
+                    "extraction_capability_score": best_performer.get("extraction_capability", "N/A"),
+                },
+                "performance_explanations": {
+                    "information_extraction_capability": {
+                        "winner": best_performer.get("model", "N/A"),
+                        "score": best_performer.get("extraction_capability", "N/A"),
+                        "explanation": "Superior weighted field extraction, critical field coverage, and information density",
+                    }
+                } if best_performer else {},
+                "capability_ranking": [{"model": model, "score": f"{score:.3f}"} for model, score in capability_ranking],
+            },
         }
 
-        self.console.print("✅ Analysis complete")
+        self.console.print("✅ Information Extraction Capability analysis complete")
         return analysis_results
 
     def _calculate_success_metrics(
