@@ -316,11 +316,11 @@ class PerformanceAnalyzer:
                         "field_count": result.get("field_count", 0),
                         "is_successful": result.get("successful", False),
                         "confidence_score": result.get("confidence_score", 0),
-                        "core_fields_found": 0,  # Not available in dict format
-                        "required_fields_found": 0,  # Not available in dict format
+                        "core_fields_found": result.get("core_fields_found", 0),  # Now available from conversion
+                        "required_fields_found": 0,  # Not tracked in simple system
                         "has_structured_output": result.get("is_structured", False),
-                        "fallback_used": False,  # Not available in dict format
-                        "categories_count": 0,  # Not available in dict format
+                        "fallback_used": False,  # Not tracked in simple system
+                        "categories_count": 0,  # Not tracked in simple system
                     }
                 else:
                     # Handle object format

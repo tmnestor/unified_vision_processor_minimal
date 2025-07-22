@@ -432,6 +432,20 @@ class ComparisonRunner:
         Returns:
             Dictionary in original script format with has_* fields
         """
+        # Define core fields (matching what extractors actually produce)
+        CORE_FIELDS = {
+            "DATE", "TOTAL", "GST", "ABN", "SUPPLIER_NAME",
+            "INVOICE_NUMBER", "AMOUNT", "DESCRIPTION",
+            "BSB", "ACCOUNT_NUMBER", "BUSINESS_NAME", "RECEIPT_NUMBER"
+        }
+
+        # Calculate core fields found
+        core_fields_found = 0
+        if extraction_result.extracted_fields:
+            for field_name in extraction_result.extracted_fields:
+                if field_name.upper() in CORE_FIELDS:
+                    core_fields_found += 1
+
         # Create base result dictionary matching original format
         result = {
             "img_name": extraction_result.image_name,
@@ -447,6 +461,8 @@ class ComparisonRunner:
             "field_count": extraction_result.field_count,
             "is_successful": extraction_result.is_successful,
             "confidence_score": extraction_result.extraction_score / 10.0,  # Normalize to 0-1 range
+            "core_fields_found": core_fields_found,  # Add core fields count
+            "fields": extraction_result.extracted_fields,  # Add the actual fields for CSV export
         }
 
         # Add has_* fields from working script logic (EXACT MATCH)

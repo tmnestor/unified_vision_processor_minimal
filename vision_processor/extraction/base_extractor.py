@@ -15,7 +15,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from rich.console import Console
 
-from ..config.production_schema import PRODUCTION_SCHEMA
 from .patterns import FieldCleaner, FieldValidator, PatternLibrary
 
 console = Console()
@@ -82,11 +81,14 @@ class BaseExtractor(ABC):
         self.pattern_library = PatternLibrary
         self.field_cleaner = FieldCleaner
         self.field_validator = FieldValidator
-        self.production_schema = PRODUCTION_SCHEMA
 
-        # Get core fields for validation
-        self.core_fields = set(self.production_schema.get_core_fields())
-        self.all_fields = set(self.production_schema.get_all_fields())
+        # Define core fields that are commonly expected in Australian tax documents
+        # These are the actual field names we extract, not schema-mapped names
+        self.core_fields = {
+            "DATE", "TOTAL", "GST", "ABN", "SUPPLIER_NAME",
+            "INVOICE_NUMBER", "AMOUNT", "DESCRIPTION",
+            "BSB", "ACCOUNT_NUMBER", "BUSINESS_NAME", "RECEIPT_NUMBER"
+        }
 
     def extract(self, response: str, image_name: str, model_name: str) -> ExtractionResult:
         """Main extraction method.
@@ -181,12 +183,6 @@ class BaseExtractor(ABC):
 
             # Clean field name
             clean_name = field_name.strip().upper()
-
-            # Skip if not in schema
-            if clean_name not in self.all_fields:
-                if self.verbose:
-                    console.print(f"⚠️  Skipping unknown field: {field_name}", style="yellow")
-                continue
 
             # Clean value based on field type
             clean_value = self.pattern_library.clean_field_value(clean_name, value)
