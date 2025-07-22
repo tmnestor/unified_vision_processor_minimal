@@ -93,7 +93,15 @@ class SimpleConfig:
         yaml_model_paths = self.yaml_config.get("model_paths", {})
         self.model_paths = type('ModelPaths', (), yaml_model_paths)()
 
-        # Remove processing object so SimpleConfig takes the correct path in model factory
+        # Create processing object with all required attributes for model loading
+        self.processing = type('Processing', (), {
+            'memory_limit_mb': self.memory_limit_mb,
+            'enable_gradient_checkpointing': self.enable_gradient_checkpointing,
+            'use_flash_attention': self.use_flash_attention,
+            'quantization': self.enable_quantization,
+            'batch_size': 1,
+            'max_tokens': 256,
+        })()
 
     def print_configuration(self):
         """Print current configuration for debugging."""
