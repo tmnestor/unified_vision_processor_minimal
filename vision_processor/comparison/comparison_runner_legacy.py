@@ -245,7 +245,7 @@ class ComparisonRunner:
 
         valid_models = []
 
-        for model_name in self.config.models:
+        for model_name in self.config.models_list:
             self.console.print(f"🔍 Validating {model_name}...")
 
             # Check if model is registered
