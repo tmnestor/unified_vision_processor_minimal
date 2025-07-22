@@ -11,21 +11,21 @@ Advanced metrics focusing on Information Extraction Capability:
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-# Critical business fields weighted by importance
+# All fields equally weighted for extraction capability
 FIELD_WEIGHTS = {
-    "DATE": 1.0,        # Essential for tax records
-    "TOTAL": 1.0,       # Essential for financial tracking
-    "GST": 0.9,         # Critical for Australian tax compliance
-    "ABN": 0.9,         # Critical for business identification
-    "SUPPLIER_NAME": 0.8,  # Important for vendor tracking
-    "BUSINESS_NAME": 0.8,  # Important for entity identification
-    "INVOICE_NUMBER": 0.7, # Important for record keeping
-    "SUBTOTAL": 0.6,    # Useful for verification
-    "AMOUNT": 0.5,      # May duplicate TOTAL
-    "DESCRIPTION": 0.4, # Contextual information
-    "BSB": 0.3,         # Banking details
-    "ACCOUNT_NUMBER": 0.3, # Banking details
-    "RECEIPT_NUMBER": 0.2, # Alternative to invoice number
+    "DATE": 1.0,
+    "TOTAL": 1.0,
+    "GST": 1.0,
+    "ABN": 1.0,
+    "SUPPLIER_NAME": 1.0,
+    "BUSINESS_NAME": 1.0,
+    "INVOICE_NUMBER": 1.0,
+    "SUBTOTAL": 1.0,
+    "AMOUNT": 1.0,
+    "DESCRIPTION": 1.0,
+    "BSB": 1.0,
+    "ACCOUNT_NUMBER": 1.0,
+    "RECEIPT_NUMBER": 1.0,
 }
 
 @dataclass

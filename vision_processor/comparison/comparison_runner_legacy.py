@@ -565,8 +565,10 @@ class ComparisonRunner:
         for model_name in self.results.models_tested:
             success_rate = self.results.model_success_rates.get(model_name, 0)
             exec_time = self.results.model_execution_times.get(model_name, 0)
+            num_images = len(self.results.dataset_info.verified_images)
+            avg_time_per_image = exec_time / num_images if num_images > 0 else 0
 
-            self.console.print(f"   {model_name}: {success_rate:.1%} success, {exec_time:.1f}s total")
+            self.console.print(f"   {model_name}: {success_rate:.1%} success, {exec_time:.1f}s total, {avg_time_per_image:.1f}s per image")
 
         # Best performers with detailed explanations
         if self.results.comparison_metrics and self.results.comparison_metrics.get("summary"):
@@ -591,12 +593,13 @@ class ComparisonRunner:
                         self.console.print(f"   [green]Winner[/green]: {details['winner']} ([cyan]Score: {details['score']}[/cyan])")
                         self.console.print(f"   [yellow]Why[/yellow]: {details['explanation']}")
 
-            # Processing time details if available
-            processing_times = self.results.comparison_metrics["summary"].get("processing_times", {})
-            if processing_times and "average_per_image" in processing_times:
-                self.console.print("\n⏱️  Processing Speed Comparison:")
-                for model, time_str in processing_times["average_per_image"].items():
-                    self.console.print(f"   {model}: {time_str} per image")
+            # Processing time comparison
+            self.console.print("\n⏱️  Processing Speed Comparison:")
+            for model_name in self.results.models_tested:
+                exec_time = self.results.model_execution_times.get(model_name, 0)
+                num_images = len(self.results.dataset_info.verified_images)
+                avg_time_per_image = exec_time / num_images if num_images > 0 else 0
+                self.console.print(f"   {model_name}: {avg_time_per_image:.1f}s per image")
 
         # Memory Usage Analysis
         self._print_memory_summary()
