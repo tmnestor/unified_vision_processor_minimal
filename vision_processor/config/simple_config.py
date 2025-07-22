@@ -1,25 +1,33 @@
-"""Simple configuration loader from .env file."""
+"""Simple configuration loader from .env file and YAML config."""
 
 import os
 from pathlib import Path
-from typing import Optional
 
+import yaml
 from dotenv import load_dotenv
 
 
 class SimpleConfig:
     """Simplified configuration loader from .env file."""
 
-    def __init__(self, env_file: Optional[str] = None):
-        """Initialize configuration from .env file.
+    def __init__(self, env_file: str | None = None, yaml_file: str | None = None):
+        """Initialize configuration from .env file and optional YAML file.
 
         Args:
             env_file: Path to .env file. If None, uses default .env in project root.
+            yaml_file: Path to YAML config file (e.g., model_comparison.yaml).
         """
+        # Load environment variables first
         if env_file:
             load_dotenv(env_file)
         else:
             load_dotenv()  # Load default .env file
+
+        # Load YAML configuration if provided
+        self.yaml_config = {}
+        if yaml_file and Path(yaml_file).exists():
+            with Path(yaml_file).open('r') as f:
+                self.yaml_config = yaml.safe_load(f) or {}
 
         # Model settings
         self.model_type = os.getenv("VISION_MODEL_TYPE", "internvl3")
@@ -73,6 +81,17 @@ class SimpleConfig:
         if self.offline_mode:
             os.environ["TRANSFORMERS_OFFLINE"] = "1"
             os.environ["HF_DATASETS_OFFLINE"] = "1"
+
+        # Load comparison-specific settings from YAML defaults
+        defaults = self.yaml_config.get("defaults", {})
+        self.datasets_path = defaults.get("datasets_path", "datasets")
+        self.output_dir = defaults.get("output_dir", "results")
+        models_str = defaults.get("models", "llama,internvl")
+        self.models = [m.strip() for m in models_str.split(",")]
+        
+        # Load model paths from YAML
+        yaml_model_paths = self.yaml_config.get("model_paths", {})
+        self.model_paths = type('ModelPaths', (), yaml_model_paths)()
 
     def print_configuration(self):
         """Print current configuration for debugging."""

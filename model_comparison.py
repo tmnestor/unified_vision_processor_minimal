@@ -80,8 +80,8 @@ def run_production_comparison(
         if internvl_path:
             config_overrides["internvl_path"] = internvl_path
 
-        # Load simple configuration
-        config = SimpleConfig()
+        # Load simple configuration with YAML file
+        config = SimpleConfig(yaml_file=config_path)
 
         # Simple validation - just check if models exist
         if not Path(datasets_path).exists():
