@@ -19,7 +19,8 @@ import yaml
 from dotenv import load_dotenv
 from rich.console import Console
 
-# Note: Production schema removed in refactoring - using simple core fields now
+# Production schema legacy imports
+from .production_schema_legacy import PRODUCTION_SCHEMA, FieldCategory
 
 console = Console()
 

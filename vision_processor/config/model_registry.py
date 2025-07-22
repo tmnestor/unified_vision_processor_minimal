@@ -8,12 +8,14 @@ BaseVisionModel interface.
 
 import importlib
 from dataclasses import dataclass
+
+# Note: Using simple dataclass instead of complex ProcessingConfig
+from dataclasses import dataclass as ProcessingConfig
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 
 from ..models.base_model import BaseVisionModel, DeviceConfig, ModelCapabilities, ModelType
-from .production_config import ProcessingConfig
 
 
 class ModelStatus(Enum):

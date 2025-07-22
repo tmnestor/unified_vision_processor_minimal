@@ -12,7 +12,8 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-# Note: Production schema removed in refactoring - using simple core fields now
+# Production schema legacy imports
+from .production_schema_legacy import PRODUCTION_SCHEMA, FieldCategory
 from .simple_config import SimpleConfig
 
 

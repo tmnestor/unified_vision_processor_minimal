@@ -34,12 +34,12 @@ import typer
 import yaml
 from rich.console import Console
 
-from vision_processor.comparison.comparison_runner import ComparisonRunner
+from vision_processor.comparison.comparison_runner_legacy import ComparisonRunner
 from vision_processor.config.model_registry import get_model_registry
 
-# Import modular production components
-from vision_processor.config.production_config import create_production_config
-from vision_processor.config.production_schema import PRODUCTION_SCHEMA
+# Import modular production components (legacy)
+from vision_processor.config.production_config_legacy import create_production_config
+from vision_processor.config.production_schema_legacy import PRODUCTION_SCHEMA
 
 # Configure environment
 console = Console()
@@ -361,7 +361,7 @@ def show_schema():
     console.print(f"📊 Required Fields: {required_fields}")
 
     # Show field distribution by category
-    from vision_processor.config.production_schema import FieldCategory
+    from vision_processor.config.production_schema_legacy import FieldCategory
 
     console.print("\n📋 Field Distribution by Category:")
 
