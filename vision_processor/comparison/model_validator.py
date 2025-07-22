@@ -14,7 +14,7 @@ import torch
 from PIL import Image
 
 from ..config.model_registry import ModelRegistry
-from ..config.production_config import ProcessingConfig
+from ..config.production_config_legacy import ProcessingConfig
 from ..models.base_model import BaseVisionModel, DeviceConfig
 
 

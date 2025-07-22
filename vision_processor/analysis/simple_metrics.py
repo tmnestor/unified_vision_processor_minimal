@@ -121,3 +121,44 @@ class SimpleMetricsCalculator:
             }
 
         return summary
+
+    def create_dataframe(self, comparison_results):
+        """Create a pandas DataFrame from results for CSV export.
+
+        Args:
+            comparison_results: ComparisonResults object
+
+        Returns:
+            pandas.DataFrame with flattened results
+        """
+        try:
+            import pandas as pd
+        except ImportError:
+            print("⚠️  pandas not available, cannot create DataFrame")
+            return None
+
+        rows = []
+
+        # Extract data from comparison results
+        if hasattr(comparison_results, 'model_results'):
+            for model_name, model_data in comparison_results.model_results.items():
+                if hasattr(model_data, 'extraction_results'):
+                    for result in model_data.extraction_results:
+                        row = {
+                            'model': model_name,
+                            'image': getattr(result, 'image_name', 'unknown'),
+                            'successful': getattr(result, 'successful', False),
+                            'field_count': len(getattr(result, 'extracted_fields', {})),
+                            'core_fields_found': getattr(result, 'core_fields_found', 0),
+                            'extraction_time': getattr(result, 'extraction_time', 0.0),
+                        }
+                        rows.append(row)
+
+        if rows:
+            return pd.DataFrame(rows)
+        else:
+            # Return empty DataFrame with expected columns
+            return pd.DataFrame(columns=[
+                'model', 'image', 'successful', 'field_count',
+                'core_fields_found', 'extraction_time'
+            ])
