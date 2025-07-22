@@ -14,18 +14,24 @@ from typing import Dict, List, Optional
 # All fields equally weighted for extraction capability
 FIELD_WEIGHTS = {
     "DATE": 1.0,
-    "TOTAL": 1.0,
-    "GST": 1.0,
+    "SUPPLIER": 1.0,
     "ABN": 1.0,
-    "SUPPLIER_NAME": 1.0,
-    "BUSINESS_NAME": 1.0,
-    "INVOICE_NUMBER": 1.0,
+    "GST": 1.0,
+    "TOTAL": 1.0,
     "SUBTOTAL": 1.0,
-    "AMOUNT": 1.0,
-    "DESCRIPTION": 1.0,
-    "BSB": 1.0,
-    "ACCOUNT_NUMBER": 1.0,
+    "ITEMS": 1.0,
+    "QUANTITIES": 1.0,
+    "PRICES": 1.0,
     "RECEIPT_NUMBER": 1.0,
+    "PAYMENT_METHOD": 1.0,
+    "DOCUMENT_TYPE": 1.0,
+    "BUSINESS_ADDRESS": 1.0,
+    "BUSINESS_PHONE": 1.0,
+    "PAYER_NAME": 1.0,
+    "PAYER_ADDRESS": 1.0,
+    "PAYER_PHONE": 1.0,
+    "PAYER_EMAIL": 1.0,
+    "BANK_ACCOUNT_NUMBER": 1.0,
 }
 
 @dataclass

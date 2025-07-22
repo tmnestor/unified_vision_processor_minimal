@@ -59,7 +59,7 @@ model_paths:
 prompts:
 
   internvl: |
-    Extract data from this image in KEY-VALUE format.
+    <|image|>Extract data from this business document in KEY-VALUE format.
     
     Output format:
     DATE: [date from receipt]
@@ -80,11 +80,7 @@ prompts:
     PAYER_ADDRESS: [customer/payer address if visible]
     PAYER_PHONE: [customer/payer phone if visible]
     PAYER_EMAIL: [customer/payer email if visible]
-    INVOICE_NUMBER: [invoice number if visible]
-    TIME: [time if visible]
-    CARD_NUMBER: [card number if visible]
-    AUTH_CODE: [auth code if visible]
-    STATUS: [status if visible]
+    BANK_ACCOUNT_NUMBER: [bank account number if visible]
     
     Extract all visible text and format as KEY: VALUE pairs only.
 
@@ -113,11 +109,7 @@ prompts:
     PAYER_ADDRESS: [customer/payer address if visible]
     PAYER_PHONE: [customer/payer phone if visible]
     PAYER_EMAIL: [customer/payer email if visible]
-    INVOICE_NUMBER: [invoice number if visible]
-    TIME: [time if visible]
-    CARD_NUMBER: [card number if visible]
-    AUTH_CODE: [auth code if visible]
-    STATUS: [status if visible]
+    BANK_ACCOUNT_NUMBER: [bank account number if visible]
     
     Extract all visible text and format as KEY: VALUE pairs only.
 
