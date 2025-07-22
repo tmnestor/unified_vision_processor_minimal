@@ -510,7 +510,7 @@ class ComparisonRunner:
                     "information_extraction_capability": {
                         "winner": best_performer.get("model", "N/A"),
                         "score": best_performer.get("extraction_capability", "N/A"),
-                        "explanation": "Superior weighted field extraction, critical field coverage, and information density",
+                        "explanation": "Higher average field extraction count with consistent success rate",
                     }
                 } if best_performer else {},
                 "capability_ranking": [{"model": model, "score": f"{score:.3f}"} for model, score in capability_ranking],

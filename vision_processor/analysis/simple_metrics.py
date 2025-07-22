@@ -67,21 +67,13 @@ class InformationExtractionMetrics:
     @property
     def information_extraction_capability(self) -> float:
         """
-        Composite score measuring overall Information Extraction Capability.
+        Information Extraction Capability based purely on field extraction volume.
 
-        Since all fields are equally important, focuses on:
-        - Field extraction volume (50%)
-        - Success rate consistency (30%)
-        - Information density (20%)
+        Since all fields are equally important:
+        - More fields extracted = higher capability
+        - Success rate multiplier ensures failed extractions are penalized
         """
-        # Normalize average fields by max possible (13 known fields)
-        normalized_field_score = min(self.avg_fields_per_image / 13.0, 1.0)
-
-        return (
-            normalized_field_score * 0.5 +
-            self.success_rate * 0.3 +
-            self.information_density * 0.2
-        )
+        return self.avg_fields_per_image * self.success_rate
 
 
 class InformationExtractionCalculator:
