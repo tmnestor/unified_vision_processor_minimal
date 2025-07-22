@@ -351,20 +351,20 @@ def validate_models(
 def show_schema():
     """Show the simple core fields schema"""
     console.print("🏷️  SIMPLE CORE FIELDS", style="bold blue")
-    
+
     # Define the simple core fields directly (from base_extractor.py)
     core_fields = {
         "DATE", "TOTAL", "GST", "ABN", "SUPPLIER_NAME",
         "INVOICE_NUMBER", "AMOUNT", "DESCRIPTION",
         "BSB", "ACCOUNT_NUMBER", "BUSINESS_NAME", "RECEIPT_NUMBER"
     }
-    
+
     console.print(f"📊 Total Core Fields: {len(core_fields)}")
     console.print("\n🎯 Core Fields for Australian Tax Documents:")
-    
+
     for i, field in enumerate(sorted(core_fields), 1):
         console.print(f"   {i:2d}. {field}")
-    
+
     console.print("\n💡 Note: This simplified system focuses on essential fields only")
     console.print("💡 No complex categorization - just the fields that matter most")
 
