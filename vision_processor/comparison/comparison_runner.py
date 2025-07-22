@@ -18,7 +18,10 @@ from rich.progress import track
 from ..analysis.simple_metrics import InformationExtractionCalculator
 from ..config.model_registry import get_model_registry
 from ..config.simple_config import SimpleConfig
-from ..extraction.dynamic_extractor import DynamicExtractionResult, DynamicFieldExtractor
+from ..extraction.dynamic_extractor import (
+    DynamicExtractionResult,
+    DynamicFieldExtractor,
+)
 from ..utils.memory_monitor import MemoryMonitor
 from ..utils.repetition_control import UltraAggressiveRepetitionController
 from .model_validator import ModelValidator

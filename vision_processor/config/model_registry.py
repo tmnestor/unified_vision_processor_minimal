@@ -15,7 +15,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 
-from ..models.base_model import BaseVisionModel, DeviceConfig, ModelCapabilities, ModelType
+from ..models.base_model import (
+    BaseVisionModel,
+    DeviceConfig,
+    ModelCapabilities,
+    ModelType,
+)
 
 
 class ModelStatus(Enum):

@@ -34,7 +34,7 @@ import typer
 import yaml
 from rich.console import Console
 
-from vision_processor.comparison.comparison_runner_legacy import ComparisonRunner
+from vision_processor.comparison.comparison_runner import ComparisonRunner
 from vision_processor.config.model_registry import get_model_registry
 
 # Import simple configuration
@@ -106,10 +106,10 @@ def run_production_comparison(
 
         # Export DataFrame for additional analysis
         try:
-            df = runner.export_dataframe()
-            if df is not None:
+            results_df = runner.export_dataframe()
+            if results_df is not None:
                 csv_path = Path(output_dir) / "production_results.csv"
-                df.to_csv(csv_path, index=False)
+                results_df.to_csv(csv_path, index=False)
                 console.print(f"✅ Production results exported: {csv_path}")
         except Exception as e:
             console.print(f"⚠️  Failed to export DataFrame: {e}")
