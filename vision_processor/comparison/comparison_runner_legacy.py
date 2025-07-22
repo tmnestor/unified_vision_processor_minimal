@@ -533,7 +533,7 @@ class ComparisonRunner:
             if results:
                 successful = sum(1 for r in results if r.get("successful", False))
                 model_success_rates[model_name] = successful / len(results)
-                model_execution_times[model_name] = sum(r.get("inference_time", 0.0) for r in results)
+                model_execution_times[model_name] = sum(r.get("extraction_time", 0.0) for r in results)
 
                 total_successful += successful
                 total_documents += len(results)

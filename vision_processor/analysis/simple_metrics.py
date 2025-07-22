@@ -69,17 +69,18 @@ class InformationExtractionMetrics:
         """
         Composite score measuring overall Information Extraction Capability.
 
-        Combines:
-        - Weighted extraction score (40%)
-        - Critical field coverage (30%)
+        Since all fields are equally important, focuses on:
+        - Field extraction volume (50%)
+        - Success rate consistency (30%)
         - Information density (20%)
-        - Extraction completeness (10%)
         """
+        # Normalize average fields by max possible (13 known fields)
+        normalized_field_score = min(self.avg_fields_per_image / 13.0, 1.0)
+
         return (
-            self.weighted_extraction_score * 0.4 +
-            self.critical_field_coverage * 0.3 +
-            self.information_density * 0.2 +
-            self.extraction_completeness * 0.1
+            normalized_field_score * 0.5 +
+            self.success_rate * 0.3 +
+            self.information_density * 0.2
         )
 
 
