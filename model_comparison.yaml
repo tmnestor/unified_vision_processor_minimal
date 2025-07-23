@@ -18,9 +18,9 @@ defaults:
 # Model-specific configurations
 model_config:
   llama:
-    max_new_tokens_limit: 1000  # Override repetition control limit for complete extraction
+    max_new_tokens_limit: 2024  # Exact multiple of model architecture
   internvl:
-    max_new_tokens_limit: 1000  # Ensure consistent limits across models
+    max_new_tokens_limit: 2024  # Ensure consistent limits across models
 
 # Device configuration for V100 production deployment
 device_config:

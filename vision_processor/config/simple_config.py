@@ -33,16 +33,17 @@ class SimpleConfig:
         self.model_type = os.getenv("VISION_MODEL_TYPE", "internvl3")
 
         # Try model-specific path first, then fall back to generic path
-        if self.model_type == "internvl3":
-            self.model_path = os.getenv("VISION_INTERNVL_MODEL_PATH") or os.getenv(
-                "VISION_MODEL_PATH", "/path/to/models"
-            )
-        elif self.model_type == "llama32_vision":
-            self.model_path = os.getenv("VISION_LLAMA_MODEL_PATH") or os.getenv(
-                "VISION_MODEL_PATH", "/path/to/models"
-            )
-        else:
-            self.model_path = os.getenv("VISION_MODEL_PATH", "/path/to/models")
+        match self.model_type:
+            case "internvl3":
+                self.model_path = os.getenv("VISION_INTERNVL_MODEL_PATH") or os.getenv(
+                    "VISION_MODEL_PATH", "/path/to/models"
+                )
+            case "llama32_vision":
+                self.model_path = os.getenv("VISION_LLAMA_MODEL_PATH") or os.getenv(
+                    "VISION_MODEL_PATH", "/path/to/models"
+                )
+            case _:
+                self.model_path = os.getenv("VISION_MODEL_PATH", "/path/to/models")
 
         # GPU and memory settings
         self.device_config = os.getenv("VISION_DEVICE_CONFIG", "auto")

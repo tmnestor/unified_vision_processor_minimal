@@ -374,36 +374,33 @@ class ComparisonRunner:
 
                         # Clean response to remove markdown artifacts and repetition
                         clean_text = response.raw_text
-                        # Remove markdown code blocks
-                        if "```" in clean_text:
-                            clean_text = clean_text.split("```")[0].strip()
-                        # Take only the first occurrence if there's repetition
-                        if "**Answer:**" in clean_text:
-                            # For numbered lists, take the content after the first **Answer:**
-                            parts = clean_text.split("**Answer:**")
-                            if len(parts) > 1:
-                                clean_text = parts[1].strip()
-                                # If there's another **Answer:** (repetition), take only up to it
-                                if "**Answer:**" in clean_text:
-                                    clean_text = clean_text.split("**Answer:**")[
-                                        0
-                                    ].strip()
+                        
+                        # Apply cleaning based on content patterns
+                        match (("```" in clean_text), ("**Answer:**" in clean_text)):
+                            case (True, _):
+                                # Remove markdown code blocks
+                                clean_text = clean_text.split("```")[0].strip()
+                            case (_, True):
+                                # Handle Answer: sections
+                                parts = clean_text.split("**Answer:**")
+                                if len(parts) > 1:
+                                    clean_text = parts[1].strip()
+                                    # Remove subsequent Answer: sections (repetition)
+                                    if "**Answer:**" in clean_text:
+                                        clean_text = clean_text.split("**Answer:**")[0].strip()
+                            case _:
+                                pass
 
                         # Remove markdown formatting
                         clean_text = clean_text.replace("**", "")  # Remove bold markers
-                        clean_text = re.sub(
-                            r"\*\s*", "", clean_text
-                        )  # Remove bullet points
+                        clean_text = re.sub(r"\*\s*", "", clean_text)  # Remove bullet points
 
                         # Stop at repetition markers
-                        for end_marker in [
-                            "**END OF",
-                            "END OF DOCUMENT",
-                            "END OF OUTPUT",
-                            "END OF FILE",
-                        ]:
-                            if end_marker in clean_text:
-                                clean_text = clean_text.split(end_marker)[0].strip()
+                        end_markers = ["**END OF", "END OF DOCUMENT", "END OF OUTPUT", "END OF FILE"]
+                        for marker in end_markers:
+                            if marker in clean_text:
+                                clean_text = clean_text.split(marker)[0].strip()
+                                break
 
                         # Parse key-value pairs - handle generic format
                         lines = clean_text.strip().split("\n")
@@ -416,86 +413,56 @@ class ComparisonRunner:
                         # Extract key-value pairs from response
                         extracted_pairs = {}
 
-                        # Try to parse structured format
-                        # Check if it's a numbered list format (e.g., "1. DATE: value 2. SUPPLIER: value")
+                        # Try to parse structured format based on response characteristics
                         full_text = " ".join(lines)
-
-                        # DEBUG: Show what we're parsing (commented out - enable if needed)
-                        # if "1." in full_text and "2." in full_text:
-                        #     self.console.print(f"DEBUG: Parsing numbered format, first 200 chars: '{full_text[:200]}...'", style="yellow")
-
-                        # Better pattern that captures everything up to the next numbered item
-                        numbered_pattern = (
-                            r"(\d+)\.\s*([A-Z_]+):\s*(.*?)(?=\s*\d+\.\s*[A-Z_]+:|$)"
-                        )
-                        numbered_matches = re.findall(numbered_pattern, full_text)
-
-                        if numbered_matches:
-                            # Numbered list format
-                            # self.console.print(f"DEBUG: Found {len(numbered_matches)} numbered matches", style="yellow")
-                            for _num, key, value in numbered_matches:
-                                key = key.strip().upper()
-                                value = value.strip()
-                                extracted_pairs[key] = value
-                                # DEBUG: Show what we're extracting (commented out - enable if needed)
-                                # if len(numbered_matches) < 25:  # Only show if reasonable number
-                                #     self.console.print(f"DEBUG:   {num}. {key}: {value[:50]}{'...' if len(value) > 50 else ''}", style="dim yellow")
-                        elif len(lines) == 1:
-                            # Single line format - parse all key-value pairs
-                            text = lines[0] if lines else ""
-                            # Generic pattern to find all KEY: VALUE pairs
-                            kv_pattern = r"([A-Z_]+):\s*([^:]+?)(?=\s+[A-Z_]+:|$)"
-                            kv_matches = re.findall(kv_pattern, text)
-                            for key, value in kv_matches:
-                                key = key.strip().upper()
-                                value = value.strip()
-                                extracted_pairs[key] = value
-                        else:
-                            # Multi-line format - parse line by line
-                            for line in lines:
-                                if ":" in line:
-                                    try:
-                                        # Remove leading number if present (e.g., "1. DATE:" becomes "DATE:")
-                                        line = re.sub(r"^\d+\.\s*", "", line)
-                                        # Skip lines that look like examples or headers
-                                        if any(
-                                            skip in line.lower()
-                                            for skip in [
-                                                "example:",
-                                                "format:",
-                                                "output:",
-                                                "note:",
-                                            ]
-                                        ):
-                                            continue
-                                        
-                                        # Handle markdown format: **Field Name:** value
-                                        if "**" in line and ":**" in line:
-                                            # Extract from **Field:** value format
-                                            match = re.search(r'\*\*([^:]+):\*\*\s*(.+)', line)
-                                            if match:
+                        
+                        # Determine format type and parse accordingly
+                        match (len(lines), "1." in full_text and "2." in full_text, len(lines) == 1):
+                            case (_, True, _):
+                                # Numbered list format (e.g., "1. DATE: value 2. SUPPLIER: value")
+                                numbered_pattern = r"(\d+)\.\s*([A-Z_]+):\s*(.*?)(?=\s*\d+\.\s*[A-Z_]+:|$)"
+                                for _num, key, value in re.findall(numbered_pattern, full_text):
+                                    extracted_pairs[key.strip().upper()] = value.strip()
+                            
+                            case (1, _, _):
+                                # Single line format - parse all key-value pairs
+                                kv_pattern = r"([A-Z_]+):\s*([^:]+?)(?=\s+[A-Z_]+:|$)"
+                                for key, value in re.findall(kv_pattern, lines[0]):
+                                    extracted_pairs[key.strip().upper()] = value.strip()
+                            
+                            case _:
+                                # Multi-line format - parse line by line
+                                for line in lines:
+                                    if ":" not in line:
+                                        continue
+                                    
+                                    # Clean line and check for skip patterns
+                                    line = re.sub(r"^\d+\.\s*", "", line)
+                                    if any(skip in line.lower() for skip in ["example:", "format:", "output:", "note:"]):
+                                        continue
+                                    
+                                    match (("**" in line and ":**" in line), True):
+                                        case (True, _):
+                                            # Markdown format: **Field Name:** value
+                                            if match := re.search(r'\*\*([^:]+):\*\*\s*(.+)', line):
                                                 key = match.group(1).strip().upper().replace(" ", "_")
                                                 value = match.group(2).strip()
                                                 if key and value and not value.lower().startswith("not applicable"):
                                                     extracted_pairs[key] = value
-                                        else:
+                                        
+                                        case (False, _):
                                             # Regular KEY: value format
-                                            key, value = line.split(":", 1)
-                                            key = key.strip().upper()
-                                            value = value.strip()
-                                            # Only add if key is uppercase (proper format) and value exists
-                                            # Also ensure key isn't just a number
-                                            if (
-                                                key
-                                                and value
-                                                and key.replace("_", "")
-                                                .replace(" ", "")
-                                                .isalpha()
-                                                and not key.isdigit()
-                                            ):
-                                                extracted_pairs[key] = value
-                                    except ValueError:
-                                        pass
+                                            try:
+                                                key, value = line.split(":", 1)
+                                                key = key.strip().upper()
+                                                value = value.strip()
+                                                # Validate key format
+                                                if (key and value and 
+                                                    key.replace("_", "").replace(" ", "").isalpha() and 
+                                                    not key.isdigit()):
+                                                    extracted_pairs[key] = value
+                                            except ValueError:
+                                                pass
 
                         # Display all extracted fields
                         if extracted_pairs:
@@ -504,11 +471,7 @@ class ComparisonRunner:
                             for key, value in sorted_pairs:
                                 # Clean up values - remove trailing asterisks and whitespace
                                 value = value.rstrip("*").strip()
-                                # Truncate very long values for display (except TRANSACTIONS and ITEMS)
-                                if key in ["TRANSACTIONS", "ITEMS"] and len(value) > 500:
-                                    value = value[:497] + "..."
-                                elif key not in ["TRANSACTIONS", "ITEMS"] and len(value) > 100:
-                                    value = value[:97] + "..."
+                                # NO TRUNCATION - show complete extracted data for fair comparison
                                 self.console.print(
                                     f"   {key:20}: {value}", style="dim cyan"
                                 )

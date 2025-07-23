@@ -71,43 +71,29 @@ class UniversalKeyValueParser:
         value = value.rstrip(".")
         value = value.strip("\"'")
 
-        # Handle numeric values
-        if key in [
-            "TOTAL",
-            "GST",
-            "SUBTOTAL",
-            "OPENING_BALANCE",
-            "CLOSING_BALANCE",
-            "NIGHTLY_RATE",
-            "AMOUNT",
-            "UNIT_PRICE",
-            "PRICE_PER_LITRE",
-        ]:
-            return self._extract_numeric(value)
-
-        # Handle list values
-        elif key in ["ITEMS", "QUANTITIES", "PRICES"]:
-            return self._extract_list(value)
-
-        # Handle integer values
-        elif key in ["LITRES", "QUANTITY", "ATTENDEES"]:
-            return self._extract_integer(value)
-
-        # Handle date ranges
-        elif key == "STATEMENT_PERIOD":
-            return self._clean_date_range(value)
-
-        # Handle ABN format
-        elif key == "ABN":
-            return self._clean_abn(value)
-
-        # Handle BSB format
-        elif key == "BSB":
-            return self._clean_bsb(value)
-
-        # Default: return as string
-        else:
-            return value.strip()
+        # Use pattern matching for key type handling
+        match key:
+            case "TOTAL" | "GST" | "SUBTOTAL" | "OPENING_BALANCE" | "CLOSING_BALANCE" | "NIGHTLY_RATE" | "AMOUNT" | "UNIT_PRICE" | "PRICE_PER_LITRE":
+                return self._extract_numeric(value)
+            
+            case "ITEMS" | "QUANTITIES" | "PRICES":
+                return self._extract_list(value)
+            
+            case "LITRES" | "QUANTITY" | "ATTENDEES":
+                return self._extract_integer(value)
+            
+            case "STATEMENT_PERIOD":
+                return self._clean_date_range(value)
+            
+            case "ABN":
+                return self._clean_abn(value)
+            
+            case "BSB":
+                return self._clean_bsb(value)
+            
+            case _:
+                # Default: return as string
+                return value.strip()
 
     def _extract_numeric(self, value: str) -> float:
         """Extract numeric value from string.
@@ -157,16 +143,17 @@ class UniversalKeyValueParser:
         Returns:
             List of string values.
         """
-        # Handle different list separators
-        if "|" in value:
-            items = value.split("|")
-        elif "," in value:
-            items = value.split(",")
-        elif ";" in value:
-            items = value.split(";")
-        else:
-            # Single item
-            return [value.strip()]
+        # Handle different list separators using pattern matching
+        match ("|" in value, "," in value, ";" in value):
+            case (True, _, _):
+                items = value.split("|")
+            case (False, True, _):
+                items = value.split(",")
+            case (False, False, True):
+                items = value.split(";")
+            case _:
+                # Single item
+                return [value.strip()]
 
         # Clean each item
         return [item.strip() for item in items if item.strip()]
@@ -268,25 +255,30 @@ class UniversalKeyValueParser:
         Returns:
             True if matches, False otherwise.
         """
-        if pattern == "DD/MM/YYYY":
-            if isinstance(value, str):
-                return bool(re.match(r"^\d{1,2}/\d{1,2}/\d{4}$", value))
-
-        elif pattern == "numeric with 2 decimals":
-            if isinstance(value, (int, float)):
+        match pattern:
+            case "DD/MM/YYYY":
+                if isinstance(value, str):
+                    return bool(re.match(r"^\d{1,2}/\d{1,2}/\d{4}$", value))
+                return False
+            
+            case "numeric with 2 decimals":
+                return isinstance(value, (int, float))
+            
+            case "XX XXX XXX XXX format":
+                if isinstance(value, str):
+                    return bool(re.match(r"^\d{2} \d{3} \d{3} \d{3}$", value))
+                return False
+            
+            case "XXX-XXX format":
+                if isinstance(value, str):
+                    return bool(re.match(r"^\d{3}-\d{3}$", value))
+                return False
+            
+            case "numeric string":
+                if isinstance(value, str):
+                    return bool(re.match(r"^\d+$", value))
+                return False
+            
+            case _:
+                # Default: assume valid
                 return True
-
-        elif pattern == "XX XXX XXX XXX format":
-            if isinstance(value, str):
-                return bool(re.match(r"^\d{2} \d{3} \d{3} \d{3}$", value))
-
-        elif pattern == "XXX-XXX format":
-            if isinstance(value, str):
-                return bool(re.match(r"^\d{3}-\d{3}$", value))
-
-        elif pattern == "numeric string":
-            if isinstance(value, str):
-                return bool(re.match(r"^\d+$", value))
-
-        # Default: assume valid
-        return True
