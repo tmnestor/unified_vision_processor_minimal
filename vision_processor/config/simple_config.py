@@ -81,9 +81,17 @@ class SimpleConfig:
         self.repetition_phrase_threshold = int(
             os.getenv("VISION_REPETITION_PHRASE_THRESHOLD", "2")
         )  # 2 repetitions trigger cleaning
-        self.repetition_max_tokens_limit = int(
-            os.getenv("VISION_REPETITION_MAX_TOKENS_LIMIT", "384")
-        )  # Ultra-short token limit
+        # Read max_tokens_limit from YAML config (single source of truth)
+        yaml_token_limit = self.yaml_config.get("model_config", {}).get("llama", {}).get("max_new_tokens_limit")
+        env_token_limit = os.getenv("VISION_REPETITION_MAX_TOKENS_LIMIT")
+        
+        # Priority: YAML config > Environment variable > Default
+        if yaml_token_limit:
+            self.repetition_max_tokens_limit = int(yaml_token_limit)
+        elif env_token_limit:
+            self.repetition_max_tokens_limit = int(env_token_limit)
+        else:
+            self.repetition_max_tokens_limit = 384  # Final fallback
 
         # Set offline mode for transformers
         if self.offline_mode:
