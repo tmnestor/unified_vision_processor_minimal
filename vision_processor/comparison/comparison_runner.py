@@ -331,24 +331,24 @@ class ComparisonRunner:
                             max_new_tokens=self.config.processing.max_tokens,
                         )
 
-                        # DEBUG: Print actual response length and content to trace truncation
-                        self.console.print(
-                            f"DEBUG: Raw response length: {len(response.raw_text)} chars",
-                            style="red",
-                        )
-                        self.console.print(
-                            f"DEBUG: Last 50 chars: '{response.raw_text[-50:]}'",
-                            style="red",
-                        )
+                        # DEBUG: Print actual response length and content (commented out - enable if needed)
+                        # self.console.print(
+                        #     f"DEBUG: Raw response length: {len(response.raw_text)} chars",
+                        #     style="red",
+                        # )
+                        # self.console.print(
+                        #     f"DEBUG: Last 50 chars: '{response.raw_text[-50:]}'",
+                        #     style="red",
+                        # )
 
-                        # DEBUG: Show full raw response to understand format
-                        if (
-                            len(response.raw_text) < 3000
-                        ):  # Only show if reasonable length
-                            self.console.print(
-                                "DEBUG: Full raw response:", style="yellow"
-                            )
-                            self.console.print(response.raw_text, style="dim yellow")
+                        # DEBUG: Show full raw response to understand format (commented out - enable if needed)
+                        # if (
+                        #     len(response.raw_text) < 3000
+                        # ):  # Only show if reasonable length
+                        #     self.console.print(
+                        #         "DEBUG: Full raw response:", style="yellow"
+                        #     )
+                        #     self.console.print(response.raw_text, style="dim yellow")
 
                         # Pure model comparison: minimal processing to preserve raw outputs
                         analysis_dict = {
@@ -385,6 +385,22 @@ class ComparisonRunner:
                                         0
                                     ].strip()
 
+                        # Remove markdown formatting
+                        clean_text = clean_text.replace("**", "")  # Remove bold markers
+                        clean_text = re.sub(
+                            r"\*\s*", "", clean_text
+                        )  # Remove bullet points
+
+                        # Stop at repetition markers
+                        for end_marker in [
+                            "**END OF",
+                            "END OF DOCUMENT",
+                            "END OF OUTPUT",
+                            "END OF FILE",
+                        ]:
+                            if end_marker in clean_text:
+                                clean_text = clean_text.split(end_marker)[0].strip()
+
                         # Parse key-value pairs - handle generic format
                         lines = clean_text.strip().split("\n")
 
@@ -394,11 +410,11 @@ class ComparisonRunner:
                         # Try to parse structured format
                         # Check if it's a numbered list format (e.g., "1. DATE: value 2. SUPPLIER: value")
                         full_text = " ".join(lines)
-                        
-                        # DEBUG: Show what we're parsing
-                        if "1." in full_text and "2." in full_text:
-                            self.console.print(f"DEBUG: Parsing numbered format, first 200 chars: '{full_text[:200]}...'", style="yellow")
-                        
+
+                        # DEBUG: Show what we're parsing (commented out - enable if needed)
+                        # if "1." in full_text and "2." in full_text:
+                        #     self.console.print(f"DEBUG: Parsing numbered format, first 200 chars: '{full_text[:200]}...'", style="yellow")
+
                         # Better pattern that captures everything up to the next numbered item
                         numbered_pattern = (
                             r"(\d+)\.\s*([A-Z_]+):\s*(.*?)(?=\s*\d+\.\s*[A-Z_]+:|$)"
@@ -407,19 +423,19 @@ class ComparisonRunner:
 
                         if numbered_matches:
                             # Numbered list format
-                            self.console.print(f"DEBUG: Found {len(numbered_matches)} numbered matches", style="yellow")
-                            for num, key, value in numbered_matches:
+                            # self.console.print(f"DEBUG: Found {len(numbered_matches)} numbered matches", style="yellow")
+                            for _num, key, value in numbered_matches:
                                 key = key.strip().upper()
                                 value = value.strip()
                                 extracted_pairs[key] = value
-                                # DEBUG: Show what we're extracting
-                                if len(numbered_matches) < 25:  # Only show if reasonable number
-                                    self.console.print(f"DEBUG:   {num}. {key}: {value[:50]}{'...' if len(value) > 50 else ''}", style="dim yellow")
+                                # DEBUG: Show what we're extracting (commented out - enable if needed)
+                                # if len(numbered_matches) < 25:  # Only show if reasonable number
+                                #     self.console.print(f"DEBUG:   {num}. {key}: {value[:50]}{'...' if len(value) > 50 else ''}", style="dim yellow")
                         elif len(lines) == 1:
                             # Single line format - parse all key-value pairs
                             text = lines[0] if lines else ""
                             # Generic pattern to find all KEY: VALUE pairs
-                            kv_pattern = r'([A-Z_]+):\s*([^:]+?)(?=\s+[A-Z_]+:|$)'
+                            kv_pattern = r"([A-Z_]+):\s*([^:]+?)(?=\s+[A-Z_]+:|$)"
                             kv_matches = re.findall(kv_pattern, text)
                             for key, value in kv_matches:
                                 key = key.strip().upper()
@@ -432,17 +448,40 @@ class ComparisonRunner:
                                     try:
                                         # Remove leading number if present (e.g., "1. DATE:" becomes "DATE:")
                                         line = re.sub(r"^\d+\.\s*", "", line)
+                                        # Skip lines that look like examples or headers
+                                        if any(
+                                            skip in line.lower()
+                                            for skip in [
+                                                "example:",
+                                                "format:",
+                                                "output:",
+                                            ]
+                                        ):
+                                            continue
                                         key, value = line.split(":", 1)
                                         key = key.strip().upper()
                                         value = value.strip()
-                                        if key and value:  # Only add if both key and value exist
+                                        # Only add if key is uppercase (proper format) and value exists
+                                        # Also ensure key isn't just a number
+                                        if (
+                                            key
+                                            and value
+                                            and key.replace("_", "")
+                                            .replace(" ", "")
+                                            .isalpha()
+                                            and not key.isdigit()
+                                        ):
                                             extracted_pairs[key] = value
                                     except ValueError:
                                         pass
 
                         # Display all extracted fields
                         if extracted_pairs:
-                            for key, value in extracted_pairs.items():
+                            # Sort by key for consistent display
+                            sorted_pairs = sorted(extracted_pairs.items())
+                            for key, value in sorted_pairs:
+                                # Clean up values - remove trailing asterisks and whitespace
+                                value = value.rstrip("*").strip()
                                 # Truncate very long values for display
                                 if len(value) > 100:
                                     value = value[:97] + "..."
@@ -450,7 +489,9 @@ class ComparisonRunner:
                                     f"   {key:20}: {value}", style="dim cyan"
                                 )
                         else:
-                            self.console.print("   No structured data extracted", style="dim red")
+                            self.console.print(
+                                "   No structured data extracted", style="dim red"
+                            )
 
                         # Print progress - raw model comparison
                         status = "✅"  # Always successful for raw comparison

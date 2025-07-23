@@ -66,47 +66,83 @@ model_paths:
 prompts:
 
   internvl: |
-    <|image|>Analyze this business document and extract ALL relevant information.
+    <|image|>Extract information from this business document.
     
-    INSTRUCTIONS:
-    1. First identify the document type (invoice, receipt, bank statement, etc.)
-    2. Extract ALL key information you can see
-    3. Use KEY: VALUE format
-    4. NO repetition - output each piece of information ONLY ONCE
-    5. NO explanations or additional text
+    CRITICAL RULES:
+    1. Use ONLY this format: KEY: value
+    2. NO markdown, NO asterisks, NO bullets
+    3. Each field on its own line
+    4. NO repetition - output each field ONCE
+    5. STOP after all fields extracted
     
-    Start with:
-    DOCUMENT_TYPE: [type of document]
+    Output format:
+    DOCUMENT_TYPE: [invoice/receipt/bank statement/etc]
+    DATE: [date from document]
+    SUPPLIER: [supplier name if applicable]
+    ABN: [ABN if present]
+    GST: [GST amount if present]
+    TOTAL: [total amount]
+    SUBTOTAL: [subtotal if present]
+    ITEMS: [item names separated by |]
+    QUANTITIES: [quantities if present]
+    PRICES: [individual prices if present]
+    RECEIPT_NUMBER: [receipt/invoice number]
+    PAYMENT_METHOD: [payment method]
+    BUSINESS_ADDRESS: [business address]
+    BUSINESS_PHONE: [business phone]
+    PAYER_NAME: [payer name if present]
+    PAYER_EMAIL: [payer email if present]
     
-    Then extract all relevant fields based on document type, such as:
-    - For invoices/receipts: date, supplier, items, prices, totals, tax info
-    - For bank statements: bank name, account info, transactions, balances
-    - For other documents: extract whatever information is present
+    For bank statements also include:
+    BANK_NAME: [bank name]
+    ACCOUNT_NUMBER: [account number]
+    ACCOUNT_HOLDER: [account holder name]
+    STATEMENT_PERIOD: [statement period]
+    TRANSACTIONS: [brief transaction list]
+    BALANCE: [balance]
     
-    Output information in clear KEY: VALUE format.
+    Extract all visible fields. Use exact KEY: value format. NO other text.
 
   # llama: |
   #   Extract data from this image in markdown format.
 
   llama: |
-    <|image|>Analyze this business document and extract ALL relevant information.
+    <|image|>Extract information from this business document.
     
-    INSTRUCTIONS:
-    1. First identify the document type (invoice, receipt, bank statement, etc.)
-    2. Extract ALL key information you can see
-    3. Use KEY: VALUE format
-    4. NO repetition - output each piece of information ONLY ONCE
-    5. NO explanations or additional text
+    CRITICAL RULES:
+    1. Use ONLY this format: KEY: value
+    2. NO markdown, NO asterisks, NO bullets
+    3. Each field on its own line
+    4. NO repetition - output each field ONCE
+    5. STOP after all fields extracted
     
-    Start with:
-    DOCUMENT_TYPE: [type of document]
+    Output format:
+    DOCUMENT_TYPE: [invoice/receipt/bank statement/etc]
+    DATE: [date from document]
+    SUPPLIER: [supplier name if applicable]
+    ABN: [ABN if present]
+    GST: [GST amount if present]
+    TOTAL: [total amount]
+    SUBTOTAL: [subtotal if present]
+    ITEMS: [item names separated by |]
+    QUANTITIES: [quantities if present]
+    PRICES: [individual prices if present]
+    RECEIPT_NUMBER: [receipt/invoice number]
+    PAYMENT_METHOD: [payment method]
+    BUSINESS_ADDRESS: [business address]
+    BUSINESS_PHONE: [business phone]
+    PAYER_NAME: [payer name if present]
+    PAYER_EMAIL: [payer email if present]
     
-    Then extract all relevant fields based on document type, such as:
-    - For invoices/receipts: date, supplier, items, prices, totals, tax info
-    - For bank statements: bank name, account info, transactions, balances
-    - For other documents: extract whatever information is present
+    For bank statements also include:
+    BANK_NAME: [bank name]
+    ACCOUNT_NUMBER: [account number]
+    ACCOUNT_HOLDER: [account holder name]
+    STATEMENT_PERIOD: [statement period]
+    TRANSACTIONS: [brief transaction list]
+    BALANCE: [balance]
     
-    Output information in clear KEY: VALUE format.
+    Extract all visible fields. Use exact KEY: value format. NO other text.
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
