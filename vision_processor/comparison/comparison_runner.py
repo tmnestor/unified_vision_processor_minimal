@@ -331,6 +331,10 @@ class ComparisonRunner:
                             max_new_tokens=self.config.processing.max_tokens,
                         )
 
+                        # DEBUG: Print actual response length and content to trace truncation
+                        self.console.print(f"DEBUG: Raw response length: {len(response.raw_text)} chars", style="red")
+                        self.console.print(f"DEBUG: Last 50 chars: '{response.raw_text[-50:]}'", style="red")
+                        
                         # Pure model comparison: minimal processing to preserve raw outputs
                         analysis_dict = {
                             "img_name": image_path.name,
