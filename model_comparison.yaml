@@ -130,9 +130,9 @@ model_paths:
 prompts:
 
   internvl: |
-    <|image|>Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
+    <|image|>Extract data from this business document and return ONLY the field values in the exact format below. Use "N/A" if field is not visible.
 
-    REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
+    Expected output format - return exactly these 26 lines with actual values:
     DOCUMENT_TYPE: [value or N/A]
     SUPPLIER: [value or N/A]
     ABN: [11-digit Australian Business Number or N/A]
@@ -160,15 +160,15 @@ prompts:
     CLOSING_BALANCE: [closing balance amount in dollars or N/A]
     TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    Output exactly 26 lines above. Include ALL keys even if value is N/A. No other text.
+    Return exactly 26 lines as shown above with no additional text, explanations, or commentary.
 
   # llama: |
   #   Extract data from this image in markdown format.
 
   llama: |
-    <|image|>Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
+    <|image|>Extract data from this business document and return ONLY the field values in the exact format below. Use "N/A" if field is not visible.
 
-    REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
+    Expected output format - return exactly these 26 lines with actual values:
     DOCUMENT_TYPE: [value or N/A]
     SUPPLIER: [value or N/A]
     ABN: [11-digit Australian Business Number or N/A]
@@ -196,7 +196,7 @@ prompts:
     CLOSING_BALANCE: [closing balance amount in dollars or N/A]
     TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    Output exactly 26 lines above. Include ALL keys even if value is N/A. No other text.
+    Return exactly 26 lines as shown above with no additional text, explanations, or commentary.
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
