@@ -546,7 +546,7 @@ class LlamaVisionModel(BaseVisionModel):
                 return_tensors="pt"
             )
             
-            logger.info(f"✅ Chat template applied successfully - using official format")
+            logger.info("✅ Chat template applied successfully - using official format")
             
         except Exception as e:
             logger.warning(f"⚠️ Chat template failed, falling back to manual format: {e}")
