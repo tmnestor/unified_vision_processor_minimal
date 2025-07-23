@@ -400,8 +400,12 @@ class ComparisonRunner:
                         clean_text = clean_text.replace("**", "")  # Remove bold markers
                         clean_text = re.sub(r"\*\s*", "", clean_text)  # Remove bullet points
 
-                        # Stop at repetition markers
-                        end_markers = ["**END OF", "END OF DOCUMENT", "END OF OUTPUT", "END OF FILE"]
+                        # Stop at repetition markers and explanation sections
+                        end_markers = [
+                            "**END OF", "END OF DOCUMENT", "END OF OUTPUT", "END OF FILE",
+                            "Note:", "NOTE:", "Answer:", "Final Answer:", "The output is exactly",
+                            "The above output", "Please ensure", "I apologize", "I hope it is correct"
+                        ]
                         for marker in end_markers:
                             if marker in clean_text:
                                 clean_text = clean_text.split(marker)[0].strip()
