@@ -196,7 +196,10 @@ prompts:
     CLOSING_BALANCE: [closing balance amount in dollars or N/A]
     TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    Output exactly 26 lines above. Include ALL keys even if value is N/A. No other text.
+    Output exactly 26 lines above in plain text format.
+    Use format: KEY: value (not **KEY:** value)
+    Include ALL keys even if value is N/A.
+    No bold text, no markdown, no other text.
 
 
   # Alternative prompt versions (commented out for reference)
