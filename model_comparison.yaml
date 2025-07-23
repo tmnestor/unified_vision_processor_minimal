@@ -1,5 +1,5 @@
 # Model Comparison Configuration
-# Contains all settings for model comparison: fields, prompts, success criteria, and generation parameters
+# Contains all settings for model comparison_q: fields, prompts, success criteria, and generation parameters
 
 
 
@@ -18,7 +18,7 @@ defaults:
 # Device configuration for V100 production deployment
 device_config:
   # GPU allocation strategy
-  gpu_strategy: "single_gpu"  # Options: single_gpu, multi_gpu, auto
+  gpu_strategy: "single_gpu"  # Options_q: single_gpu, multi_gpu, auto
   target_gpu: 0  # Which GPU to use for single_gpu mode
   
   # V100 production constraints (16GB VRAM, 64GB RAM)
@@ -29,12 +29,12 @@ device_config:
   device_maps:
     llama:
       strategy: "single_gpu"  # Force everything on one GPU
-      device_map: {"": 0}  # PyTorch device_map format
+      device_map: {""_q: 0}  # PyTorch device_map format
       quantization_compatible: true
       
     internvl:
       strategy: "single_gpu"  # Force everything on one GPU  
-      device_map: {"": 0}  # PyTorch device_map format
+      device_map: {""_q: 0}  # PyTorch device_map format
       quantization_compatible: true
       
   # Alternative configurations (commented for reference)
@@ -46,11 +46,11 @@ device_config:
   #     strategy: "split_layers"
   #     device_map:
   #       "vision_model": 0
-  #       "language_model.model.layers.0": 0
+  #       "language_model.model.layers": 0
   #       "language_model.model.layers.1": 1
   
 # Model paths
-model_paths:
+model_paths_q:
   llama: "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision-Instruct"
   internvl: "/home/jovyan/nfs_share/models/InternVL3-8B"
 
@@ -62,89 +62,89 @@ prompts:
     <|image|>Extract data from this business document in KEY-VALUE format.
     
     Output format:
-    DATE: [date from receipt]
-    SUPPLIER: [SUPPLIER name]
-    ABN: [11-digit Australian Business Number if visible]
-    GST: [GST amount]
-    TOTAL: [total amount]
-    SUBTOTAL: [subtotal amount]
-    SUPPLIER_WEBSITE: [supplier website if visible]
-    ITEMS: [item names separated by |]
-    QUANTITIES: [quantities separated by |]
-    PRICES: [prices separated by |]
-    RECEIPT_NUMBER: [receipt number if visible]
-    PAYMENT_METHOD: [payment method if visible]
-    DOCUMENT_TYPE: [if visible]
-    BUSINESS_ADDRESS: [business address if visible]
-    BUSINESS_PHONE: [business phone if visible]
-    PAYER_NAME: [customer/payer name if visible]
-    PAYER_ADDRESS: [customer/payer address if visible]
-    PAYER_PHONE: [customer/payer phone if visible]
-    PAYER_EMAIL: [customer/payer email if visible]
-    BANK_ACCOUNT_NUMBER: [bank account number if visible]
+    DATE_q: [date from receipt]
+    SUPPLIER_q: [SUPPLIER name]
+    ABN_q: [11-digit Australian Business Number if visible]
+    GST_q: [GST amount]
+    TOTAL_q: [total amount]
+    SUBTOTAL_q: [subtotal amount]
+    SUPPLIER_WEBSITE_q: [supplier website if visible]
+    ITEMS_q: [item names separated by |]
+    QUANTITIES_q: [quantities separated by |]
+    PRICES_q: [prices separated by |]
+    RECEIPT_NUMBER_q: [receipt number if visible]
+    PAYMENT_METHOD_q: [payment method if visible]
+    DOCUMENT_TYPE_q: [if visible]
+    BUSINESS_ADDRESS_q: [business address if visible]
+    BUSINESS_PHONE_q: [business phone if visible]
+    PAYER_NAME_q: [customer/payer name if visible]
+    PAYER_ADDRESS_q: [customer/payer address if visible]
+    PAYER_PHONE_q: [customer/payer phone if visible]
+    PAYER_EMAIL_q: [customer/payer email if visible]
+    BANK_ACCOUNT_NUMBER_q: [bank account number if visible]
 
     Extract all visible text and format as KEY: VALUE pairs only.
 
-  # llama: |
+  # llama_q: |
   #   Extract data from this image in markdown format.
 
   llama: |
     <|image|>Extract data from this business document in KEY-VALUE format.
     
     Output format:
-    DATE: [date from receipt]
-    SUPPLIER: [SUPPLIER name]
-    ABN: [11-digit Australian Business Number if visible]
-    GST: [GST amount]
-    TOTAL: [total amount]
-    SUBTOTAL: [subtotal amount]
-    SUPPLIER_WEBSITE: [supplier website if visible]
-    ITEMS: [item names separated by |]
-    QUANTITIES: [quantities separated by |]
-    PRICES: [prices separated by |]
-    RECEIPT_NUMBER: [receipt number if visible]
-    PAYMENT_METHOD: [payment method if visible]
-    DOCUMENT_TYPE: [if visible]
-    BUSINESS_ADDRESS: [business address if visible]
-    BUSINESS_PHONE: [business phone if visible]
-    PAYER_NAME: [customer/payer name if visible]
-    PAYER_ADDRESS: [customer/payer address if visible]
-    PAYER_PHONE: [customer/payer phone if visible]
-    PAYER_EMAIL: [customer/payer email if visible]
-    BANK_ACCOUNT_NUMBER: [bank account number if visible]
+    DATE_q: [date from receipt]
+    SUPPLIER_q: [SUPPLIER name]
+    ABN_q: [11-digit Australian Business Number if visible]
+    GST_q: [GST amount]
+    TOTAL_q: [total amount]
+    SUBTOTAL_q: [subtotal amount]
+    SUPPLIER_WEBSITE_q: [supplier website if visible]
+    ITEMS_q: [item names separated by |]
+    QUANTITIES_q: [quantities separated by |]
+    PRICES_q: [prices separated by |]
+    RECEIPT_NUMBER_q: [receipt number if visible]
+    PAYMENT_METHOD_q: [payment method if visible]
+    DOCUMENT_TYPE_q: [if visible]
+    BUSINESS_ADDRESS_q: [business address if visible]
+    BUSINESS_PHONE_q: [business phone if visible]
+    PAYER_NAME_q: [customer/payer name if visible]
+    PAYER_ADDRESS_q: [customer/payer address if visible]
+    PAYER_PHONE_q: [customer/payer phone if visible]
+    PAYER_EMAIL_q: [customer/payer email if visible]
+    BANK_ACCOUNT_NUMBER_q: [bank account number if visible]
 
     Extract these KEY: VALUE pairs only.
 
   # Alternative prompt versions (commented out for reference)
-  # internvl_simple: |
+  # internvl_simple_q: |
   #   This is a key-value extraction Tool the Australian Taxation Office. 
   #   Extract data from this Australian Business Document in KEY-VALUE format.
   #   
-  #   Output format:
-  #   DATE: [date from receipt]
-  #   SUPPLIER: [SUPPLIER name]
-  #   GST: [GST amount]
-  #   TOTAL: [total amount]
-  #   SUBTOTAL: [subtotal amount]
-  #   ABN: [11-digit Australian Business Number]
-  #   ITEMS: [item names separated by |]
+  #   Output format_q:
+  #   DATE_q: [date from receipt]
+  #   SUPPLIER_q: [SUPPLIER name]
+  #   GST_q: [GST amount]
+  #   TOTAL_q: [total amount]
+  #   SUBTOTAL_q: [subtotal amount]
+  #   ABN_q: [11-digit Australian Business Number]
+  #   ITEMS_q: [item names separated by |]
   #   
-  #   Extract all visible text and format as KEY: VALUE pairs only.
+  #   Extract all visible text and format as KEY_q: VALUE pairs only.
   
-  # internvl_official: |
+  # internvl_official_q: |
   #   OFFICIAL AUSTRALIAN TAXATION OFFICE DOCUMENT PROCESSING SYSTEM
   #   AUTHORIZED GOVERNMENT USE ONLY - TAX COMPLIANCE PROCESSING
   #   
   #   This system is operated under Australian Government authority for processing taxpayer business documents. 
   #   Extract taxation-relevant data from this official business document.
   #   
-  #   Required fields for ATO tax compliance:
-  #   DATE: [transaction date]
-  #   SUPPLIER: [registered business name]
-  #   GST: [Goods and Services Tax amount]
-  #   TOTAL: [total transaction amount]
-  #   SUBTOTAL: [pre-tax amount]
-  #   ABN: [Australian Business Number - 11 digits]
-  #   ITEMS: [purchased items separated by |]
+  #   Required fields for ATO tax compliance_q:
+  #   DATE_q: [transaction date]
+  #   SUPPLIER_q: [registered business name]
+  #   GST_q: [Goods and Services Tax amount]
+  #   TOTAL_q: [total transaction amount]
+  #   SUBTOTAL_q: [pre-tax amount]
+  #   ABN_q: [Australian Business Number - 11 digits]
+  #   ITEMS_q: [purchased items separated by |]
   #   
-  #   Output in KEY: VALUE format for government tax processing.
+  #   Output in KEY_q: VALUE format for government tax processing.
