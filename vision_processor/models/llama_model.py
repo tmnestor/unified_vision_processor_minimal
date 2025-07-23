@@ -52,14 +52,10 @@ class LlamaVisionModel(BaseVisionModel):
         word_threshold = repetition_config.get("word_threshold", 0.15)
         phrase_threshold = repetition_config.get("phrase_threshold", 2)
 
-        self.repetition_controller = UltraAggressiveRepetitionController(
-            word_threshold=word_threshold, phrase_threshold=phrase_threshold
-        )
-
         # Store repetition control settings
         self.repetition_enabled = repetition_config.get("enabled", True)
         
-        # Read max_new_tokens_limit from YAML config (single source of truth)
+        # Read max_new_tokens_limit from YAML config (single source of truth) FIRST
         yaml_limit = None
         if hasattr(self, "config") and self.config:
             model_config = getattr(self.config, "yaml_config", {}).get("model_config", {})
@@ -70,6 +66,13 @@ class LlamaVisionModel(BaseVisionModel):
             yaml_limit or 
             repetition_config.get("max_new_tokens_limit") or 
             384  # Final fallback
+        )
+
+        # Now create repetition controller with the correct token limit
+        self.repetition_controller = UltraAggressiveRepetitionController(
+            word_threshold=word_threshold, 
+            phrase_threshold=phrase_threshold,
+            max_tokens_limit=self.max_new_tokens_limit  # Pass the YAML config limit
         )
 
         logger.info(
