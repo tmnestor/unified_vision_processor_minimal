@@ -945,6 +945,8 @@ class ComparisonRunner:
 
     def _extract_keyvalue_pairs_robust(self, text: str) -> dict[str, str]:
         """Extract key-value pairs using robust AWK-style parsing from backup."""
+        import re  # Move import to top to avoid scope issues
+        
         if not text or not text.strip():
             return {}
 
@@ -975,7 +977,6 @@ class ComparisonRunner:
             ]
             
             # Much simpler approach: just insert newlines before each field
-            import re
             reconstructed_text = single_line
             
             # Insert newline before each field (except the first one)
