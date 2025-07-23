@@ -89,7 +89,6 @@ prompts:
   #   Extract data from this image in markdown format.
 
   llama: |
-
     <|image|>Extract data from this business document in KEY-VALUE format.
     
     Output format:
@@ -99,6 +98,7 @@ prompts:
     GST: [GST amount]
     TOTAL: [total amount]
     SUBTOTAL: [subtotal amount]
+    SUPPLIER_WEBSITE: [supplier website if visible]
     ITEMS: [item names separated by |]
     QUANTITIES: [quantities separated by |]
     PRICES: [prices separated by |]
@@ -112,7 +112,7 @@ prompts:
     PAYER_PHONE: [customer/payer phone if visible]
     PAYER_EMAIL: [customer/payer email if visible]
     BANK_ACCOUNT_NUMBER: [bank account number if visible]
-    
+
     Extract all visible text and format as KEY: VALUE pairs only.
 
 
