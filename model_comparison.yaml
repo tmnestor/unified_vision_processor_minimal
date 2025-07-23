@@ -94,8 +94,9 @@ prompts:
     STATEMENT_PERIOD: [value or N/A]
     OPENING_BALANCE: [opening balance amount in dollars or N/A]
     CLOSING_BALANCE: [closing balance amount in dollars or N/A]
+    TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    Output exactly 25 lines above. Include ALL keys even if value is N/A. No other text.
+    Output exactly 26 lines above. Include ALL keys even if value is N/A. No other text.
 
   # llama: |
   #   Extract data from this image in markdown format.
@@ -129,8 +130,9 @@ prompts:
     STATEMENT_PERIOD: [value or N/A]
     OPENING_BALANCE: [opening balance amount in dollars or N/A]
     CLOSING_BALANCE: [closing balance amount in dollars or N/A]
+    TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    Output exactly 25 lines above. Include ALL keys even if value is N/A. No other text.
+    Output exactly 26 lines above. Include ALL keys even if value is N/A. No other text.
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
