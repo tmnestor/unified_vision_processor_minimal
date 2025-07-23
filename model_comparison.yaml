@@ -160,7 +160,7 @@ prompts:
     CLOSING_BALANCE: [closing balance amount in dollars or N/A]
     TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    Output exactly 26 lines above. Include ALL keys even if value is N/A. No other text.
+    STOP after the 26 lines above. Do not add explanations, notes, or additional text.
 
   # llama: |
   #   Extract data from this image in markdown format.
@@ -196,7 +196,7 @@ prompts:
     CLOSING_BALANCE: [closing balance amount in dollars or N/A]
     TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    Output exactly 26 lines above. Include ALL keys even if value is N/A. No other text.
+    STOP after the 26 lines above. Do not add explanations, notes, or additional text.
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
