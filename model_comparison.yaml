@@ -14,6 +14,13 @@ defaults:
   output_dir: "results"  # Default output directory
   models: "llama,internvl"  # Default models to compare
   trust_remote_code: true  # Enable custom model architectures (InternVL requires this)
+  
+# Model-specific configurations
+model_config:
+  llama:
+    max_new_tokens_limit: 1000  # Override repetition control limit for complete extraction
+  internvl:
+    max_new_tokens_limit: 1000  # Ensure consistent limits across models
 
 # Device configuration for V100 production deployment
 device_config:

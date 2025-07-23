@@ -58,11 +58,24 @@ class LlamaVisionModel(BaseVisionModel):
 
         # Store repetition control settings
         self.repetition_enabled = repetition_config.get("enabled", True)
-        self.max_new_tokens_limit = repetition_config.get("max_new_tokens_limit", 384)
+        
+        # Read max_new_tokens_limit from YAML config (single source of truth)
+        yaml_limit = None
+        if hasattr(self, "config") and self.config:
+            model_config = getattr(self.config, "yaml_config", {}).get("model_config", {})
+            yaml_limit = model_config.get("llama", {}).get("max_new_tokens_limit")
+        
+        # Use YAML config as single source of truth, fallback to repetition_config, then default
+        self.max_new_tokens_limit = (
+            yaml_limit or 
+            repetition_config.get("max_new_tokens_limit") or 
+            384  # Final fallback
+        )
 
         logger.info(
             f"UltraAggressiveRepetitionController initialized - "
-            f"word_threshold={word_threshold}, phrase_threshold={phrase_threshold}"
+            f"word_threshold={word_threshold}, phrase_threshold={phrase_threshold}, "
+            f"max_new_tokens_limit={self.max_new_tokens_limit}"
         )
 
     def _get_capabilities(self) -> ModelCapabilities:
