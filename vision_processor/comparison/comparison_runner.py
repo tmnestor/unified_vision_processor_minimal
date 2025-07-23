@@ -367,8 +367,17 @@ class ComparisonRunner:
                             f"\n🔍 {model_name.upper()} sees in {image_path.name}:"
                         )
 
+                        # Clean response to remove markdown artifacts and repetition
+                        clean_text = response.raw_text
+                        # Remove markdown code blocks
+                        if "```" in clean_text:
+                            clean_text = clean_text.split("```")[0].strip()
+                        # Take only the first occurrence if there's repetition
+                        if "**Answer:**" in clean_text:
+                            clean_text = clean_text.split("**Answer:**")[0].strip()
+                        
                         # Parse key-value pairs - handle the 20-field format
-                        lines = response.raw_text.strip().split("\n")
+                        lines = clean_text.strip().split("\n")
 
                         # Expected keys in order
                         expected_keys = [
@@ -397,17 +406,38 @@ class ComparisonRunner:
                         # Extract key-value pairs from response
                         extracted_pairs = {}
 
-                        # Try to parse structured format first
-                        for line in lines:
-                            if ":" in line:
-                                try:
-                                    key, value = line.split(":", 1)
-                                    key = key.strip().upper()
-                                    value = value.strip()
-                                    if key in expected_keys:
-                                        extracted_pairs[key] = value
-                                except ValueError:
-                                    pass
+                        # Try to parse structured format
+                        # First check if it's all on one line (Llama format)
+                        if len(lines) == 1 or (len(lines) > 0 and all(key in lines[0] for key in ["DATE:", "SUPPLIER:", "ABN:"])):
+                            # Single line format - parse all key-value pairs from the first line
+                            text = lines[0] if lines else ""
+                            
+                            # Extract each expected key in order
+                            for i, key in enumerate(expected_keys):
+                                key_pattern = f"{key}:"
+                                if key_pattern in text:
+                                    start_idx = text.find(key_pattern) + len(key_pattern)
+                                    # Find the next key or end of string
+                                    next_key_idx = len(text)
+                                    for next_key in expected_keys[i+1:]:
+                                        next_pattern = f" {next_key}:"
+                                        if next_pattern in text[start_idx:]:
+                                            next_key_idx = text.find(next_pattern, start_idx)
+                                            break
+                                    value = text[start_idx:next_key_idx].strip()
+                                    extracted_pairs[key] = value
+                        else:
+                            # Multi-line format - parse line by line
+                            for line in lines:
+                                if ":" in line:
+                                    try:
+                                        key, value = line.split(":", 1)
+                                        key = key.strip().upper()
+                                        value = value.strip()
+                                        if key in expected_keys:
+                                            extracted_pairs[key] = value
+                                    except ValueError:
+                                        pass
 
                         # Display all expected fields (show N/A for missing ones)
                         for key in expected_keys:
