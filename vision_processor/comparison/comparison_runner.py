@@ -343,12 +343,16 @@ class ComparisonRunner:
 
                         # DEBUG: Show full raw response to understand format
                         if (
-                            len(response.raw_text) < 3000
+                            len(response.raw_text) < 4000
                         ):  # Only show if reasonable length
                             self.console.print(
                                 "DEBUG: Full raw response:", style="yellow"
                             )
-                            self.console.print(response.raw_text, style="dim yellow")
+                            # Show first 2000 chars if longer
+                            if len(response.raw_text) > 2000:
+                                self.console.print(response.raw_text[:2000] + "...[TRUNCATED]", style="dim yellow")
+                            else:
+                                self.console.print(response.raw_text, style="dim yellow")
 
                         # Pure model comparison: minimal processing to preserve raw outputs
                         analysis_dict = {
@@ -403,6 +407,11 @@ class ComparisonRunner:
 
                         # Parse key-value pairs - handle generic format
                         lines = clean_text.strip().split("\n")
+                        
+                        # DEBUG: Show parsing info
+                        self.console.print(f"DEBUG: Parsing {len(lines)} lines", style="yellow")
+                        if len(lines) > 0:
+                            self.console.print(f"DEBUG: First line: '{lines[0][:100]}...'", style="yellow")
 
                         # Extract key-value pairs from response
                         extracted_pairs = {}
