@@ -79,7 +79,12 @@ model_config:
     max_new_tokens_limit: 2024  # Ensure consistent limits across models
     confidence_score: 0.95      # Default confidence for InternVL responses
 
-# Repetition control configuration
+# Post-processing configuration
+post_processing:
+  enabled: false              # Disable post-processing by default (chat template provides clean output)
+  force_parsing: false        # Force field parsing even with clean output
+  
+# Repetition control configuration  
 repetition_control:
   enabled: true               # Enable repetition detection and cleanup
   word_threshold: 0.15        # 15% word repetition threshold

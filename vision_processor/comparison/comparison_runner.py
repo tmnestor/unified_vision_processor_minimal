@@ -377,7 +377,28 @@ class ComparisonRunner:
                             f"\n🔍 {model_name.upper()} sees in {image_path.name}:"
                         )
 
-                        # Clean response to remove markdown artifacts and repetition
+                        # Check if post-processing is disabled (chat template provides clean output)
+                        post_processing_config = self.config.yaml_config.get("post_processing", {})
+                        post_processing_enabled = post_processing_config.get("enabled", True)  # Default to True for backward compatibility
+                        
+                        if not post_processing_enabled:
+                            # 🚀 DIRECT OUTPUT: Skip all post-processing for clean chat template responses
+                            self.console.print("📋 Raw model output (post-processing disabled):")
+                            self.console.print(response.raw_text, style="dim green")
+                            
+                            # Store raw response without parsing
+                            analysis_dict["extracted_fields"] = {"raw_output": response.raw_text}
+                            
+                            # Simple status display
+                            status = "✅"
+                            response_str = f"{len(response.raw_text)} chars"
+                            time_str = f"{response.processing_time:.1f}s"
+                            self.console.print(
+                                f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {response_str}"
+                            )
+                            continue  # Skip all the post-processing below
+                        
+                        # 🔧 LEGACY POST-PROCESSING: Clean response to remove markdown artifacts and repetition
                         clean_text = response.raw_text
                         
                         # Apply cleaning based on content patterns
