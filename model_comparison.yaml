@@ -96,9 +96,16 @@ prompts:
   #   Extract data from this image in markdown format.
 
   llama: |
-    <|image|>Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
-
-    REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
+    <|image|>Extract data from this business document. 
+    
+    CRITICAL INSTRUCTIONS:
+    1. Output EXACTLY 20 lines in the format below
+    2. NO repetition - output each field ONLY ONCE
+    3. NO explanations or additional text
+    4. STOP immediately after line 20
+    5. Use "N/A" for missing fields
+    
+    REQUIRED OUTPUT (exactly these 20 lines):
     DATE: [value or N/A]
     SUPPLIER: [value or N/A]
     ABN: [value or N/A]
@@ -119,8 +126,6 @@ prompts:
     PAYER_PHONE: [value or N/A]
     PAYER_EMAIL: [value or N/A]
     BANK_ACCOUNT_NUMBER: [value or N/A]
-
-    Output exactly 20 lines above. Include ALL keys even if value is N/A. No other text.
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
