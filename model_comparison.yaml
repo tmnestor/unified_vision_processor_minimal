@@ -9,7 +9,7 @@ min_fields_for_success: 1  # Document is successful if it extracts at least 1 fi
 # CLI defaults
 defaults:
   datasets_path: "datasets"  # Default datasets directory
-  max_tokens: 256  # Increased from 64 to allow complete key-value extraction
+  max_tokens: 800  # Increased to allow complete 20-field key-value extraction
   quantization: true  # Enable 8-bit quantization for V100
   output_dir: "results"  # Default output directory
   models: "llama,internvl"  # Default models to compare
