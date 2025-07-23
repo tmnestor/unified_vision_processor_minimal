@@ -113,9 +113,7 @@ prompts:
     PAYER_EMAIL: [customer/payer email if visible]
     BANK_ACCOUNT_NUMBER: [bank account number if visible]
 
-    Extract all visible text and format as KEY: VALUE pairs only.
-
-
+    Extract these KEY: VALUE pairs only.
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
