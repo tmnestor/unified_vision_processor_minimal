@@ -166,7 +166,7 @@ prompts:
   #   Extract data from this image in markdown format.
 
   llama: |
-    <|begin_of_text|><|image|>Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
+    Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
 
     REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
     DOCUMENT_TYPE: [value or N/A]

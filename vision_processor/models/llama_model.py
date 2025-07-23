@@ -509,25 +509,56 @@ class LlamaVisionModel(BaseVisionModel):
         return image
 
     def _prepare_inputs(self, image: Image.Image, prompt: str) -> dict[str, Any]:
-        """Prepare inputs for model inference.
+        """Prepare inputs for model inference using official chat template.
 
         Args:
             image: Preprocessed PIL Image
-            prompt: Text prompt (should include <|image|> token)
+            prompt: Text prompt (without <|image|> token - will be added by chat template)
 
         Returns:
             Processed inputs dictionary
         """
-        # Ensure prompt includes image token
-        if not prompt.startswith("<|image|>"):
-            prompt_with_image = f"<|image|>{prompt}"
-        else:
-            prompt_with_image = prompt
+        # Clean prompt of any existing image tokens - chat template will handle this
+        clean_prompt = prompt.replace("<|image|>", "").strip()
+        
+        # Use official HuggingFace chat template format
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image"},
+                    {"type": "text", "text": clean_prompt}
+                ]
+            }
+        ]
+        
+        # Apply chat template with generation prompt
+        try:
+            input_text = self.processor.apply_chat_template(
+                messages, 
+                add_generation_prompt=True
+            )
+            
+            # Process inputs using the formatted text
+            inputs = self.processor(
+                text=input_text, 
+                images=image, 
+                return_tensors="pt"
+            )
+            
+            logger.info(f"✅ Chat template applied successfully - using official format")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Chat template failed, falling back to manual format: {e}")
+            # Fallback to original manual approach if chat template fails
+            if not prompt.startswith("<|image|>"):
+                prompt_with_image = f"<|image|>{prompt}"
+            else:
+                prompt_with_image = prompt
 
-        # Process inputs
-        inputs = self.processor(
-            text=prompt_with_image, images=image, return_tensors="pt"
-        )
+            inputs = self.processor(
+                text=prompt_with_image, images=image, return_tensors="pt"
+            )
 
         logger.debug(
             f"Input shapes - IDs: {inputs['input_ids'].shape}, Pixels: {inputs['pixel_values'].shape}"
