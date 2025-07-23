@@ -970,36 +970,21 @@ class ComparisonRunner:
                 "STATEMENT_PERIOD", "OPENING_BALANCE", "CLOSING_BALANCE", "TRANSACTIONS"
             ]
             
-            # Use regex to split on field boundaries (FIELD_NAME:)
-            # This handles the case where models return everything on one line
+            # Much simpler approach: just insert newlines before each field
             import re
+            reconstructed_text = single_line
             
-            # Create pattern that matches any expected field followed by colon
-            field_pattern = r'\b(' + '|'.join(expected_fields) + r'):'
+            # Insert newline before each field (except the first one)
+            for field in expected_fields:
+                # Look for " FIELD:" pattern and replace with "\nFIELD:"
+                pattern = f' {field}:'
+                reconstructed_text = reconstructed_text.replace(pattern, f'\n{field}:')
             
-            # Split the text using the field pattern as delimiter, keeping the delimiter
-            parts = re.split(f'({field_pattern})', single_line)
+            # Split into lines
+            lines = [line.strip() for line in reconstructed_text.split('\n') if line.strip()]
             
-            # Reconstruct as field:value pairs
-            reconstructed_lines = []
-            current_field = None
-            
-            for part in parts:
-                part = part.strip()
-                if not part:
-                    continue
-                    
-                # Check if this part is a field name
-                field_match = re.match(r'^(' + '|'.join(expected_fields) + r'):$', part)
-                if field_match:
-                    current_field = part  # Store "FIELD_NAME:"
-                elif current_field:
-                    # This is the value for the current field
-                    reconstructed_lines.append(f"{current_field} {part}")
-                    current_field = None
-            
-            print(f"DEBUG: Reconstructed {len(reconstructed_lines)} field lines from single-line response")
-            lines = reconstructed_lines
+            print(f"DEBUG: Reconstructed {len(lines)} field lines from single-line response")
+            print(f"DEBUG: First few reconstructed lines: {lines[:3] if lines else 'None'}")
 
         # Now process lines normally (whether original multi-line or reconstructed)
         for line in lines:
@@ -1026,22 +1011,7 @@ class ComparisonRunner:
                     # Remove markdown formatting from key
                     key = key.replace("**", "").replace("*", "")
                     
-                    # Clean value - handle multi-field concatenation in single line
-                    # Stop value at next field boundary if it contains another field
-                    expected_fields_set = {
-                        "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS",
-                        "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST",
-                        "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "ITEMS", "QUANTITIES", 
-                        "PRICES", "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME",
-                        "BSB_NUMBER", "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER",
-                        "STATEMENT_PERIOD", "OPENING_BALANCE", "CLOSING_BALANCE", "TRANSACTIONS"
-                    }
-                    
-                    # Check if value contains another field name and truncate there
-                    for field in expected_fields_set:
-                        if f" {field}:" in value:
-                            value = value.split(f" {field}:")[0].strip()
-                            break
+                    # Simple value cleaning (no complex truncation needed after line reconstruction)
                     
                     # Clean value
                     value = value.replace("**", "").replace("*", "").strip()
