@@ -386,7 +386,7 @@ class LlamaVisionModel(BaseVisionModel):
             # Configure generation settings for stable inference (based on working implementation)
             # Note: Set sampling parameters to None to suppress warnings when do_sample=False
             self.model.generation_config.max_new_tokens = (
-                1024  # Use max_new_tokens instead of max_length
+                self.max_new_tokens_limit  # Use YAML config limit instead of hardcoded
             )
             self.model.generation_config.do_sample = (
                 False  # Deterministic for consistency
@@ -594,6 +594,9 @@ class LlamaVisionModel(BaseVisionModel):
             max_tokens = kwargs.get("max_new_tokens", 1024)
             if self.repetition_enabled:
                 max_tokens = min(max_tokens, self.max_new_tokens_limit)
+
+            # DEBUG: Show actual generation parameters
+            logger.info(f"DEBUG GENERATION: max_new_tokens={kwargs.get('max_new_tokens', 1024)}, max_new_tokens_limit={self.max_new_tokens_limit}, final_max_tokens={max_tokens}")
 
             generation_kwargs = {
                 **inputs,
