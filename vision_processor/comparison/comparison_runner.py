@@ -6,6 +6,7 @@ model loading, extraction, analysis, and reporting generation.
 """
 
 import gc
+import re
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -374,8 +375,16 @@ class ComparisonRunner:
                             clean_text = clean_text.split("```")[0].strip()
                         # Take only the first occurrence if there's repetition
                         if "**Answer:**" in clean_text:
-                            clean_text = clean_text.split("**Answer:**")[0].strip()
-                        
+                            # For numbered lists, take the content after the first **Answer:**
+                            parts = clean_text.split("**Answer:**")
+                            if len(parts) > 1:
+                                clean_text = parts[1].strip()
+                                # If there's another **Answer:** (repetition), take only up to it
+                                if "**Answer:**" in clean_text:
+                                    clean_text = clean_text.split("**Answer:**")[
+                                        0
+                                    ].strip()
+
                         # Parse key-value pairs - handle the 20-field format
                         lines = clean_text.strip().split("\n")
 
@@ -407,22 +416,45 @@ class ComparisonRunner:
                         extracted_pairs = {}
 
                         # Try to parse structured format
-                        # First check if it's all on one line (Llama format)
-                        if len(lines) == 1 or (len(lines) > 0 and all(key in lines[0] for key in ["DATE:", "SUPPLIER:", "ABN:"])):
+                        # Check if it's a numbered list format (e.g., "1. DATE: value 2. SUPPLIER: value")
+                        full_text = " ".join(lines)
+                        numbered_pattern = (
+                            r"\d+\.\s*([A-Z_]+):\s*([^0-9]*?)(?=\s*\d+\.\s*[A-Z_]+:|$)"
+                        )
+                        numbered_matches = re.findall(numbered_pattern, full_text)
+
+                        if numbered_matches:
+                            # Numbered list format
+                            for key, value in numbered_matches:
+                                key = key.strip().upper()
+                                value = value.strip()
+                                if key in expected_keys:
+                                    extracted_pairs[key] = value
+                        elif len(lines) == 1 or (
+                            len(lines) > 0
+                            and all(
+                                key in lines[0]
+                                for key in ["DATE:", "SUPPLIER:", "ABN:"]
+                            )
+                        ):
                             # Single line format - parse all key-value pairs from the first line
                             text = lines[0] if lines else ""
-                            
+
                             # Extract each expected key in order
                             for i, key in enumerate(expected_keys):
                                 key_pattern = f"{key}:"
                                 if key_pattern in text:
-                                    start_idx = text.find(key_pattern) + len(key_pattern)
+                                    start_idx = text.find(key_pattern) + len(
+                                        key_pattern
+                                    )
                                     # Find the next key or end of string
                                     next_key_idx = len(text)
-                                    for next_key in expected_keys[i+1:]:
+                                    for next_key in expected_keys[i + 1 :]:
                                         next_pattern = f" {next_key}:"
                                         if next_pattern in text[start_idx:]:
-                                            next_key_idx = text.find(next_pattern, start_idx)
+                                            next_key_idx = text.find(
+                                                next_pattern, start_idx
+                                            )
                                             break
                                     value = text[start_idx:next_key_idx].strip()
                                     extracted_pairs[key] = value
@@ -431,6 +463,8 @@ class ComparisonRunner:
                             for line in lines:
                                 if ":" in line:
                                     try:
+                                        # Remove leading number if present (e.g., "1. DATE:" becomes "DATE:")
+                                        line = re.sub(r"^\d+\.\s*", "", line)
                                         key, value = line.split(":", 1)
                                         key = key.strip().upper()
                                         value = value.strip()
