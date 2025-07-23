@@ -417,59 +417,8 @@ class ComparisonRunner:
                             if len(lines) > 0:
                                 self.console.print(f"DEBUG: First line: '{lines[0][:100]}...'", style="yellow")
 
-                        # Extract key-value pairs from response
-                        extracted_pairs = {}
-
-                        # Try to parse structured format based on response characteristics
-                        full_text = " ".join(lines)
-                        
-                        # Determine format type and parse accordingly
-                        match (len(lines), "1." in full_text and "2." in full_text, len(lines) == 1):
-                            case (_, True, _):
-                                # Numbered list format (e.g., "1. DATE: value 2. SUPPLIER: value")
-                                numbered_pattern = r"(\d+)\.\s*([A-Z_]+):\s*(.*?)(?=\s*\d+\.\s*[A-Z_]+:|$)"
-                                for _num, key, value in re.findall(numbered_pattern, full_text):
-                                    extracted_pairs[key.strip().upper()] = value.strip()
-                            
-                            case (1, _, _):
-                                # Single line format - parse all key-value pairs
-                                kv_pattern = r"([A-Z_]+):\s*([^:]+?)(?=\s+[A-Z_]+:|$)"
-                                for key, value in re.findall(kv_pattern, lines[0]):
-                                    extracted_pairs[key.strip().upper()] = value.strip()
-                            
-                            case _:
-                                # Multi-line format - parse line by line
-                                for line in lines:
-                                    if ":" not in line:
-                                        continue
-                                    
-                                    # Clean line and check for skip patterns
-                                    line = re.sub(r"^\d+\.\s*", "", line)
-                                    if any(skip in line.lower() for skip in ["example:", "format:", "output:", "note:"]):
-                                        continue
-                                    
-                                    match (("**" in line and ":**" in line), True):
-                                        case (True, _):
-                                            # Markdown format: **Field Name:** value
-                                            if match := re.search(r'\*\*([^:]+):\*\*\s*(.+)', line):
-                                                key = match.group(1).strip().upper().replace(" ", "_")
-                                                value = match.group(2).strip()
-                                                if key and value and not value.lower().startswith("not applicable"):
-                                                    extracted_pairs[key] = value
-                                        
-                                        case (False, _):
-                                            # Regular KEY: value format
-                                            try:
-                                                key, value = line.split(":", 1)
-                                                key = key.strip().upper()
-                                                value = value.strip()
-                                                # Validate key format
-                                                if (key and value and 
-                                                    key.replace("_", "").replace(" ", "").isalpha() and 
-                                                    not key.isdigit()):
-                                                    extracted_pairs[key] = value
-                                            except ValueError:
-                                                pass
+                        # Extract key-value pairs using robust AWK-style parsing
+                        extracted_pairs = self._extract_keyvalue_pairs_robust(clean_text)
 
                         # Display all extracted fields
                         if extracted_pairs:
@@ -980,6 +929,98 @@ class ComparisonRunner:
             ComparisonResults or None if comparison hasn't been run
         """
         return self.results
+
+    def _extract_keyvalue_pairs_robust(self, text: str) -> dict[str, str]:
+        """Extract key-value pairs using robust AWK-style parsing from backup."""
+        if not text or not text.strip():
+            return {}
+
+        extracted_pairs = {}
+        lines = text.strip().split("\n")
+
+        for line in lines:
+            line = line.strip()
+            
+            # Skip empty lines, comments, and instruction lines
+            if not line or line.startswith("#") or line.startswith("NOTE:") or line.startswith("Note:"):
+                continue
+
+            # Skip instruction/format lines
+            if any(skip in line.lower() for skip in ["example:", "format:", "output:", "instruction:", "required output format"]):
+                continue
+
+            # Look for KEY: VALUE pattern
+            if ":" in line and len(line.split(":", 1)) == 2:
+                # Remove numbered list prefixes
+                line = re.sub(r"^\d+\.\s*", "", line)
+                
+                try:
+                    key, value = line.split(":", 1)
+                    key = key.strip().upper()
+                    value = value.strip()
+
+                    # Remove markdown formatting from key
+                    key = key.replace("**", "").replace("*", "")
+                    
+                    # Clean value
+                    value = value.replace("**", "").replace("*", "").strip()
+                    value = value.strip('"').strip("'").strip()
+                    
+                    # Remove bracketed instructions like [value or N/A]
+                    value = re.sub(r"\[.*?\]", "", value).strip()
+
+                    # Validate key format - must be alphabetic (with underscores/spaces)
+                    if (key and value and 
+                        key.replace("_", "").replace(" ", "").isalpha() and 
+                        not key.isdigit() and
+                        len(key) > 1 and  # At least 2 characters
+                        value.lower() not in ["n/a", "not available", "not visible", "none", ""]):
+                        
+                        # Normalize key format
+                        key = key.replace(" ", "_")
+                        extracted_pairs[key] = value
+
+                except ValueError:
+                    continue
+
+        return extracted_pairs
+
+    def _count_keyvalue_pairs(self, text: str) -> int:
+        """Count the number of key-value pairs in processed text (from backup)."""
+        if not text or not text.strip():
+            return 0
+
+        lines = text.strip().split("\n")
+        count = 0
+        for line in lines:
+            line = line.strip()
+            if ":" in line and len(line.split(":", 1)) == 2:
+                key, value = line.split(":", 1)
+                if key.strip() and value.strip():
+                    count += 1
+
+        return count
+
+    def _has_valid_keyvalue_pairs(self, text: str) -> bool:
+        """Check if text contains valid key-value pairs after conversion (from backup)."""
+        if not text or not text.strip():
+            return False
+
+        lines = text.split("\n")
+        valid_pairs = 0
+
+        for line in lines:
+            line = line.strip()
+            if line and ":" in line and len(line.split(":", 1)) == 2:
+                field, value = line.split(":", 1)
+                field = field.strip()
+                value = value.strip()
+                # Valid if field is alphabetic and value is not empty
+                if field and value and field.replace("_", "").isalpha():
+                    valid_pairs += 1
+
+        # Consider successful if we have at least 3 valid key-value pairs
+        return valid_pairs >= 3
 
     def _cleanup_gpu_memory(self):
         """Aggressive memory cleanup for V100 16GB limit (matching original script)."""
