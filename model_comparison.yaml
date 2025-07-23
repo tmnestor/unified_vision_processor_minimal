@@ -73,7 +73,7 @@ prompts:
     INVOICE_DATE: [value or N/A]
     DUE_DATE: [value or N/A]
     SUPPLIER: [value or N/A]
-    ABN: [value or N/A]
+    ABN: [11-digit Australian Business Number or N/A]
     GST: [value or N/A]
     TOTAL: [value or N/A]
     SUBTOTAL: [value or N/A]
@@ -82,7 +82,6 @@ prompts:
     QUANTITIES: [value or N/A]
     PRICES: [value or N/A]
     RECEIPT_NUMBER: [value or N/A]
-    PAYMENT_METHOD: [value or N/A]
     BUSINESS_ADDRESS: [value or N/A]
     BUSINESS_PHONE: [value or N/A]
     PAYER_NAME: [value or N/A]
@@ -90,14 +89,14 @@ prompts:
     PAYER_PHONE: [value or N/A]
     PAYER_EMAIL: [value or N/A]
     BANK_NAME: [value or N/A]
-    BANK_ACCOUNT_NUMBER: [value or N/A]
+    BSB_NUMBER: [6-digit BSB in format XXX-XXX or N/A]
+    BANK_ACCOUNT_NUMBER: [account number or N/A]
     ACCOUNT_HOLDER: [value or N/A]
-    ACCOUNT_NUMBER: [value or N/A]
     STATEMENT_PERIOD: [value or N/A]
     OPENING_BALANCE: [value or N/A]
     CLOSING_BALANCE: [value or N/A]
 
-    Output exactly 27 lines above. Include ALL keys even if value is N/A. No other text.
+    Output exactly 26 lines above. Include ALL keys even if value is N/A. No other text.
 
   # llama: |
   #   Extract data from this image in markdown format.
@@ -110,7 +109,7 @@ prompts:
     INVOICE_DATE: [value or N/A]
     DUE_DATE: [value or N/A]
     SUPPLIER: [value or N/A]
-    ABN: [value or N/A]
+    ABN: [11-digit Australian Business Number or N/A]
     GST: [value or N/A]
     TOTAL: [value or N/A]
     SUBTOTAL: [value or N/A]
@@ -119,7 +118,6 @@ prompts:
     QUANTITIES: [value or N/A]
     PRICES: [value or N/A]
     RECEIPT_NUMBER: [value or N/A]
-    PAYMENT_METHOD: [value or N/A]
     BUSINESS_ADDRESS: [value or N/A]
     BUSINESS_PHONE: [value or N/A]
     PAYER_NAME: [value or N/A]
@@ -127,14 +125,14 @@ prompts:
     PAYER_PHONE: [value or N/A]
     PAYER_EMAIL: [value or N/A]
     BANK_NAME: [value or N/A]
-    BANK_ACCOUNT_NUMBER: [value or N/A]
+    BSB_NUMBER: [6-digit BSB in format XXX-XXX or N/A]
+    BANK_ACCOUNT_NUMBER: [account number or N/A]
     ACCOUNT_HOLDER: [value or N/A]
-    ACCOUNT_NUMBER: [value or N/A]
     STATEMENT_PERIOD: [value or N/A]
     OPENING_BALANCE: [value or N/A]
     CLOSING_BALANCE: [value or N/A]
 
-    Output exactly 27 lines above. Include ALL keys even if value is N/A. No other text.
+    Output exactly 26 lines above. Include ALL keys even if value is N/A. No other text.
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
