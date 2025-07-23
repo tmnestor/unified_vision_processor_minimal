@@ -110,6 +110,9 @@ class SimpleConfig:
         self.model_paths = type("ModelPaths", (), yaml_model_paths)()
 
         # Create processing object with all required attributes for model loading
+        # Read max_tokens from YAML defaults (single source of truth)
+        yaml_max_tokens = defaults.get("max_tokens", 800)  # Use YAML default or fallback to 800
+        
         self.processing = type(
             "Processing",
             (),
@@ -119,7 +122,7 @@ class SimpleConfig:
                 "use_flash_attention": self.use_flash_attention,
                 "quantization": self.enable_quantization,
                 "batch_size": 1,
-                "max_tokens": 256,
+                "max_tokens": yaml_max_tokens,  # Use YAML config value
             },
         )()
 
