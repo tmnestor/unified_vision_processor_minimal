@@ -229,3 +229,6 @@ echo "Test the setup with:"
 echo "svp-config  # Show configuration"
 echo "python test_simple_extraction.py  # Run tests"
 echo "========================================================"
+
+alias runvision='git pull && reset && rm output_????????_??????.txt 2>/dev/null; python model_comparison.py compare \
+  --datasets-path ./datasets --output-dir ./results --models llama,internvl | tee "output_$(date +%Y%m%d_%H%M%S).txt"'
