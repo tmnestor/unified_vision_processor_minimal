@@ -6,6 +6,7 @@ model loading, extraction, analysis, and reporting generation.
 """
 
 import gc
+import re
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -346,17 +347,31 @@ class ComparisonRunner:
                         # Print what the model sees with better formatting - ALL key-value pairs
                         self.console.print(f"\n🔍 {model_name.upper()} sees in {image_path.name}:")
                         
-                        # Parse ALL key-value pairs for readable display
+                        # Parse key-value pairs - handle both multi-line and single-line formats
                         lines = response.raw_text.strip().split('\n')
-                        for line in lines:
-                            if ':' in line:
-                                key, value = line.split(':', 1)
+                        
+                        if len(lines) == 1:
+                            # Single line format - parse key-value pairs from one line
+                            text = lines[0]
+                            # Look for pattern: WORD: [content until next WORD:]
+                            pattern = r'([A-Z_]+):\s*([^A-Z]*?)(?=\s[A-Z_]+:|$)'
+                            matches = re.findall(pattern, text)
+                            
+                            for key, value in matches:
                                 key = key.strip()
                                 value = value.strip()
-                                # Don't truncate - show full values
-                                self.console.print(f"   {key:18}: {value}", style="dim cyan")
-                            elif line.strip():  # Show non-empty lines that don't have colons
-                                self.console.print(f"   [OTHER]         : {line.strip()}", style="dim yellow")
+                                if value:  # Only show non-empty values
+                                    self.console.print(f"   {key:18}: {value}", style="dim cyan")
+                        else:
+                            # Multi-line format - parse line by line
+                            for line in lines:
+                                if ':' in line:
+                                    key, value = line.split(':', 1)
+                                    key = key.strip()
+                                    value = value.strip()
+                                    self.console.print(f"   {key:18}: {value}", style="dim cyan")
+                                elif line.strip():  # Show non-empty lines that don't have colons
+                                    self.console.print(f"   [OTHER]         : {line.strip()}", style="dim yellow")
                         
                         # Print progress - raw model comparison
                         status = "✅"  # Always successful for raw comparison
