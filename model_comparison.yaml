@@ -59,61 +59,61 @@ model_paths:
 prompts:
 
   internvl: |
-    <|image|>Extract data from this business document in KEY-VALUE format.
-    
-    Output format:
-    DATE: [date from receipt]
-    SUPPLIER: [SUPPLIER name]
-    ABN: [11-digit Australian Business Number if visible]
-    GST: [GST amount]
-    TOTAL: [total amount]
-    SUBTOTAL: [subtotal amount]
-    SUPPLIER_WEBSITE: [supplier website if visible]
-    ITEMS: [item names separated by |]
-    QUANTITIES: [quantities separated by |]
-    PRICES: [prices separated by |]
-    RECEIPT_NUMBER: [receipt number if visible]
-    PAYMENT_METHOD: [payment method if visible]
-    DOCUMENT_TYPE: [if visible]
-    BUSINESS_ADDRESS: [business address if visible]
-    BUSINESS_PHONE: [business phone if visible]
-    PAYER_NAME: [customer/payer name if visible]
-    PAYER_ADDRESS: [customer/payer address if visible]
-    PAYER_PHONE: [customer/payer phone if visible]
-    PAYER_EMAIL: [customer/payer email if visible]
-    BANK_ACCOUNT_NUMBER: [bank account number if visible]
+    <|image|>Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
 
-    Extract all visible text and format as KEY: VALUE pairs only.
+    REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
+    DATE: [value or N/A]
+    SUPPLIER: [value or N/A]
+    ABN: [value or N/A]
+    GST: [value or N/A]
+    TOTAL: [value or N/A]
+    SUBTOTAL: [value or N/A]
+    SUPPLIER_WEBSITE: [value or N/A]
+    ITEMS: [value or N/A]
+    QUANTITIES: [value or N/A]
+    PRICES: [value or N/A]
+    RECEIPT_NUMBER: [value or N/A]
+    PAYMENT_METHOD: [value or N/A]
+    DOCUMENT_TYPE: [value or N/A]
+    BUSINESS_ADDRESS: [value or N/A]
+    BUSINESS_PHONE: [value or N/A]
+    PAYER_NAME: [value or N/A]
+    PAYER_ADDRESS: [value or N/A]
+    PAYER_PHONE: [value or N/A]
+    PAYER_EMAIL: [value or N/A]
+    BANK_ACCOUNT_NUMBER: [value or N/A]
+
+    Output exactly 20 lines above. Include ALL keys even if value is N/A. No other text.
 
   # llama: |
   #   Extract data from this image in markdown format.
 
   llama: |
-    <|image|>Extract data from this business document in KEY-VALUE format.
-    
-    Output format:
-    DATE: [date from receipt]
-    SUPPLIER: [SUPPLIER name]
-    ABN: [11-digit Australian Business Number if visible]
-    GST: [GST amount]
-    TOTAL: [total amount]
-    SUBTOTAL: [subtotal amount]
-    SUPPLIER_WEBSITE: [supplier website if visible]
-    ITEMS: [item names separated by |]
-    QUANTITIES: [quantities separated by |]
-    PRICES: [prices separated by |]
-    RECEIPT_NUMBER: [receipt number if visible]
-    PAYMENT_METHOD: [payment method if visible]
-    DOCUMENT_TYPE: [if visible]
-    BUSINESS_ADDRESS: [business address if visible]
-    BUSINESS_PHONE: [business phone if visible]
-    PAYER_NAME: [customer/payer name if visible]
-    PAYER_ADDRESS: [customer/payer address if visible]
-    PAYER_PHONE: [customer/payer phone if visible]
-    PAYER_EMAIL: [customer/payer email if visible]
-    BANK_ACCOUNT_NUMBER: [bank account number if visible]
+    <|image|>Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
 
-    Extract these KEY: VALUE pairs only.
+    REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
+    DATE: [value or N/A]
+    SUPPLIER: [value or N/A]
+    ABN: [value or N/A]
+    GST: [value or N/A]
+    TOTAL: [value or N/A]
+    SUBTOTAL: [value or N/A]
+    SUPPLIER_WEBSITE: [value or N/A]
+    ITEMS: [value or N/A]
+    QUANTITIES: [value or N/A]
+    PRICES: [value or N/A]
+    RECEIPT_NUMBER: [value or N/A]
+    PAYMENT_METHOD: [value or N/A]
+    DOCUMENT_TYPE: [value or N/A]
+    BUSINESS_ADDRESS: [value or N/A]
+    BUSINESS_PHONE: [value or N/A]
+    PAYER_NAME: [value or N/A]
+    PAYER_ADDRESS: [value or N/A]
+    PAYER_PHONE: [value or N/A]
+    PAYER_EMAIL: [value or N/A]
+    BANK_ACCOUNT_NUMBER: [value or N/A]
+
+    Output exactly 20 lines above. Include ALL keys even if value is N/A. No other text.
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
