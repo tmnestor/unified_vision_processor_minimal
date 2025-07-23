@@ -66,51 +66,12 @@ model_paths:
 prompts:
 
   internvl: |
-    <|image|>Extract information from this business document.
-    
-    CRITICAL RULES:
-    1. Use ONLY this format: KEY: value
-    2. NO markdown, NO asterisks, NO bullets
-    3. Each field on its own line
-    4. NO repetition - output each field ONCE
-    5. STOP after all fields extracted
-    
-    Output format:
-    DOCUMENT_TYPE: [invoice/receipt/bank statement/etc]
-    DATE: [date from document]
-    SUPPLIER: [supplier name if applicable]
-    ABN: [ABN if present]
-    GST: [GST amount if present]
-    TOTAL: [total amount]
-    SUBTOTAL: [subtotal if present]
-    ITEMS: [item names separated by |]
-    QUANTITIES: [quantities if present]
-    PRICES: [individual prices if present]
-    RECEIPT_NUMBER: [receipt/invoice number]
-    PAYMENT_METHOD: [payment method]
-    BUSINESS_ADDRESS: [business address]
-    BUSINESS_PHONE: [business phone]
-    PAYER_NAME: [payer name if present]
-    PAYER_EMAIL: [payer email if present]
-    
-    For bank statements also include:
-    BANK_NAME: [bank name]
-    ACCOUNT_NUMBER: [account number]
-    ACCOUNT_HOLDER: [account holder name]
-    STATEMENT_PERIOD: [statement period]
-    TRANSACTIONS: [brief transaction list]
-    BALANCE: [balance]
-    
-    Extract all visible fields. Use exact KEY: value format. NO other text.
-
-  # llama: |
-  #   Extract data from this image in markdown format.
-
-  llama: |
     <|image|>Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
 
     REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
-    DATE: [value or N/A]
+    DOCUMENT_TYPE: [value or N/A]
+    INVOICE_DATE: [value or N/A]
+    DUE_DATE: [value or N/A]
     SUPPLIER: [value or N/A]
     ABN: [value or N/A]
     GST: [value or N/A]
@@ -122,16 +83,58 @@ prompts:
     PRICES: [value or N/A]
     RECEIPT_NUMBER: [value or N/A]
     PAYMENT_METHOD: [value or N/A]
-    DOCUMENT_TYPE: [value or N/A]
     BUSINESS_ADDRESS: [value or N/A]
     BUSINESS_PHONE: [value or N/A]
     PAYER_NAME: [value or N/A]
     PAYER_ADDRESS: [value or N/A]
     PAYER_PHONE: [value or N/A]
     PAYER_EMAIL: [value or N/A]
+    BANK_NAME: [value or N/A]
     BANK_ACCOUNT_NUMBER: [value or N/A]
+    ACCOUNT_HOLDER: [value or N/A]
+    ACCOUNT_NUMBER: [value or N/A]
+    STATEMENT_PERIOD: [value or N/A]
+    OPENING_BALANCE: [value or N/A]
+    CLOSING_BALANCE: [value or N/A]
 
-    Output exactly 20 lines above. Include ALL keys even if value is N/A. No other text.
+    Output exactly 27 lines above. Include ALL keys even if value is N/A. No other text.
+
+  # llama: |
+  #   Extract data from this image in markdown format.
+
+  llama: |
+    <|image|>Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
+
+    REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
+    DOCUMENT_TYPE: [value or N/A]
+    INVOICE_DATE: [value or N/A]
+    DUE_DATE: [value or N/A]
+    SUPPLIER: [value or N/A]
+    ABN: [value or N/A]
+    GST: [value or N/A]
+    TOTAL: [value or N/A]
+    SUBTOTAL: [value or N/A]
+    SUPPLIER_WEBSITE: [value or N/A]
+    ITEMS: [value or N/A]
+    QUANTITIES: [value or N/A]
+    PRICES: [value or N/A]
+    RECEIPT_NUMBER: [value or N/A]
+    PAYMENT_METHOD: [value or N/A]
+    BUSINESS_ADDRESS: [value or N/A]
+    BUSINESS_PHONE: [value or N/A]
+    PAYER_NAME: [value or N/A]
+    PAYER_ADDRESS: [value or N/A]
+    PAYER_PHONE: [value or N/A]
+    PAYER_EMAIL: [value or N/A]
+    BANK_NAME: [value or N/A]
+    BANK_ACCOUNT_NUMBER: [value or N/A]
+    ACCOUNT_HOLDER: [value or N/A]
+    ACCOUNT_NUMBER: [value or N/A]
+    STATEMENT_PERIOD: [value or N/A]
+    OPENING_BALANCE: [value or N/A]
+    CLOSING_BALANCE: [value or N/A]
+
+    Output exactly 27 lines above. Include ALL keys even if value is N/A. No other text.
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
