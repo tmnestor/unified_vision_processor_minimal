@@ -418,18 +418,28 @@ class ComparisonRunner:
                         # Try to parse structured format
                         # Check if it's a numbered list format (e.g., "1. DATE: value 2. SUPPLIER: value")
                         full_text = " ".join(lines)
+                        
+                        # DEBUG: Show what we're parsing
+                        if "1." in full_text and "2." in full_text:
+                            self.console.print(f"DEBUG: Parsing numbered format, first 200 chars: '{full_text[:200]}...'", style="yellow")
+                        
+                        # Better pattern that captures everything up to the next numbered item
                         numbered_pattern = (
-                            r"\d+\.\s*([A-Z_]+):\s*([^0-9]*?)(?=\s*\d+\.\s*[A-Z_]+:|$)"
+                            r"(\d+)\.\s*([A-Z_]+):\s*(.*?)(?=\s*\d+\.\s*[A-Z_]+:|$)"
                         )
                         numbered_matches = re.findall(numbered_pattern, full_text)
 
                         if numbered_matches:
                             # Numbered list format
-                            for key, value in numbered_matches:
+                            self.console.print(f"DEBUG: Found {len(numbered_matches)} numbered matches", style="yellow")
+                            for num, key, value in numbered_matches:
                                 key = key.strip().upper()
                                 value = value.strip()
                                 if key in expected_keys:
                                     extracted_pairs[key] = value
+                                # DEBUG: Show what we're extracting
+                                if len(numbered_matches) < 25:  # Only show if reasonable number
+                                    self.console.print(f"DEBUG:   {num}. {key}: {value[:50]}{'...' if len(value) > 50 else ''}", style="dim yellow")
                         elif len(lines) == 1 or (
                             len(lines) > 0
                             and all(
