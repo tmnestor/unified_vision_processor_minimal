@@ -44,7 +44,13 @@ class UniversalKeyValueParser:
                 match = re.search(pattern, response_text, re.IGNORECASE | re.MULTILINE)
                 if match:
                     value = match.group(1).strip()
-                    if value and value.lower() not in ["", "n/a", "not visible", "not available", "none"]:
+                    if value and value.lower() not in [
+                        "",
+                        "n/a",
+                        "not visible",
+                        "not available",
+                        "none",
+                    ]:
                         extracted[key] = self._clean_value(key, value)
                         break
 

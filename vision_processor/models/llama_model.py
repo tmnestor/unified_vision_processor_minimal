@@ -101,7 +101,9 @@ class LlamaVisionModel(BaseVisionModel):
             # This ensures fair comparison with InternVL model that's V100-optimized
             available_gpus = torch.cuda.device_count()
             self.num_gpus = 1  # Force single GPU regardless of available GPUs
-            logger.info(f"🔧 V100 Production Mode: Using 1 GPU (detected {available_gpus} available)")
+            logger.info(
+                f"🔧 V100 Production Mode: Using 1 GPU (detected {available_gpus} available)"
+            )
 
             # Enable TF32 for GPU optimization on compatible hardware
             torch.backends.cuda.matmul.allow_tf32 = True
@@ -123,7 +125,9 @@ class LlamaVisionModel(BaseVisionModel):
 
             if use_4bit:
                 # Use 4-bit quantization for 11B model V100 deployment
-                logger.info("🔧 Using 4-bit quantization for aggressive memory reduction")
+                logger.info(
+                    "🔧 Using 4-bit quantization for aggressive memory reduction"
+                )
                 return BitsAndBytesConfig(
                     load_in_4bit=True,
                     bnb_4bit_compute_dtype=torch.float16,
@@ -199,18 +203,26 @@ class LlamaVisionModel(BaseVisionModel):
             return "mps"
         return "cpu"
 
-    def _estimate_memory_usage(self, quantization_config: BitsAndBytesConfig | None) -> float:
+    def _estimate_memory_usage(
+        self, quantization_config: BitsAndBytesConfig | None
+    ) -> float:
         """Estimate model memory usage in GB for V100 validation."""
         # Base model size: Llama-3.2-11B ≈ 11B parameters
         base_params = 11_000_000_000  # 11B parameters
 
         if quantization_config:
-            if hasattr(quantization_config, "load_in_4bit") and quantization_config.load_in_4bit:
+            if (
+                hasattr(quantization_config, "load_in_4bit")
+                and quantization_config.load_in_4bit
+            ):
                 # 4-bit quantization: ~0.5 bytes per parameter
                 memory_gb = (base_params * 0.5) / (1024**3)
                 overhead = 1.5  # Quantization overhead
                 return memory_gb * overhead
-            elif hasattr(quantization_config, "load_in_8bit") and quantization_config.load_in_8bit:
+            elif (
+                hasattr(quantization_config, "load_in_8bit")
+                and quantization_config.load_in_8bit
+            ):
                 # 8-bit quantization: ~1 byte per parameter
                 memory_gb = (base_params * 1.0) / (1024**3)
                 overhead = 1.3  # Quantization overhead
@@ -237,18 +249,26 @@ class LlamaVisionModel(BaseVisionModel):
             if not self.enable_quantization:
                 logger.error("   1. Enable quantization (set quantization=true)")
             else:
-                use_4bit = getattr(self, "kwargs", {}).get("aggressive_quantization", False)
+                use_4bit = getattr(self, "kwargs", {}).get(
+                    "aggressive_quantization", False
+                )
                 if not use_4bit:
                     logger.error("   1. Enable aggressive 4-bit quantization")
-                    logger.error("   2. Use smaller model variant (e.g., 7B instead of 11B)")
+                    logger.error(
+                        "   2. Use smaller model variant (e.g., 7B instead of 11B)"
+                    )
                 else:
-                    logger.error("   1. Use smaller model variant (e.g., 7B instead of 11B)")
+                    logger.error(
+                        "   1. Use smaller model variant (e.g., 7B instead of 11B)"
+                    )
 
             raise RuntimeError(
                 f"Model memory ({estimated_memory_gb:.1f}GB) exceeds V100 safe limit ({effective_limit:.1f}GB)"
             )
         else:
-            safety_percent = (effective_limit - estimated_memory_gb) / effective_limit * 100
+            safety_percent = (
+                (effective_limit - estimated_memory_gb) / effective_limit * 100
+            )
             logger.info(
                 f"✅ V100 Compliance: {estimated_memory_gb:.1f}GB / {v100_limit_gb:.1f}GB ({safety_percent:.1f}% safety margin)"
             )
@@ -298,16 +318,24 @@ class LlamaVisionModel(BaseVisionModel):
             # Add quantization configuration if enabled
             if quantization_config:
                 model_loading_args["quantization_config"] = quantization_config
-                use_4bit = getattr(self, "kwargs", {}).get("aggressive_quantization", False)
+                use_4bit = getattr(self, "kwargs", {}).get(
+                    "aggressive_quantization", False
+                )
                 quant_type = "4-bit" if use_4bit else "8-bit"
                 logger.info(
                     f"🔧 V100 Mode: Loading 11B model on single GPU with {quant_type} quantization..."
                 )
             else:
-                logger.info("🔧 V100 Mode: Loading model on single GPU without quantization...")
-                logger.warning("⚠️  No quantization - 11B model may exceed V100 16GB limit")
+                logger.info(
+                    "🔧 V100 Mode: Loading model on single GPU without quantization..."
+                )
+                logger.warning(
+                    "⚠️  No quantization - 11B model may exceed V100 16GB limit"
+                )
         else:  # Multi-GPU (should not happen in V100 production mode)
-            logger.warning(f"Multi-GPU mode detected ({self.num_gpus} GPUs) - this may exceed V100 limits")
+            logger.warning(
+                f"Multi-GPU mode detected ({self.num_gpus} GPUs) - this may exceed V100 limits"
+            )
             model_loading_args["device_map"] = device_map
             logger.info(f"Loading model across {self.num_gpus} GPUs...")
 
@@ -341,13 +369,23 @@ class LlamaVisionModel(BaseVisionModel):
 
             # Configure generation settings for stable inference (based on working implementation)
             # Note: Set sampling parameters to None to suppress warnings when do_sample=False
-            self.model.generation_config.max_new_tokens = 1024  # Use max_new_tokens instead of max_length
-            self.model.generation_config.do_sample = False  # Deterministic for consistency
+            self.model.generation_config.max_new_tokens = (
+                1024  # Use max_new_tokens instead of max_length
+            )
+            self.model.generation_config.do_sample = (
+                False  # Deterministic for consistency
+            )
 
             # Set sampling parameters to None to suppress warnings (working script approach)
-            self.model.generation_config.temperature = None  # Set to None to suppress warnings
-            self.model.generation_config.top_p = None  # Set to None to suppress warnings
-            self.model.generation_config.top_k = None  # Set to None to suppress warnings
+            self.model.generation_config.temperature = (
+                None  # Set to None to suppress warnings
+            )
+            self.model.generation_config.top_p = (
+                None  # Set to None to suppress warnings
+            )
+            self.model.generation_config.top_k = (
+                None  # Set to None to suppress warnings
+            )
 
             self.model.config.use_cache = True  # Enable KV cache
             logger.info("Configured generation settings for deterministic inference")
@@ -401,7 +439,9 @@ class LlamaVisionModel(BaseVisionModel):
 
             # Move to appropriate device
             if hasattr(self.model, "device") and self.model.device.type != "cpu":
-                test_inputs = {k: v.to(self.model.device) for k, v in test_inputs.items()}
+                test_inputs = {
+                    k: v.to(self.model.device) for k, v in test_inputs.items()
+                }
 
             with torch.no_grad():
                 test_outputs = self.model.generate(
@@ -461,7 +501,9 @@ class LlamaVisionModel(BaseVisionModel):
             prompt_with_image = prompt
 
         # Process inputs
-        inputs = self.processor(text=prompt_with_image, images=image, return_tensors="pt")
+        inputs = self.processor(
+            text=prompt_with_image, images=image, return_tensors="pt"
+        )
 
         logger.debug(
             f"Input shapes - IDs: {inputs['input_ids'].shape}, Pixels: {inputs['pixel_values'].shape}"
@@ -469,8 +511,15 @@ class LlamaVisionModel(BaseVisionModel):
 
         # Move to correct device - use the exact device detection from working code
         if self.device.type != "cpu":
-            device_target = str(self.device).split(":")[0] if ":" in str(self.device) else str(self.device)
-            inputs = {k: v.to(device_target) if hasattr(v, "to") else v for k, v in inputs.items()}
+            device_target = (
+                str(self.device).split(":")[0]
+                if ":" in str(self.device)
+                else str(self.device)
+            )
+            inputs = {
+                k: v.to(device_target) if hasattr(v, "to") else v
+                for k, v in inputs.items()
+            }
 
         return inputs
 
@@ -640,7 +689,9 @@ Output document type only."""
 
         try:
             # Use direct prediction method like working implementation
-            response = self.process_image(image_path, classification_prompt, do_sample=False)
+            response = self.process_image(
+                image_path, classification_prompt, do_sample=False
+            )
             response_lower = response.raw_text.lower()
 
             # Parse classification response with improved fuel detection
@@ -660,7 +711,9 @@ Output document type only."""
                 "per litre",
                 "fuel",
             ]
-            has_fuel_content = any(indicator in response_text for indicator in fuel_indicators)
+            has_fuel_content = any(
+                indicator in response_text for indicator in fuel_indicators
+            )
 
             # Look for quantity patterns that indicate fuel
             import re
@@ -686,11 +739,17 @@ Output document type only."""
                 "available balance",
                 "current balance",
             ]
-            has_bank_content = any(indicator in response_text for indicator in bank_indicators)
+            has_bank_content = any(
+                indicator in response_text for indicator in bank_indicators
+            )
 
             # Look for account number patterns (Australian BSB + Account format)
-            bank_account_pattern = r"\d{3}-\d{3}\s+\d{4,10}|\bBSB\b|\baccount\s+number\b"
-            has_bank_account = bool(re.search(bank_account_pattern, response_text, re.IGNORECASE))
+            bank_account_pattern = (
+                r"\d{3}-\d{3}\s+\d{4,10}|\bBSB\b|\baccount\s+number\b"
+            )
+            has_bank_account = bool(
+                re.search(bank_account_pattern, response_text, re.IGNORECASE)
+            )
 
             if "fuel_receipt" in response_lower or "fuel receipt" in response_lower:
                 doc_type = "fuel_receipt"
@@ -699,7 +758,9 @@ Output document type only."""
                 # Override other classifications if we see clear fuel indicators
                 doc_type = "fuel_receipt"
                 confidence = 0.95
-                logger.info("Overriding classification to fuel_receipt based on content indicators")
+                logger.info(
+                    "Overriding classification to fuel_receipt based on content indicators"
+                )
             elif "fuel" in response_lower or "petrol" in response_lower:
                 doc_type = "fuel_receipt"
                 confidence = 0.85
@@ -709,14 +770,18 @@ Output document type only."""
             elif "tax" in response_lower and "invoice" in response_lower:
                 doc_type = "tax_invoice"
                 confidence = 0.80
-            elif "bank_statement" in response_lower or "bank statement" in response_lower:
+            elif (
+                "bank_statement" in response_lower or "bank statement" in response_lower
+            ):
                 doc_type = "bank_statement"
                 confidence = 0.90
             elif has_bank_content or has_bank_account:
                 # Override other classifications if we see clear bank indicators
                 doc_type = "bank_statement"
                 confidence = 0.95
-                logger.info("Overriding classification to bank_statement based on content indicators")
+                logger.info(
+                    "Overriding classification to bank_statement based on content indicators"
+                )
             elif "bank" in response_lower:
                 doc_type = "bank_statement"
                 confidence = 0.75

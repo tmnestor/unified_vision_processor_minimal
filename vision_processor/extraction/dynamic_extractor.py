@@ -62,7 +62,11 @@ class DynamicFieldExtractor:
         self.min_fields_for_success = min_fields_for_success
 
     def extract_fields(
-        self, response: str, image_name: str, model_name: str, processing_time: float = 0.0
+        self,
+        response: str,
+        image_name: str,
+        model_name: str,
+        processing_time: float = 0.0,
     ) -> DynamicExtractionResult:
         """Extract fields dynamically from response using original working logic.
 
@@ -100,7 +104,9 @@ class DynamicFieldExtractor:
 
         # EXACT WORKING SCRIPT LOGIC: Determine extraction method
         initial_structured_fields = self._get_field_names_from_response(response)
-        using_raw_markdown = len(initial_structured_fields) == 0 and len(detected_fields) > 0
+        using_raw_markdown = (
+            len(initial_structured_fields) == 0 and len(detected_fields) > 0
+        )
 
         # Step 2: Extract each detected field (EXACT WORKING SCRIPT LOGIC)
         extracted_fields = {}
@@ -109,9 +115,13 @@ class DynamicFieldExtractor:
 
         for field_name in detected_fields:
             if using_raw_markdown:
-                field_detected, field_match = self._extract_field_from_raw_markdown(field_name, response)
+                field_detected, field_match = self._extract_field_from_raw_markdown(
+                    field_name, response
+                )
             else:
-                field_detected, field_match = self._extract_and_validate_field_simple(field_name, response)
+                field_detected, field_match = self._extract_and_validate_field_simple(
+                    field_name, response
+                )
 
             # CRITICAL: Working script counts field as successful if DETECTED, not if value extracted
             field_results[f"has_{field_name.lower()}"] = field_detected
@@ -128,7 +138,9 @@ class DynamicFieldExtractor:
         is_successful = extraction_score >= self.min_fields_for_success
 
         # Debug: Log the final results
-        print(f"   Final extraction results: {extraction_score} fields, success: {is_successful}")
+        print(
+            f"   Final extraction results: {extraction_score} fields, success: {is_successful}"
+        )
         print(f"   Field results: {field_results}")
         if extracted_fields:
             print(f"   Extracted field samples: {list(extracted_fields.keys())[:5]}")
@@ -186,7 +198,8 @@ class DynamicFieldExtractor:
                     and value.strip()
                     and len(key.strip()) > 1
                     and len(value.strip()) > 1
-                    and value.strip().upper() not in ["N/A", "NOT VISIBLE", "NONE", "UNKNOWN"]
+                    and value.strip().upper()
+                    not in ["N/A", "NOT VISIBLE", "NONE", "UNKNOWN"]
                 ):
                     valid_pairs += 1
 
@@ -268,9 +281,13 @@ class DynamicFieldExtractor:
             synthetic_fields.append("RECEIPT_NUMBER")
 
         # Enhanced: Add BSB and ACCOUNT_NUMBER detection for bank documents
-        if re.search(r"\b\d{3}-?\d{3}\b", response) or re.search(r"\bBSB\b", response, re.IGNORECASE):
+        if re.search(r"\b\d{3}-?\d{3}\b", response) or re.search(
+            r"\bBSB\b", response, re.IGNORECASE
+        ):
             synthetic_fields.append("BSB")
-        if re.search(r"\bACCOUNT.*NUMBER\b|\bACCOUNT[:\s]*\d{6,12}\b", response, re.IGNORECASE):
+        if re.search(
+            r"\bACCOUNT.*NUMBER\b|\bACCOUNT[:\s]*\d{6,12}\b", response, re.IGNORECASE
+        ):
             synthetic_fields.append("ACCOUNT_NUMBER")
 
         return synthetic_fields
@@ -305,7 +322,9 @@ class DynamicFieldExtractor:
         field_name_upper = field_name.upper()
 
         if field_name_upper == "ABN":
-            match = re.search(r"\b(\d{2,3}[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{3})\b", response)
+            match = re.search(
+                r"\b(\d{2,3}[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{3})\b", response
+            )
             if match:
                 return True, match.group(1)
 

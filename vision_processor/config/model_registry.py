@@ -49,7 +49,9 @@ class ModelRegistration:
     def __post_init__(self):
         """Validate registration after initialization."""
         if not issubclass(self.model_class, BaseVisionModel):
-            raise ValueError(f"Model class {self.model_class} must inherit from BaseVisionModel")
+            raise ValueError(
+                f"Model class {self.model_class} must inherit from BaseVisionModel"
+            )
 
 
 class ModelFactory:
@@ -100,7 +102,9 @@ class ModelFactory:
         try:
             return registration.model_class(**model_kwargs)
         except Exception as e:
-            raise RuntimeError(f"Failed to create {registration.name} model: {e}") from e
+            raise RuntimeError(
+                f"Failed to create {registration.name} model: {e}"
+            ) from e
 
 
 class ModelRegistry:
@@ -193,7 +197,9 @@ class ModelRegistry:
             module = importlib.import_module(module_path)
             model_class = getattr(module, class_name)
 
-            self.register_model(name, model_type, model_class, default_path, description)
+            self.register_model(
+                name, model_type, model_class, default_path, description
+            )
 
         except (ImportError, AttributeError) as e:
             error_msg = f"Failed to import external model {name}: {e}"
@@ -221,7 +227,11 @@ class ModelRegistry:
 
     def list_available_models(self) -> List[str]:
         """Get list of models that can be instantiated (no errors)."""
-        return [name for name, reg in self._models.items() if reg.status != ModelStatus.ERROR]
+        return [
+            name
+            for name, reg in self._models.items()
+            if reg.status != ModelStatus.ERROR
+        ]
 
     def validate_model(self, name: str, model_path: Optional[str] = None) -> bool:
         """Validate that a model can be loaded.
@@ -304,7 +314,9 @@ class ModelRegistry:
         if not self._factory or self._factory.processing_config != processing_config:
             self._factory = ModelFactory(processing_config)
 
-        return self._factory.create_model(registration, model_path, device_config, **kwargs)
+        return self._factory.create_model(
+            registration, model_path, device_config, **kwargs
+        )
 
     def get_model_info(self, name: str) -> Dict[str, Any]:
         """Get comprehensive model information.
@@ -380,7 +392,9 @@ class ModelRegistry:
                 )
             print()
 
-    def validate_all_models(self, model_paths: Optional[Dict[str, str]] = None) -> Dict[str, bool]:
+    def validate_all_models(
+        self, model_paths: Optional[Dict[str, str]] = None
+    ) -> Dict[str, bool]:
         """Validate all registered models.
 
         Args:
@@ -399,7 +413,9 @@ class ModelRegistry:
 
         successful = sum(results.values())
         total = len(results)
-        print(f"\n📊 Validation Summary: {successful}/{total} models validated successfully")
+        print(
+            f"\n📊 Validation Summary: {successful}/{total} models validated successfully"
+        )
 
         return results
 
@@ -421,9 +437,13 @@ def register_model(
     description: str,
 ):
     """Convenience function to register a model globally."""
-    GLOBAL_MODEL_REGISTRY.register_model(name, model_type, model_class, default_path, description)
+    GLOBAL_MODEL_REGISTRY.register_model(
+        name, model_type, model_class, default_path, description
+    )
 
 
-def create_model(name: str, processing_config: ProcessingConfig, **kwargs) -> BaseVisionModel:
+def create_model(
+    name: str, processing_config: ProcessingConfig, **kwargs
+) -> BaseVisionModel:
     """Convenience function to create a model from global registry."""
     return GLOBAL_MODEL_REGISTRY.create_model(name, processing_config, **kwargs)

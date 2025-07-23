@@ -34,6 +34,7 @@ FIELD_WEIGHTS = {
     "BANK_ACCOUNT_NUMBER": 1.0,
 }
 
+
 @dataclass
 class InformationExtractionMetrics:
     """Advanced metrics focused on Information Extraction Capability."""
@@ -92,7 +93,9 @@ class InformationExtractionCalculator:
         """Add results for a model."""
         self.results[model_name] = results
 
-    def _calculate_weighted_extraction_score(self, extracted_fields: List[str]) -> float:
+    def _calculate_weighted_extraction_score(
+        self, extracted_fields: List[str]
+    ) -> float:
         """Calculate weighted extraction score based on field importance."""
         if not extracted_fields:
             return 0.0
@@ -120,7 +123,9 @@ class InformationExtractionCalculator:
 
         return found_critical / len(critical_fields)
 
-    def _calculate_information_density(self, extracted_fields: List[str], total_fields: int) -> float:
+    def _calculate_information_density(
+        self, extracted_fields: List[str], total_fields: int
+    ) -> float:
         """Calculate information density - quality vs quantity of extracted fields."""
         if total_fields == 0:
             return 0.0
@@ -135,7 +140,9 @@ class InformationExtractionCalculator:
         relevant_fields = sum(1 for f in extracted_fields if f.upper() in FIELD_WEIGHTS)
         return relevant_fields / max_possible_fields
 
-    def calculate_metrics(self, model_name: str) -> Optional[InformationExtractionMetrics]:
+    def calculate_metrics(
+        self, model_name: str
+    ) -> Optional[InformationExtractionMetrics]:
         """Calculate comprehensive Information Extraction Capability metrics."""
         if model_name not in self.results:
             return None
@@ -145,10 +152,10 @@ class InformationExtractionCalculator:
             return None
 
         total_images = len(results)
-        successful = sum(1 for r in results if r.get('successful', False))
-        total_fields = sum(r.get('field_count', 0) for r in results)
-        total_core_fields = sum(r.get('core_fields_found', 0) for r in results)
-        total_time = sum(r.get('extraction_time', 0) for r in results)
+        successful = sum(1 for r in results if r.get("successful", False))
+        total_fields = sum(r.get("field_count", 0) for r in results)
+        total_core_fields = sum(r.get("core_fields_found", 0) for r in results)
+        total_time = sum(r.get("extraction_time", 0) for r in results)
         avg_time = total_time / total_images if total_images > 0 else 0
 
         # Calculate advanced metrics
@@ -158,24 +165,46 @@ class InformationExtractionCalculator:
         extraction_completenesses = []
 
         for result in results:
-            extracted_fields = result.get('extracted_fields', [])
+            extracted_fields = result.get("extracted_fields", [])
             if isinstance(extracted_fields, dict):
                 extracted_fields = list(extracted_fields.keys())
             elif not isinstance(extracted_fields, list):
                 extracted_fields = []
 
-            field_count = result.get('field_count', len(extracted_fields))
+            field_count = result.get("field_count", len(extracted_fields))
 
-            weighted_scores.append(self._calculate_weighted_extraction_score(extracted_fields))
-            critical_coverages.append(self._calculate_critical_field_coverage(extracted_fields))
-            information_densities.append(self._calculate_information_density(extracted_fields, field_count))
-            extraction_completenesses.append(self._calculate_extraction_completeness(extracted_fields))
+            weighted_scores.append(
+                self._calculate_weighted_extraction_score(extracted_fields)
+            )
+            critical_coverages.append(
+                self._calculate_critical_field_coverage(extracted_fields)
+            )
+            information_densities.append(
+                self._calculate_information_density(extracted_fields, field_count)
+            )
+            extraction_completenesses.append(
+                self._calculate_extraction_completeness(extracted_fields)
+            )
 
         # Average the advanced metrics
-        avg_weighted_score = sum(weighted_scores) / len(weighted_scores) if weighted_scores else 0
-        avg_critical_coverage = sum(critical_coverages) / len(critical_coverages) if critical_coverages else 0
-        avg_information_density = sum(information_densities) / len(information_densities) if information_densities else 0
-        avg_extraction_completeness = sum(extraction_completenesses) / len(extraction_completenesses) if extraction_completenesses else 0
+        avg_weighted_score = (
+            sum(weighted_scores) / len(weighted_scores) if weighted_scores else 0
+        )
+        avg_critical_coverage = (
+            sum(critical_coverages) / len(critical_coverages)
+            if critical_coverages
+            else 0
+        )
+        avg_information_density = (
+            sum(information_densities) / len(information_densities)
+            if information_densities
+            else 0
+        )
+        avg_extraction_completeness = (
+            sum(extraction_completenesses) / len(extraction_completenesses)
+            if extraction_completenesses
+            else 0
+        )
 
         return InformationExtractionMetrics(
             model_name=model_name,
@@ -187,7 +216,7 @@ class InformationExtractionCalculator:
             critical_field_coverage=avg_critical_coverage,
             information_density=avg_information_density,
             extraction_completeness=avg_extraction_completeness,
-            average_inference_time=avg_time
+            average_inference_time=avg_time,
         )
 
     def compare_models(self) -> Dict[str, Dict]:
@@ -198,14 +227,14 @@ class InformationExtractionCalculator:
             metrics = self.calculate_metrics(model_name)
             if metrics:
                 comparison[model_name] = {
-                    'extraction_capability': f"{metrics.information_extraction_capability:.3f}",
-                    'weighted_score': f"{metrics.weighted_extraction_score:.3f}",
-                    'critical_coverage': f"{metrics.critical_field_coverage:.1%}",
-                    'info_density': f"{metrics.information_density:.3f}",
-                    'completeness': f"{metrics.extraction_completeness:.1%}",
-                    'success_rate': f"{metrics.success_rate:.1%}",
-                    'avg_fields': f"{metrics.avg_fields_per_image:.1f}",
-                    'avg_time': f"{metrics.average_inference_time:.1f}s"
+                    "extraction_capability": f"{metrics.information_extraction_capability:.3f}",
+                    "weighted_score": f"{metrics.weighted_extraction_score:.3f}",
+                    "critical_coverage": f"{metrics.critical_field_coverage:.1%}",
+                    "info_density": f"{metrics.information_density:.3f}",
+                    "completeness": f"{metrics.extraction_completeness:.1%}",
+                    "success_rate": f"{metrics.success_rate:.1%}",
+                    "avg_fields": f"{metrics.avg_fields_per_image:.1f}",
+                    "avg_time": f"{metrics.average_inference_time:.1f}s",
                 }
 
         return comparison
@@ -226,10 +255,10 @@ class InformationExtractionCalculator:
     def get_detailed_analysis(self) -> Dict:
         """Get detailed analysis of Information Extraction Capability."""
         analysis = {
-            'models_tested': list(self.results.keys()),
-            'total_images': sum(len(r) for r in self.results.values()),
-            'field_weights_used': FIELD_WEIGHTS,
-            'metrics_breakdown': {}
+            "models_tested": list(self.results.keys()),
+            "total_images": sum(len(r) for r in self.results.values()),
+            "field_weights_used": FIELD_WEIGHTS,
+            "metrics_breakdown": {},
         }
 
         # Calculate relative performance
@@ -243,78 +272,102 @@ class InformationExtractionCalculator:
         ranking = self.get_extraction_capability_ranking()
         if ranking:
             best_model, best_score = ranking[0]
-            analysis['best_performer'] = {
-                'model': best_model,
-                'extraction_capability': f"{best_score:.3f}",
-                'superiority_analysis': self._analyze_superiority(all_metrics, best_model)
+            analysis["best_performer"] = {
+                "model": best_model,
+                "extraction_capability": f"{best_score:.3f}",
+                "superiority_analysis": self._analyze_superiority(
+                    all_metrics, best_model
+                ),
             }
 
         # Detailed breakdown for each model
         for model_name, metrics in all_metrics.items():
-            analysis['metrics_breakdown'][model_name] = {
-                'overall_capability': metrics.information_extraction_capability,
-                'component_scores': {
-                    'weighted_extraction': metrics.weighted_extraction_score,
-                    'critical_coverage': metrics.critical_field_coverage,
-                    'information_density': metrics.information_density,
-                    'extraction_completeness': metrics.extraction_completeness
+            analysis["metrics_breakdown"][model_name] = {
+                "overall_capability": metrics.information_extraction_capability,
+                "component_scores": {
+                    "weighted_extraction": metrics.weighted_extraction_score,
+                    "critical_coverage": metrics.critical_field_coverage,
+                    "information_density": metrics.information_density,
+                    "extraction_completeness": metrics.extraction_completeness,
                 },
-                'traditional_metrics': {
-                    'success_rate': metrics.success_rate,
-                    'avg_fields_per_image': metrics.avg_fields_per_image,
-                    'avg_core_fields_per_image': metrics.avg_core_fields_per_image,
-                    'avg_inference_time': metrics.average_inference_time
-                }
+                "traditional_metrics": {
+                    "success_rate": metrics.success_rate,
+                    "avg_fields_per_image": metrics.avg_fields_per_image,
+                    "avg_core_fields_per_image": metrics.avg_core_fields_per_image,
+                    "avg_inference_time": metrics.average_inference_time,
+                },
             }
 
         return analysis
 
-    def _analyze_superiority(self, all_metrics: Dict[str, InformationExtractionMetrics], best_model: str) -> Dict:
+    def _analyze_superiority(
+        self, all_metrics: Dict[str, InformationExtractionMetrics], best_model: str
+    ) -> Dict:
         """Analyze why one model is superior in Information Extraction Capability."""
         if best_model not in all_metrics or len(all_metrics) < 2:
             return {}
 
         best = all_metrics[best_model]
-        superiority = {
-            'strengths': [],
-            'comparison_with_others': {}
-        }
+        superiority = {"strengths": [], "comparison_with_others": {}}
 
         # Identify strengths
         if best.critical_field_coverage >= 0.8:
-            superiority['strengths'].append(f"Excellent critical field coverage ({best.critical_field_coverage:.1%})")
+            superiority["strengths"].append(
+                f"Excellent critical field coverage ({best.critical_field_coverage:.1%})"
+            )
         if best.information_density >= 0.7:
-            superiority['strengths'].append(f"High information density ({best.information_density:.3f})")
+            superiority["strengths"].append(
+                f"High information density ({best.information_density:.3f})"
+            )
         if best.weighted_extraction_score >= 0.6:
-            superiority['strengths'].append(f"Strong weighted extraction ({best.weighted_extraction_score:.3f})")
+            superiority["strengths"].append(
+                f"Strong weighted extraction ({best.weighted_extraction_score:.3f})"
+            )
 
         # Compare with other models
         for other_model, other_metrics in all_metrics.items():
             if other_model != best_model:
-                capability_diff = best.information_extraction_capability - other_metrics.information_extraction_capability
-                superiority['comparison_with_others'][other_model] = {
-                    'capability_advantage': f"{capability_diff:.3f}",
-                    'percentage_better': f"{(capability_diff / other_metrics.information_extraction_capability * 100):.1f}%" if other_metrics.information_extraction_capability > 0 else "significantly better",
-                    'key_advantages': self._identify_key_advantages(best, other_metrics)
+                capability_diff = (
+                    best.information_extraction_capability
+                    - other_metrics.information_extraction_capability
+                )
+                superiority["comparison_with_others"][other_model] = {
+                    "capability_advantage": f"{capability_diff:.3f}",
+                    "percentage_better": f"{(capability_diff / other_metrics.information_extraction_capability * 100):.1f}%"
+                    if other_metrics.information_extraction_capability > 0
+                    else "significantly better",
+                    "key_advantages": self._identify_key_advantages(
+                        best, other_metrics
+                    ),
                 }
 
         return superiority
 
-    def _identify_key_advantages(self, best: InformationExtractionMetrics, other: InformationExtractionMetrics) -> List[str]:
+    def _identify_key_advantages(
+        self, best: InformationExtractionMetrics, other: InformationExtractionMetrics
+    ) -> List[str]:
         """Identify specific advantages of one model over another."""
         advantages = []
 
         if best.critical_field_coverage - other.critical_field_coverage >= 0.1:
-            advantages.append(f"Better critical field coverage (+{(best.critical_field_coverage - other.critical_field_coverage):.1%})")
+            advantages.append(
+                f"Better critical field coverage (+{(best.critical_field_coverage - other.critical_field_coverage):.1%})"
+            )
 
         if best.information_density - other.information_density >= 0.1:
-            advantages.append(f"Higher information density (+{(best.information_density - other.information_density):.3f})")
+            advantages.append(
+                f"Higher information density (+{(best.information_density - other.information_density):.3f})"
+            )
 
         if best.weighted_extraction_score - other.weighted_extraction_score >= 0.1:
-            advantages.append(f"Superior weighted extraction (+{(best.weighted_extraction_score - other.weighted_extraction_score):.3f})")
+            advantages.append(
+                f"Superior weighted extraction (+{(best.weighted_extraction_score - other.weighted_extraction_score):.3f})"
+            )
 
         if best.extraction_completeness - other.extraction_completeness >= 0.1:
-            advantages.append(f"More complete extraction (+{(best.extraction_completeness - other.extraction_completeness):.1%})")
+            advantages.append(
+                f"More complete extraction (+{(best.extraction_completeness - other.extraction_completeness):.1%})"
+            )
 
         return advantages
 
@@ -336,17 +389,19 @@ class InformationExtractionCalculator:
         rows = []
 
         # Extract data from comparison results
-        if hasattr(comparison_results, 'model_results'):
+        if hasattr(comparison_results, "model_results"):
             for model_name, model_data in comparison_results.model_results.items():
-                if hasattr(model_data, 'extraction_results'):
+                if hasattr(model_data, "extraction_results"):
                     for result in model_data.extraction_results:
                         row = {
-                            'model': model_name,
-                            'image': getattr(result, 'image_name', 'unknown'),
-                            'successful': getattr(result, 'successful', False),
-                            'field_count': len(getattr(result, 'extracted_fields', {})),
-                            'core_fields_found': getattr(result, 'core_fields_found', 0),
-                            'extraction_time': getattr(result, 'extraction_time', 0.0),
+                            "model": model_name,
+                            "image": getattr(result, "image_name", "unknown"),
+                            "successful": getattr(result, "successful", False),
+                            "field_count": len(getattr(result, "extracted_fields", {})),
+                            "core_fields_found": getattr(
+                                result, "core_fields_found", 0
+                            ),
+                            "extraction_time": getattr(result, "extraction_time", 0.0),
                         }
                         rows.append(row)
 
@@ -354,7 +409,13 @@ class InformationExtractionCalculator:
             return pd.DataFrame(rows)
         else:
             # Return empty DataFrame with expected columns
-            return pd.DataFrame(columns=[
-                'model', 'image', 'successful', 'field_count',
-                'core_fields_found', 'extraction_time'
-            ])
+            return pd.DataFrame(
+                columns=[
+                    "model",
+                    "image",
+                    "successful",
+                    "field_count",
+                    "core_fields_found",
+                    "extraction_time",
+                ]
+            )

@@ -58,11 +58,14 @@ class MemoryMonitor:
         """Check if GPU memory monitoring is available."""
         try:
             import torch
+
             return torch.cuda.is_available()
         except ImportError:
             return False
 
-    def _get_gpu_memory(self) -> tuple[Optional[float], Optional[float], Optional[float]]:
+    def _get_gpu_memory(
+        self,
+    ) -> tuple[Optional[float], Optional[float], Optional[float]]:
         """Get GPU memory usage in GB.
 
         Returns:
@@ -83,10 +86,15 @@ class MemoryMonitor:
 
             # Debug: Check if memory is spread across multiple GPUs
             if torch.cuda.device_count() > 1:
-                total_used_all_gpus = sum(torch.cuda.memory_allocated(i) for i in range(torch.cuda.device_count()))
+                total_used_all_gpus = sum(
+                    torch.cuda.memory_allocated(i)
+                    for i in range(torch.cuda.device_count())
+                )
                 if total_used_all_gpus != used_bytes:
                     # Memory is spread across multiple GPUs - this is a problem for V100!
-                    print(f"🚨 WARNING: Memory detected on multiple GPUs! Total across all GPUs: {total_used_all_gpus / (1024**3):.1f}GB")
+                    print(
+                        f"🚨 WARNING: Memory detected on multiple GPUs! Total across all GPUs: {total_used_all_gpus / (1024**3):.1f}GB"
+                    )
 
             # Convert to GB
             used_gb = used_bytes / (1024**3)
@@ -174,25 +182,53 @@ class MemoryMonitor:
         elapsed = snapshot.timestamp - self.start_time
 
         if show_details:
-            self.console.print(f"\n📊 [bold]Memory Snapshot: {snapshot.label}[/bold] (t={elapsed:.1f}s)")
-            self.console.print(f"   🖥️  System RAM: {snapshot.system_used_gb:.1f}GB / {snapshot.system_total_gb:.1f}GB ({snapshot.system_percent:.1f}%)")
-            self.console.print(f"   🔧 Process RAM: {snapshot.process_memory_gb:.1f}GB ({snapshot.process_memory_percent:.1f}%)")
+            self.console.print(
+                f"\n📊 [bold]Memory Snapshot: {snapshot.label}[/bold] (t={elapsed:.1f}s)"
+            )
+            self.console.print(
+                f"   🖥️  System RAM: {snapshot.system_used_gb:.1f}GB / {snapshot.system_total_gb:.1f}GB ({snapshot.system_percent:.1f}%)"
+            )
+            self.console.print(
+                f"   🔧 Process RAM: {snapshot.process_memory_gb:.1f}GB ({snapshot.process_memory_percent:.1f}%)"
+            )
 
-            if snapshot.gpu_memory_used_gb is not None and snapshot.gpu_memory_total_gb is not None:
+            if (
+                snapshot.gpu_memory_used_gb is not None
+                and snapshot.gpu_memory_total_gb is not None
+            ):
                 # Calculate percentage based on reserved memory (what PyTorch actually claims)
-                reserved_gb = snapshot.gpu_memory_reserved_gb or snapshot.gpu_memory_used_gb
-                reserved_percent = (reserved_gb / snapshot.gpu_memory_total_gb * 100) if snapshot.gpu_memory_total_gb else 0.0
+                reserved_gb = (
+                    snapshot.gpu_memory_reserved_gb or snapshot.gpu_memory_used_gb
+                )
+                reserved_percent = (
+                    (reserved_gb / snapshot.gpu_memory_total_gb * 100)
+                    if snapshot.gpu_memory_total_gb
+                    else 0.0
+                )
 
-                self.console.print(f"   🎮 GPU Reserved: {reserved_gb:.1f}GB / {snapshot.gpu_memory_total_gb:.1f}GB ({reserved_percent:.1f}%)")
-                self.console.print(f"   📊 GPU Allocated: {snapshot.gpu_memory_used_gb:.1f}GB (active tensors)")
+                self.console.print(
+                    f"   🎮 GPU Reserved: {reserved_gb:.1f}GB / {snapshot.gpu_memory_total_gb:.1f}GB ({reserved_percent:.1f}%)"
+                )
+                self.console.print(
+                    f"   📊 GPU Allocated: {snapshot.gpu_memory_used_gb:.1f}GB (active tensors)"
+                )
 
                 # V100 Production Warning
                 if reserved_gb > 16.0:
-                    self.console.print(f"   ⚠️  WARNING: Reserved memory ({reserved_gb:.1f}GB) exceeds V100 limit (16GB)", style="bold red")
+                    self.console.print(
+                        f"   ⚠️  WARNING: Reserved memory ({reserved_gb:.1f}GB) exceeds V100 limit (16GB)",
+                        style="bold red",
+                    )
         else:
             # Compact format
-            gpu_info = f", GPU: {snapshot.gpu_memory_used_gb:.1f}GB" if snapshot.gpu_memory_used_gb is not None else ""
-            self.console.print(f"💾 {snapshot.label}: RAM {snapshot.process_memory_gb:.1f}GB{gpu_info}")
+            gpu_info = (
+                f", GPU: {snapshot.gpu_memory_used_gb:.1f}GB"
+                if snapshot.gpu_memory_used_gb is not None
+                else ""
+            )
+            self.console.print(
+                f"💾 {snapshot.label}: RAM {snapshot.process_memory_gb:.1f}GB{gpu_info}"
+            )
 
     def print_current_usage(self, label: str = "Current"):
         """Print current memory usage.
@@ -216,18 +252,24 @@ class MemoryMonitor:
         if any(s.gpu_memory_used_gb for s in self.snapshots):
             peak_gpu = max(
                 (s for s in self.snapshots if s.gpu_memory_used_gb),
-                key=lambda s: s.gpu_memory_used_gb
+                key=lambda s: s.gpu_memory_used_gb,
             )
         else:
             peak_gpu = None
 
         self.console.print("\n🏔️  [bold]Peak Memory Usage:[/bold]")
-        self.console.print(f"   🖥️  System: {peak_system.system_used_gb:.1f}GB ({peak_system.system_percent:.1f}%) at '{peak_system.label}'")
-        self.console.print(f"   🔧 Process: {peak_process.process_memory_gb:.1f}GB ({peak_process.process_memory_percent:.1f}%) at '{peak_process.label}'")
+        self.console.print(
+            f"   🖥️  System: {peak_system.system_used_gb:.1f}GB ({peak_system.system_percent:.1f}%) at '{peak_system.label}'"
+        )
+        self.console.print(
+            f"   🔧 Process: {peak_process.process_memory_gb:.1f}GB ({peak_process.process_memory_percent:.1f}%) at '{peak_process.label}'"
+        )
 
         if peak_gpu:
             gpu_percent = peak_gpu.gpu_memory_percent or 0.0
-            self.console.print(f"   🎮 GPU: {peak_gpu.gpu_memory_used_gb:.1f}GB ({gpu_percent:.1f}%) at '{peak_gpu.label}'")
+            self.console.print(
+                f"   🎮 GPU: {peak_gpu.gpu_memory_used_gb:.1f}GB ({gpu_percent:.1f}%) at '{peak_gpu.label}'"
+            )
 
     def print_memory_timeline(self):
         """Print a timeline of memory usage."""
@@ -239,7 +281,11 @@ class MemoryMonitor:
 
         for snapshot in self.snapshots:
             elapsed = snapshot.timestamp - self.start_time
-            gpu_info = f" GPU:{snapshot.gpu_memory_used_gb:.1f}GB" if snapshot.gpu_memory_used_gb is not None else ""
+            gpu_info = (
+                f" GPU:{snapshot.gpu_memory_used_gb:.1f}GB"
+                if snapshot.gpu_memory_used_gb is not None
+                else ""
+            )
 
             self.console.print(
                 f"   {elapsed:6.1f}s: {snapshot.label:<25} "
@@ -262,6 +308,7 @@ class MemoryMonitor:
         if self.gpu_available:
             try:
                 import torch
+
                 torch.cuda.empty_cache()
                 torch.cuda.synchronize()
             except Exception:
@@ -282,21 +329,26 @@ class MemoryMonitor:
         # Calculate statistics
         process_memories = [s.process_memory_gb for s in self.snapshots]
         system_memories = [s.system_used_gb for s in self.snapshots]
-        gpu_memories = [s.gpu_memory_used_gb for s in self.snapshots if s.gpu_memory_used_gb]
+        gpu_memories = [
+            s.gpu_memory_used_gb for s in self.snapshots if s.gpu_memory_used_gb
+        ]
 
         summary = {
             "peak_process_memory_gb": max(process_memories),
             "avg_process_memory_gb": sum(process_memories) / len(process_memories),
             "peak_system_memory_gb": max(system_memories),
             "total_snapshots": len(self.snapshots),
-            "monitoring_duration_s": self.snapshots[-1].timestamp - self.snapshots[0].timestamp,
+            "monitoring_duration_s": self.snapshots[-1].timestamp
+            - self.snapshots[0].timestamp,
         }
 
         if gpu_memories:
-            summary.update({
-                "peak_gpu_memory_gb": max(gpu_memories),
-                "avg_gpu_memory_gb": sum(gpu_memories) / len(gpu_memories),
-                "gpu_total_memory_gb": self.snapshots[0].gpu_memory_total_gb,
-            })
+            summary.update(
+                {
+                    "peak_gpu_memory_gb": max(gpu_memories),
+                    "avg_gpu_memory_gb": sum(gpu_memories) / len(gpu_memories),
+                    "gpu_total_memory_gb": self.snapshots[0].gpu_memory_total_gb,
+                }
+            )
 
         return summary

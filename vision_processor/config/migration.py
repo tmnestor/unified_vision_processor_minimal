@@ -20,11 +20,11 @@ class ConfigMigrator:
     """Migrates old configuration to new UnifiedConfig."""
 
     @staticmethod
-    def from_simple_config(simple_config: SimpleConfig) -> UnifiedConfig:
+    def from_simple_config(_simple_config: SimpleConfig) -> UnifiedConfig:
         """Convert SimpleConfig to UnifiedConfig.
 
         Args:
-            simple_config: SimpleConfig instance
+            _simple_config: SimpleConfig instance (currently unused)
 
         Returns:
             Equivalent UnifiedConfig instance
@@ -72,7 +72,9 @@ class ConfigMigrator:
             unified.processing.max_tokens = proc_cfg.max_tokens
             unified.processing.batch_size = proc_cfg.batch_size
             unified.processing.memory_limit_mb = proc_cfg.memory_limit_mb
-            unified.processing.enable_gradient_checkpointing = proc_cfg.enable_gradient_checkpointing
+            unified.processing.enable_gradient_checkpointing = (
+                proc_cfg.enable_gradient_checkpointing
+            )
             unified.processing.use_flash_attention = proc_cfg.use_flash_attention
 
         # Migrate extraction configuration
@@ -80,8 +82,12 @@ class ConfigMigrator:
             ext_cfg = prod_config.extraction_config
             unified.extraction.min_core_fields = ext_cfg.min_core_fields
             unified.extraction.min_total_fields = ext_cfg.min_total_fields
-            unified.extraction.enable_fallback_patterns = ext_cfg.enable_fallback_patterns
-            unified.extraction.enable_raw_markdown_fallback = ext_cfg.enable_raw_markdown_fallback
+            unified.extraction.enable_fallback_patterns = (
+                ext_cfg.enable_fallback_patterns
+            )
+            unified.extraction.enable_raw_markdown_fallback = (
+                ext_cfg.enable_raw_markdown_fallback
+            )
             unified.extraction.strict_validation = ext_cfg.strict_validation
             unified.extraction.priority_categories = ext_cfg.priority_categories
 
@@ -123,7 +129,9 @@ class ConfigMigrator:
             raise ValueError(f"Unsupported configuration type: {type(config)}")
 
 
-def migrate_config_file(old_config_path: str, new_config_path: str, config_type: str = "auto") -> None:
+def migrate_config_file(
+    old_config_path: str, new_config_path: str, config_type: str = "auto"
+) -> None:
     """Migrate a configuration file to the new format.
 
     Args:
@@ -192,7 +200,9 @@ def migrate_config_file(old_config_path: str, new_config_path: str, config_type:
             "enable_fallback_patterns": unified.extraction.enable_fallback_patterns,
             "enable_raw_markdown_fallback": unified.extraction.enable_raw_markdown_fallback,
             "strict_validation": unified.extraction.strict_validation,
-            "priority_categories": [cat.value for cat in unified.extraction.priority_categories],
+            "priority_categories": [
+                cat.value for cat in unified.extraction.priority_categories
+            ],
         },
         "analysis": {
             "output_format": unified.analysis.output_format,
@@ -207,4 +217,6 @@ def migrate_config_file(old_config_path: str, new_config_path: str, config_type:
         yaml.dump(config_dict, f, default_flow_style=False, sort_keys=False)
 
     console.print(f"✅ Migrated configuration saved to: {new_path}", style="green")
-    console.print("💡 Review the new configuration and adjust as needed", style="yellow")
+    console.print(
+        "💡 Review the new configuration and adjust as needed", style="yellow"
+    )

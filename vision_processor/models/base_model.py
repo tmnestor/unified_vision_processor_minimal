@@ -223,8 +223,14 @@ class BaseVisionModel(ABC):
                     {
                         "cuda_version": torch.version.cuda,
                         "gpu_count": torch.cuda.device_count(),
-                        "current_gpu": torch.cuda.current_device() if self.device.type == "cuda" else None,
-                        "gpu_memory_total": torch.cuda.get_device_properties(0).total_memory / 1024 / 1024
+                        "current_gpu": torch.cuda.current_device()
+                        if self.device.type == "cuda"
+                        else None,
+                        "gpu_memory_total": torch.cuda.get_device_properties(
+                            0
+                        ).total_memory
+                        / 1024
+                        / 1024
                         if self.device.type == "cuda"
                         else None,
                         "gpu_memory_allocated": self.get_memory_usage(),

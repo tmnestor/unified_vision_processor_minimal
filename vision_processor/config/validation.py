@@ -18,7 +18,9 @@ console = Console()
 class ValidationResult:
     """Result of a validation check."""
 
-    def __init__(self, passed: bool, message: str, details: Optional[Dict[str, str]] = None):
+    def __init__(
+        self, passed: bool, message: str, details: Optional[Dict[str, str]] = None
+    ):
         self.passed = passed
         self.message = message
         self.details = details or {}
@@ -64,7 +66,8 @@ class ConfigValidator:
         cuda_version = torch.version.cuda if cuda_available else "Not available"
 
         return ValidationResult(
-            True, f"System requirements met (Python {python_version}, CUDA {cuda_version})"
+            True,
+            f"System requirements met (Python {python_version}, CUDA {cuda_version})",
         )
 
     def validate_gpu_memory(self, required_gb: float = 16.0) -> ValidationResult:
@@ -102,9 +105,13 @@ class ConfigValidator:
                 },
             )
 
-        return ValidationResult(True, f"GPU memory sufficient ({total_memory_gb:.1f}GB available)")
+        return ValidationResult(
+            True, f"GPU memory sufficient ({total_memory_gb:.1f}GB available)"
+        )
 
-    def validate_disk_space(self, model_paths: List[str], required_gb: float = 50.0) -> ValidationResult:
+    def validate_disk_space(
+        self, model_paths: List[str], required_gb: float = 50.0
+    ) -> ValidationResult:
         """Validate sufficient disk space for models."""
         # Get unique mount points for model paths
         mount_points = {}
@@ -124,7 +131,9 @@ class ConfigValidator:
 
         if not mount_points:
             return ValidationResult(
-                False, "Cannot check disk space", {"Solution": "Ensure model directories exist"}
+                False,
+                "Cannot check disk space",
+                {"Solution": "Ensure model directories exist"},
             )
 
         min_free_gb = min(mount_points.values())
@@ -136,14 +145,20 @@ class ConfigValidator:
                 {
                     "Available": f"{min_free_gb:.1f}GB",
                     "Required": f"{required_gb}GB",
-                    "Locations": ", ".join(f"{k}: {v:.1f}GB" for k, v in mount_points.items()),
+                    "Locations": ", ".join(
+                        f"{k}: {v:.1f}GB" for k, v in mount_points.items()
+                    ),
                     "Solution": "Free up disk space or use different location",
                 },
             )
 
-        return ValidationResult(True, f"Disk space sufficient ({min_free_gb:.1f}GB free)")
+        return ValidationResult(
+            True, f"Disk space sufficient ({min_free_gb:.1f}GB free)"
+        )
 
-    def validate_model_files(self, model_path: str, model_name: str) -> ValidationResult:
+    def validate_model_files(
+        self, model_path: str, model_name: str
+    ) -> ValidationResult:
         """Validate model files exist and are complete."""
         path = Path(model_path)
 
@@ -191,7 +206,9 @@ class ConfigValidator:
                 },
             )
 
-        return ValidationResult(True, f"Model files valid for {model_name} ({total_size_gb:.1f}GB)")
+        return ValidationResult(
+            True, f"Model files valid for {model_name} ({total_size_gb:.1f}GB)"
+        )
 
     def validate_dependencies(self) -> ValidationResult:
         """Validate required Python packages are installed."""
@@ -215,7 +232,10 @@ class ConfigValidator:
             return ValidationResult(
                 False,
                 "Missing required packages",
-                {"Missing": ", ".join(missing), "Solution": "Run: conda env update -f environment.yml"},
+                {
+                    "Missing": ", ".join(missing),
+                    "Solution": "Run: conda env update -f environment.yml",
+                },
             )
 
         return ValidationResult(True, "All dependencies installed")
@@ -300,7 +320,9 @@ class ConfigValidator:
         # Summary
         console.print("\n" + "=" * 50)
         if passed_count == total_count:
-            console.print(f"✅ All {total_count} validation checks passed!", style="bold green")
+            console.print(
+                f"✅ All {total_count} validation checks passed!", style="bold green"
+            )
         else:
             console.print(
                 f"❌ {total_count - passed_count} of {total_count} validation checks failed",

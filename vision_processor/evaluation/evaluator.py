@@ -88,7 +88,9 @@ class ExtractionEvaluator:
         self.console.print(f"✅ Loaded ground truth for {len(ground_truth)} images")
         return ground_truth
 
-    def _calculate_field_accuracy(self, extracted: str, ground_truth: str, field_type: str) -> float:
+    def _calculate_field_accuracy(
+        self, extracted: str, ground_truth: str, field_type: str
+    ) -> float:
         """Calculate accuracy for a specific field."""
         if not ground_truth:  # No ground truth available
             return 1.0 if not extracted else 0.0
@@ -117,7 +119,11 @@ class ExtractionEvaluator:
             if len(ext_items) != len(gt_items):
                 return 0.0
 
-            matches = sum(1 for e, g in zip(ext_items, gt_items, strict=True) if e.lower() == g.lower())
+            matches = sum(
+                1
+                for e, g in zip(ext_items, gt_items, strict=True)
+                if e.lower() == g.lower()
+            )
             return matches / len(gt_items) if gt_items else 0.0
 
         elif field_type == "DATE":
@@ -136,7 +142,9 @@ class ExtractionEvaluator:
             else:
                 return 0.0
 
-    def _evaluate_single_image(self, manager: SimpleExtractionManager, image_file: str) -> Dict[str, Any]:
+    def _evaluate_single_image(
+        self, manager: SimpleExtractionManager, image_file: str
+    ) -> Dict[str, Any]:
         """Evaluate extraction for a single image using the working extraction manager."""
         image_path = self.images_dir / image_file
 
@@ -162,18 +170,26 @@ class ExtractionEvaluator:
                 gt_value = gt_data.get(field, "")
                 ext_value = extracted_data.get(field, "")
                 try:
-                    field_accuracies[field] = self._calculate_field_accuracy(ext_value, gt_value, field)
+                    field_accuracies[field] = self._calculate_field_accuracy(
+                        ext_value, gt_value, field
+                    )
                 except Exception as field_error:
-                    self.console.print(f"🔍 DEBUG: Error calculating accuracy for {field}: {field_error}")
+                    self.console.print(
+                        f"🔍 DEBUG: Error calculating accuracy for {field}: {field_error}"
+                    )
                     field_accuracies[field] = 0.0
 
             # Overall accuracy
             total_fields = len([f for f in self.extraction_fields if gt_data.get(f)])
             overall_accuracy = (
-                sum(field_accuracies.values()) / len(field_accuracies) if field_accuracies else 0.0
+                sum(field_accuracies.values()) / len(field_accuracies)
+                if field_accuracies
+                else 0.0
             )
 
-            self.console.print(f"🔍 DEBUG: Calculated overall accuracy: {overall_accuracy:.1%}")
+            self.console.print(
+                f"🔍 DEBUG: Calculated overall accuracy: {overall_accuracy:.1%}"
+            )
 
             result_dict = {
                 "image_file": image_file,
@@ -183,13 +199,17 @@ class ExtractionEvaluator:
                 "total_gt_fields": total_fields,
                 "field_accuracies": field_accuracies,
                 "overall_accuracy": overall_accuracy,
-                "raw_response": str(extracted_data),  # Show the extracted fields instead
+                "raw_response": str(
+                    extracted_data
+                ),  # Show the extracted fields instead
                 "extracted_data": extracted_data,
                 "ground_truth": gt_data,
                 "confidence": result.model_confidence,
             }
 
-            self.console.print("🔍 DEBUG: Successfully created result dict, returning...")
+            self.console.print(
+                "🔍 DEBUG: Successfully created result dict, returning..."
+            )
             return result_dict
 
         except Exception as e:
@@ -199,7 +219,9 @@ class ExtractionEvaluator:
             self.console.print(f"🔍 DEBUG: Traceback: {traceback.format_exc()}")
             return {"error": str(e), "image_file": image_file}
 
-    def evaluate_model(self, model_type: str, test_images: Optional[List[str]] = None) -> Dict[str, Any]:
+    def evaluate_model(
+        self, model_type: str, test_images: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
         """Evaluate a specific model on all test images using working extraction manager."""
         self.console.print(f"\n🔬 Evaluating {model_type.upper()} model...")
 
@@ -220,7 +242,9 @@ class ExtractionEvaluator:
             TextColumn("[progress.description]{task.description}"),
             console=self.console,
         ) as progress:
-            task = progress.add_task(f"Processing {len(test_images)} images...", total=None)
+            task = progress.add_task(
+                f"Processing {len(test_images)} images...", total=None
+            )
 
             for image_file in test_images:
                 progress.update(task, description=f"Processing {image_file}...")
@@ -236,16 +260,20 @@ class ExtractionEvaluator:
         failed_results = [r for r in results if "error" in r]
 
         if successful_results:
-            avg_accuracy = sum(r["overall_accuracy"] for r in successful_results) / len(successful_results)
-            avg_processing_time = total_time / len(successful_results)
-            avg_fields_extracted = sum(r["extracted_fields"] for r in successful_results) / len(
+            avg_accuracy = sum(r["overall_accuracy"] for r in successful_results) / len(
                 successful_results
             )
+            avg_processing_time = total_time / len(successful_results)
+            avg_fields_extracted = sum(
+                r["extracted_fields"] for r in successful_results
+            ) / len(successful_results)
 
             # Field-wise accuracy
             field_wise_accuracy = {}
             for field in self.extraction_fields:
-                field_scores = [r["field_accuracies"].get(field, 0.0) for r in successful_results]
+                field_scores = [
+                    r["field_accuracies"].get(field, 0.0) for r in successful_results
+                ]
                 field_wise_accuracy[field] = sum(field_scores) / len(field_scores)
 
         else:
@@ -291,7 +319,9 @@ class ExtractionEvaluator:
                 with output_file.open("w") as f:
                     json.dump(results, f, indent=2, default=str)
 
-                self.console.print(f"✅ {model_type}: {results['avg_accuracy']:.1%} accuracy")
+                self.console.print(
+                    f"✅ {model_type}: {results['avg_accuracy']:.1%} accuracy"
+                )
 
             except Exception as e:
                 self.console.print(f"❌ {model_type} evaluation failed: {e}")
@@ -327,7 +357,9 @@ class ExtractionEvaluator:
                     f"{results['avg_fields_extracted']:.1f}",
                 )
             else:
-                overview_table.add_row(model_type.upper(), "FAILED", "N/A", "N/A", "N/A")
+                overview_table.add_row(
+                    model_type.upper(), "FAILED", "N/A", "N/A", "N/A"
+                )
 
         self.console.print(overview_table)
 
@@ -337,7 +369,9 @@ class ExtractionEvaluator:
         field_table.add_column("Field", style="cyan")
 
         working_models = [
-            (model, results) for model, results in comparison_results.items() if "error" not in results
+            (model, results)
+            for model, results in comparison_results.items()
+            if "error" not in results
         ]
 
         for model, _ in working_models:
@@ -360,7 +394,9 @@ class ExtractionEvaluator:
         # Winner analysis
         if len(working_models) >= 2:
             best_model = max(working_models, key=lambda x: x[1]["avg_accuracy"])
-            fastest_model = min(working_models, key=lambda x: x[1]["avg_processing_time"])
+            fastest_model = min(
+                working_models, key=lambda x: x[1]["avg_processing_time"]
+            )
 
             self.console.print("\n🏆 WINNERS:")
             self.console.print(
@@ -375,14 +411,18 @@ class ExtractionEvaluator:
         self._save_markdown_report(comparison_results, report_file)
         self.console.print(f"\n📄 Detailed report saved: {report_file}")
 
-    def _save_markdown_report(self, comparison_results: Dict[str, Any], output_file: Path) -> None:
+    def _save_markdown_report(
+        self, comparison_results: Dict[str, Any], output_file: Path
+    ) -> None:
         """Save detailed markdown report."""
         with output_file.open("w") as f:
             f.write("# Vision Model Key-Value Extraction Evaluation Report\n\n")
             f.write(f"Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
 
             f.write("## Overview\n\n")
-            f.write("| Model | Success Rate | Avg Accuracy | Avg Speed | Fields/Image |\n")
+            f.write(
+                "| Model | Success Rate | Avg Accuracy | Avg Speed | Fields/Image |\n"
+            )
             f.write("|-------|-------------|-------------|-----------|-------------|\n")
 
             for model_type, results in comparison_results.items():
@@ -395,7 +435,9 @@ class ExtractionEvaluator:
 
             f.write("\n## Field-wise Accuracy\n\n")
             working_models = [
-                (model, results) for model, results in comparison_results.items() if "error" not in results
+                (model, results)
+                for model, results in comparison_results.items()
+                if "error" not in results
             ]
 
             if working_models:
@@ -426,10 +468,16 @@ class ExtractionEvaluator:
                 if "error" in results:
                     f.write(f"**Error**: {results['error']}\n\n")
                 else:
-                    f.write(f"- **Images Processed**: {results['successful']}/{results['total_images']}\n")
+                    f.write(
+                        f"- **Images Processed**: {results['successful']}/{results['total_images']}\n"
+                    )
                     f.write(f"- **Overall Accuracy**: {results['avg_accuracy']:.1%}\n")
-                    f.write(f"- **Average Processing Time**: {results['avg_processing_time']:.1f}s\n")
-                    f.write(f"- **Total Processing Time**: {results['total_processing_time']:.1f}s\n\n")
+                    f.write(
+                        f"- **Average Processing Time**: {results['avg_processing_time']:.1f}s\n"
+                    )
+                    f.write(
+                        f"- **Total Processing Time**: {results['total_processing_time']:.1f}s\n\n"
+                    )
 
 
 def main():

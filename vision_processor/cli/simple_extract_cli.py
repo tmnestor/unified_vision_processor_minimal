@@ -21,10 +21,16 @@ console = Console()
 @app.command()
 def extract(
     image_path: str = typer.Argument(..., help="Path to document image"),
-    model: Optional[str] = typer.Option(None, help="Override model type (internvl3 or llama32_vision)"),
-    output_format: Optional[str] = typer.Option(None, help="Override output format (table, json, yaml)"),
+    model: Optional[str] = typer.Option(
+        None, help="Override model type (internvl3 or llama32_vision)"
+    ),
+    output_format: Optional[str] = typer.Option(
+        None, help="Override output format (table, json, yaml)"
+    ),
     config_file: str = typer.Option(".env", help="Path to .env configuration file"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
 ) -> None:
     """Extract data using single-step processing with .env configuration."""
 
@@ -94,9 +100,13 @@ def extract(
 @app.command()
 def compare(
     image_path: str = typer.Argument(..., help="Path to document image"),
-    models: str = typer.Option("internvl3,llama32_vision", help="Models to compare (comma-separated)"),
+    models: str = typer.Option(
+        "internvl3,llama32_vision", help="Models to compare (comma-separated)"
+    ),
     config_file: str = typer.Option(".env", help="Path to .env configuration file"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
 ) -> None:
     """Compare extraction results between models using .env configuration."""
 
@@ -132,7 +142,9 @@ def compare(
 
             # Validate configuration
             if not config.validate():
-                console.print(f"[red]❌ Configuration validation failed for {model_name}[/red]")
+                console.print(
+                    f"[red]❌ Configuration validation failed for {model_name}[/red]"
+                )
                 continue
 
             # Process document
@@ -208,7 +220,9 @@ def batch(
     output_dir: str = typer.Option("output", help="Directory to save results"),
     model: Optional[str] = typer.Option(None, help="Override model type"),
     config_file: str = typer.Option(".env", help="Path to .env configuration file"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
 ) -> None:
     """Process multiple documents in batch mode."""
 
@@ -237,7 +251,9 @@ def batch(
         # Find image files
         image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
         image_files = [
-            f for f in input_path.iterdir() if f.suffix.lower() in image_extensions and f.is_file()
+            f
+            for f in input_path.iterdir()
+            if f.suffix.lower() in image_extensions and f.is_file()
         ]
 
         if not image_files:

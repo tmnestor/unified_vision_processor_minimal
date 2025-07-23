@@ -13,8 +13,13 @@ class SimpleRepetitionCleaner:
     def __init__(self):
         # Common tokens to remove from responses
         self.cleanup_tokens = [
-            '<|begin_of_text|>', '<|end_of_text|>', '<|image|>',
-            '[INST]', '[/INST]', '<s>', '</s>'
+            "<|begin_of_text|>",
+            "<|end_of_text|>",
+            "<|image|>",
+            "[INST]",
+            "[/INST]",
+            "<s>",
+            "</s>",
         ]
 
     def clean_response(self, response: str) -> str:
@@ -32,10 +37,10 @@ class SimpleRepetitionCleaner:
         # Remove special tokens
         cleaned = response
         for token in self.cleanup_tokens:
-            cleaned = cleaned.replace(token, '')
+            cleaned = cleaned.replace(token, "")
 
         # Remove consecutive duplicate lines
-        lines = cleaned.split('\n')
+        lines = cleaned.split("\n")
         unique_lines = []
         prev_line = None
 
@@ -45,11 +50,11 @@ class SimpleRepetitionCleaner:
                 unique_lines.append(line)
                 prev_line = line_cleaned
 
-        cleaned = '\n'.join(unique_lines)
+        cleaned = "\n".join(unique_lines)
 
         # Remove excessive whitespace
-        cleaned = re.sub(r'\s+', ' ', cleaned)
-        cleaned = re.sub(r'\n\s*\n\s*\n', '\n\n', cleaned)
+        cleaned = re.sub(r"\s+", " ", cleaned)
+        cleaned = re.sub(r"\n\s*\n\s*\n", "\n\n", cleaned)
 
         return cleaned.strip()
 
@@ -73,7 +78,7 @@ class SimpleRepetitionCleaner:
         # Look for 3-word phrases repeated 5+ times (severe repetition)
         phrase_counts = {}
         for i in range(len(words) - 2):
-            phrase = ' '.join(words[i:i+3]).lower()
+            phrase = " ".join(words[i : i + 3]).lower()
             phrase_counts[phrase] = phrase_counts.get(phrase, 0) + 1
 
         # If any phrase appears 5+ times, it's severe

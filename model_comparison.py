@@ -123,6 +123,7 @@ def run_production_comparison(
 
     except Exception as e:
         import traceback
+
         console.print(f"❌ Production comparison failed: {e}", style="bold red")
         console.print("🔍 Full traceback:", style="red")
         console.print(traceback.format_exc(), style="red")
@@ -152,7 +153,9 @@ def validate_production_environment() -> bool:
     for model_name in available_models:
         info = model_registry.get_model_info(model_name)
         status = "✅" if info.get("path_exists", False) else "❌"
-        console.print(f"   {status} {model_name}: {info.get('description', 'No description')}")
+        console.print(
+            f"   {status} {model_name}: {info.get('description', 'No description')}"
+        )
 
     # Check dependencies
     import importlib.util
@@ -175,15 +178,24 @@ def validate_production_environment() -> bool:
 
 @app.command()
 def compare(
-    datasets_path: str = typer.Option(None, help="Path to input datasets directory (default from config)"),
-    output_dir: str = typer.Option(None, help="Output directory for results (default from config)"),
-    models: str = typer.Option(None, help="Comma-separated list of models (default from config)"),
-    max_tokens: int = typer.Option(None, help="Maximum new tokens for generation (default from config)"),
+    datasets_path: str = typer.Option(
+        None, help="Path to input datasets directory (default from config)"
+    ),
+    output_dir: str = typer.Option(
+        None, help="Output directory for results (default from config)"
+    ),
+    models: str = typer.Option(
+        None, help="Comma-separated list of models (default from config)"
+    ),
+    max_tokens: int = typer.Option(
+        None, help="Maximum new tokens for generation (default from config)"
+    ),
     quantization: bool = typer.Option(
         None, help="Enable 8-bit quantization for V100 (default from config)"
     ),
     trust_remote_code: bool = typer.Option(
-        None, help="Allow execution of remote code for custom models (default from config)"
+        None,
+        help="Allow execution of remote code for custom models (default from config)",
     ),
     llama_path: str = typer.Option(None, help="Custom path to Llama model"),
     internvl_path: str = typer.Option(None, help="Custom path to InternVL model"),
@@ -216,7 +228,9 @@ def compare(
         quantization if quantization is not None else defaults.get("quantization", True)
     )
     effective_trust_remote_code = (
-        trust_remote_code if trust_remote_code is not None else defaults.get("trust_remote_code", True)
+        trust_remote_code
+        if trust_remote_code is not None
+        else defaults.get("trust_remote_code", True)
     )
 
     models_list = [m.strip() for m in effective_models.split(",")]
@@ -236,17 +250,25 @@ def compare(
 
     # Handle results
     if result and result.get("success"):
-        console.print("\n🎉 Production comparison completed successfully!", style="bold green")
-        console.print(f"⏱️  Execution time: {result['execution_time']:.1f}s", style="green")
+        console.print(
+            "\n🎉 Production comparison completed successfully!", style="bold green"
+        )
+        console.print(
+            f"⏱️  Execution time: {result['execution_time']:.1f}s", style="green"
+        )
     else:
         error_msg = result.get("error", "Unknown error") if result else "Unknown error"
-        console.print(f"\n❌ Production comparison failed: {error_msg}", style="bold red")
+        console.print(
+            f"\n❌ Production comparison failed: {error_msg}", style="bold red"
+        )
         raise typer.Exit(1)
 
 
 @app.command()
 def check_environment(
-    datasets_path: str = typer.Option("datasets", help="Path to datasets directory to check"),
+    datasets_path: str = typer.Option(
+        "datasets", help="Path to datasets directory to check"
+    ),
 ):
     """Check production environment and dependencies"""
 
@@ -258,7 +280,9 @@ def check_environment(
     datasets_dir = Path(datasets_path)
     if datasets_dir.exists():
         image_count = len(list(datasets_dir.glob("*.png")))
-        console.print(f"✅ Datasets directory: {datasets_dir} ({image_count} PNG files)")
+        console.print(
+            f"✅ Datasets directory: {datasets_dir} ({image_count} PNG files)"
+        )
 
         if image_count == 0:
             console.print("⚠️  No PNG files found in datasets directory", style="yellow")
@@ -277,14 +301,17 @@ def check_environment(
                 except Exception:
                     pass
 
-            console.print(f"✅ Sample validation: {valid_images}/{len(sample_images)} images valid")
+            console.print(
+                f"✅ Sample validation: {valid_images}/{len(sample_images)} images valid"
+            )
     else:
         console.print(f"❌ Datasets directory not found: {datasets_dir}")
         is_valid = False
 
     # Print final status
     console.print(
-        f"\n{'🎉' if is_valid else '❌'} ENVIRONMENT STATUS", style="bold green" if is_valid else "bold red"
+        f"\n{'🎉' if is_valid else '❌'} ENVIRONMENT STATUS",
+        style="bold green" if is_valid else "bold red",
     )
     if is_valid:
         console.print("✅ Production environment ready for model comparison")
@@ -304,7 +331,9 @@ def list_models():
 
 @app.command()
 def validate_models(
-    config_path: str = typer.Option("model_comparison.yaml", help="Path to configuration file"),
+    config_path: str = typer.Option(
+        "model_comparison.yaml", help="Path to configuration file"
+    ),
 ):
     """Validate all configured models"""
     console.print("🔍 MODEL VALIDATION", style="bold blue")
@@ -329,7 +358,9 @@ def validate_models(
 
         success_count = sum(results.values())
         total_count = len(results)
-        console.print(f"\n🎯 Summary: {success_count}/{total_count} models validated successfully")
+        console.print(
+            f"\n🎯 Summary: {success_count}/{total_count} models validated successfully"
+        )
 
         if success_count == 0:
             console.print("❌ No models are ready for comparison", style="bold red")
@@ -351,9 +382,18 @@ def show_schema():
 
     # Define the simple core fields directly (from base_extractor.py)
     core_fields = {
-        "DATE", "TOTAL", "GST", "ABN", "SUPPLIER_NAME",
-        "INVOICE_NUMBER", "AMOUNT", "DESCRIPTION",
-        "BSB", "ACCOUNT_NUMBER", "BUSINESS_NAME", "RECEIPT_NUMBER"
+        "DATE",
+        "TOTAL",
+        "GST",
+        "ABN",
+        "SUPPLIER_NAME",
+        "INVOICE_NUMBER",
+        "AMOUNT",
+        "DESCRIPTION",
+        "BSB",
+        "ACCOUNT_NUMBER",
+        "BUSINESS_NAME",
+        "RECEIPT_NUMBER",
     }
 
     console.print(f"📊 Total Core Fields: {len(core_fields)}")

@@ -8,6 +8,7 @@ model loading, extraction, analysis, and reporting generation.
 import gc
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -15,15 +16,9 @@ from PIL import Image
 from rich.console import Console
 from rich.progress import track
 
-from ..analysis.simple_metrics import InformationExtractionCalculator
 from ..config.model_registry import get_model_registry
 from ..config.simple_config import SimpleConfig
-from ..extraction.dynamic_extractor import (
-    DynamicExtractionResult,
-    DynamicFieldExtractor,
-)
 from ..utils.memory_monitor import MemoryMonitor
-from ..utils.repetition_control import UltraAggressiveRepetitionController
 from .model_validator import ModelValidator
 
 
@@ -99,15 +94,7 @@ class ComparisonRunner:
         # Initialize components
         self.model_registry = get_model_registry()
         self.model_validator = ModelValidator(self.model_registry)
-        # Use dynamic extractor with simple default
-        self.extractor = DynamicFieldExtractor(
-            min_fields_for_success=3,  # Simple default
-        )
-        # Initialize repetition controller (matching original script)
-        self.repetition_controller = UltraAggressiveRepetitionController()
-
-        # Initialize Information Extraction Capability calculator
-        self.metrics_calculator = InformationExtractionCalculator()
+        # Pure model comparison - no complex extraction components needed
 
         # Results storage
         self.results: Optional[ComparisonResults] = None
@@ -143,7 +130,9 @@ class ComparisonRunner:
             raise RuntimeError("No valid models found for comparison")
 
         # Step 4: Run extraction for each model
-        extraction_results = self._run_extractions(valid_models, dataset_info.verified_images)
+        extraction_results = self._run_extractions(
+            valid_models, dataset_info.verified_images
+        )
         self.memory_monitor.cleanup_and_measure("All Models Processed")
 
         # Step 5: Perform comprehensive analysis
@@ -189,7 +178,9 @@ class ComparisonRunner:
             import torch
 
             if torch.cuda.is_available():
-                self.console.print(f"✅ CUDA Available: {torch.cuda.get_device_name(0)}")
+                self.console.print(
+                    f"✅ CUDA Available: {torch.cuda.get_device_name(0)}"
+                )
                 memory_gb = torch.cuda.get_device_properties(0).total_memory / 1024**3
                 self.console.print(f"   GPU Memory: {memory_gb:.1f}GB")
             else:
@@ -233,12 +224,16 @@ class ComparisonRunner:
 
         # Print validation summary
         validation = dataset_info.get_validation_summary()
-        self.console.print(f"✅ Verified: {validation['found']}/{validation['total_expected']} images")
+        self.console.print(
+            f"✅ Verified: {validation['found']}/{validation['total_expected']} images"
+        )
 
         if validation["found"] == 0:
             raise RuntimeError("No valid images found in dataset")
         elif validation["found"] < validation["total_expected"]:
-            self.console.print("⚠️  Some images failed validation but proceeding", style="yellow")
+            self.console.print(
+                "⚠️  Some images failed validation but proceeding", style="yellow"
+            )
 
         return dataset_info
 
@@ -273,7 +268,9 @@ class ComparisonRunner:
 
                 # Basic registration check already passed above
                 valid_models.append(model_name)
-                self.console.print(f"✅ {model_name} validation passed (V100 lightweight mode)")
+                self.console.print(
+                    f"✅ {model_name} validation passed (V100 lightweight mode)"
+                )
 
             except Exception as e:
                 self.console.print(f"❌ {model_name} validation failed: {e}")
@@ -291,7 +288,9 @@ class ComparisonRunner:
 
         for model_name in model_names:
             self.console.print(f"\n{'=' * 50}")
-            self.console.print(f"🤖 PROCESSING WITH {model_name.upper()}", style="bold cyan")
+            self.console.print(
+                f"🤖 PROCESSING WITH {model_name.upper()}", style="bold cyan"
+            )
             self.console.print(f"{'=' * 50}")
 
             model_results = []
@@ -304,7 +303,7 @@ class ComparisonRunner:
                     model_name,
                     self.config.processing,
                     model_path=model_path,
-                    config=self.config  # Pass full config so model can access device_config
+                    config=self.config,  # Pass full config so model can access device_config
                 )
 
                 # Explicitly load model (V100-compatible sequential loading)
@@ -326,31 +325,31 @@ class ComparisonRunner:
 
                         # Run model inference
                         response = model.process_image(
-                            image, prompt, max_new_tokens=self.config.processing.max_tokens
+                            image,
+                            prompt,
+                            max_new_tokens=self.config.processing.max_tokens,
                         )
 
-                        # Clean response using repetition controller (matching original script)
-                        cleaned_response = self.repetition_controller.clean_response(
-                            response.raw_text, image_path.name
-                        )
-
-                        # Extract fields using dynamic extractor (original script logic)
-                        extraction_result = self.extractor.extract_fields(
-                            cleaned_response, image_path.name, model_name, response.processing_time
-                        )
-
-                        # Convert DynamicExtractionResult to original dictionary format for compatibility
-                        analysis_dict = self._convert_to_original_format(extraction_result)
+                        # Pure model comparison: minimal processing to preserve raw outputs
+                        analysis_dict = {
+                            "img_name": image_path.name,
+                            "raw_response": response.raw_text,  # Pure model output
+                            "model_name": model_name,
+                            "processing_time": response.processing_time,
+                            "response_length": len(response.raw_text),
+                            "successful": True,  # Always true for raw comparison
+                            "timestamp": datetime.now().isoformat(),
+                        }
 
                         model_results.append(analysis_dict)
 
-                        # Print progress
-                        status = "✅" if extraction_result.is_successful else "❌"
-                        fields_str = f"{extraction_result.field_count} fields"
+                        # Print progress - raw model comparison
+                        status = "✅"  # Always successful for raw comparison
+                        response_str = f"{len(response.raw_text)} chars"
                         time_str = f"{response.processing_time:.1f}s"
 
                         self.console.print(
-                            f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {fields_str}"
+                            f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {response_str}"
                         )
 
                         # Cleanup and memory check every few images
@@ -358,7 +357,9 @@ class ComparisonRunner:
                             gc.collect()
                             # Take memory snapshot periodically
                             if (i + 1) % 10 == 0:  # Every 10 images
-                                self.memory_monitor.take_snapshot(f"{model_name} - Image {i + 1}")
+                                self.memory_monitor.take_snapshot(
+                                    f"{model_name} - Image {i + 1}"
+                                )
 
                     except Exception as e:
                         self.console.print(
@@ -387,13 +388,15 @@ class ComparisonRunner:
 
             finally:
                 # Explicit model cleanup for V100 compatibility (matching original script)
-                if 'model' in locals() and model is not None:
+                if "model" in locals() and model is not None:
                     try:
                         self.console.print(f"\n🧹 Cleaning up {model_name.upper()}")
                         model.unload_model()
                         del model
                     except Exception as cleanup_error:
-                        self.console.print(f"⚠️  Cleanup warning for {model_name}: {cleanup_error}")
+                        self.console.print(
+                            f"⚠️  Cleanup warning for {model_name}: {cleanup_error}"
+                        )
 
                 # Aggressive memory cleanup for V100 16GB limit
                 self._cleanup_gpu_memory()
@@ -401,10 +404,15 @@ class ComparisonRunner:
 
             # Calculate model summary
             model_time = time.time() - model_start_time
-            successful_extractions = sum(1 for r in model_results if r.get("successful", False))
-            success_rate = successful_extractions / len(model_results) if model_results else 0
+            successful_extractions = sum(
+                1 for r in model_results if r.get("successful", False)
+            )
+            success_rate = (
+                successful_extractions / len(model_results) if model_results else 0
+            )
             avg_fields = (
-                sum(r.get("extraction_score", 0) for r in model_results) / len(model_results)
+                sum(r.get("extraction_score", 0) for r in model_results)
+                / len(model_results)
                 if model_results
                 else 0
             )
@@ -420,103 +428,49 @@ class ComparisonRunner:
 
         return extraction_results
 
-    def _convert_to_original_format(self, extraction_result: DynamicExtractionResult) -> Dict[str, Any]:
-        """Convert DynamicExtractionResult to original script dictionary format.
+    def _run_analysis(
+        self, extraction_results: Dict[str, List[Dict[str, Any]]]
+    ) -> Dict[str, Any]:
+        """Run simple analysis on raw model outputs for document understanding comparison."""
+        self.console.print(
+            "\n📊 RAW MODEL DOCUMENT UNDERSTANDING COMPARISON", style="bold green"
+        )
 
-        Args:
-            extraction_result: DynamicExtractionResult from dynamic extractor
-
-        Returns:
-            Dictionary in original script format with has_* fields
-        """
-        # Define core fields (matching what extractors actually produce)
-        CORE_FIELDS = {
-            "DATE", "TOTAL", "GST", "ABN", "SUPPLIER_NAME",
-            "INVOICE_NUMBER", "AMOUNT", "DESCRIPTION",
-            "BSB", "ACCOUNT_NUMBER", "BUSINESS_NAME", "RECEIPT_NUMBER"
-        }
-
-        # Calculate core fields found
-        core_fields_found = 0
-        if extraction_result.extracted_fields:
-            for field_name in extraction_result.extracted_fields:
-                if field_name.upper() in CORE_FIELDS:
-                    core_fields_found += 1
-
-        # Create base result dictionary matching original format
-        result = {
-            "img_name": extraction_result.image_name,
-            "response": extraction_result.cleaned_response,
-            "is_structured": not extraction_result.using_raw_markdown,
-            "extraction_score": extraction_result.extraction_score,
-            "successful": extraction_result.is_successful,
-            "extraction_time": extraction_result.processing_time,  # Fixed: analysis expects extraction_time
-            "doc_type": "BUSINESS_DOCUMENT",  # Default classification
-            # Add required fields for analysis compatibility
-            "image_name": extraction_result.image_name,
-            "model_name": extraction_result.model_name,
-            "field_count": extraction_result.field_count,
-            "is_successful": extraction_result.is_successful,
-            "confidence_score": extraction_result.extraction_score / 10.0,  # Normalize to 0-1 range
-            "core_fields_found": core_fields_found,  # Add core fields count
-            "fields": extraction_result.extracted_fields,  # Add the actual fields for CSV export
-            "extracted_fields": extraction_result.extracted_fields,  # For InformationExtractionCalculator compatibility
-        }
-
-        # Add has_* fields from working script logic (EXACT MATCH)
-        if extraction_result.field_results:
-            result.update(extraction_result.field_results)
-
-        return result
-
-    def _run_analysis(self, extraction_results: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
-        """Run comprehensive analysis on extraction results."""
-        self.console.print("\n📊 INFORMATION EXTRACTION CAPABILITY ANALYSIS", style="bold green")
-
-        # Add results to the metrics calculator
-        for model_name, results in extraction_results.items():
-            self.metrics_calculator.add_results(model_name, results)
-
+        # Simple raw response comparison
         analysis_results = {}
 
-        # Information Extraction Capability analysis
-        self.console.print("📈 Calculating Information Extraction Capability metrics...")
-        model_comparison = self.metrics_calculator.compare_models()
-        detailed_analysis = self.metrics_calculator.get_detailed_analysis()
-        capability_ranking = self.metrics_calculator.get_extraction_capability_ranking()
+        # Basic statistics for each model
+        for model_name, results in extraction_results.items():
+            total_responses = len(results)
+            avg_response_length = (
+                sum(r.get("response_length", 0) for r in results) / total_responses
+                if total_responses > 0
+                else 0
+            )
+            avg_processing_time = (
+                sum(r.get("processing_time", 0) for r in results) / total_responses
+                if total_responses > 0
+                else 0
+            )
+
+            self.console.print(
+                f"📝 {model_name.upper()}: {total_responses} responses, avg {avg_response_length:.0f} chars, {avg_processing_time:.1f}s"
+            )
 
         analysis_results["performance"] = {
-            "comparison": model_comparison,
-            "ranking": capability_ranking,
-            "detailed_breakdown": detailed_analysis,
+            "comparison": "Raw model output comparison - no complex metrics",
+            "models": list(extraction_results.keys()),
+            "total_images": len(next(iter(extraction_results.values()), [])),
         }
 
-        # Field analysis focusing on extraction quality
-        self.console.print("🏷️  Running field extraction analysis...")
         analysis_results["field"] = {
-            "summary": detailed_analysis.get("metrics_breakdown", {}),
-            "field_weights": detailed_analysis.get("field_weights_used", {}),
-            "best_performer": detailed_analysis.get("best_performer", {}),
+            "summary": "Raw output analysis - no field extraction performed",
         }
 
-        # Comparison metrics with Information Extraction Capability focus
-        self.console.print("🔢 Generating comparison summary...")
-        best_performer = detailed_analysis.get("best_performer", {})
         analysis_results["metrics"] = {
-            "comparison": model_comparison,
             "summary": {
-                "best_performers": {
-                    "overall_capability": best_performer.get("model", "N/A"),
-                    "extraction_capability_score": best_performer.get("extraction_capability", "N/A"),
-                },
-                "performance_explanations": {
-                    "information_extraction_capability": {
-                        "winner": best_performer.get("model", "N/A"),
-                        "score": best_performer.get("extraction_capability", "N/A"),
-                        "explanation": "Higher average field extraction count with consistent success rate",
-                    }
-                } if best_performer else {},
-                "capability_ranking": [{"model": model, "score": f"{score:.3f}"} for model, score in capability_ranking],
+                "analysis_type": "Pure document understanding comparison",
+                "focus": "Raw model responses without regex processing",
             },
         }
 
@@ -536,12 +490,16 @@ class ComparisonRunner:
             if results:
                 successful = sum(1 for r in results if r.get("successful", False))
                 model_success_rates[model_name] = successful / len(results)
-                model_execution_times[model_name] = sum(r.get("extraction_time", 0.0) for r in results)
+                model_execution_times[model_name] = sum(
+                    r.get("extraction_time", 0.0) for r in results
+                )
 
                 total_successful += successful
                 total_documents += len(results)
 
-        overall_success_rate = total_successful / total_documents if total_documents > 0 else 0
+        overall_success_rate = (
+            total_successful / total_documents if total_documents > 0 else 0
+        )
 
         return {
             "model_success_rates": model_success_rates,
@@ -558,10 +516,16 @@ class ComparisonRunner:
         self.console.print("🏆 COMPARISON COMPLETE", style="bold green")
         self.console.print(f"{'=' * 70}")
 
-        self.console.print(f"⏱️  Total execution time: {self.results.total_execution_time:.1f}s")
-        self.console.print(f"📊 Overall success rate: {self.results.overall_success_rate:.1%}")
+        self.console.print(
+            f"⏱️  Total execution time: {self.results.total_execution_time:.1f}s"
+        )
+        self.console.print(
+            f"📊 Overall success rate: {self.results.overall_success_rate:.1%}"
+        )
         self.console.print(f"🤖 Models compared: {len(self.results.models_tested)}")
-        self.console.print(f"📁 Images processed: {len(self.results.dataset_info.verified_images)}")
+        self.console.print(
+            f"📁 Images processed: {len(self.results.dataset_info.verified_images)}"
+        )
 
         # Model-specific summaries
         self.console.print("\n📋 Model Performance Summary:")
@@ -571,14 +535,17 @@ class ComparisonRunner:
             num_images = len(self.results.dataset_info.verified_images)
             avg_time_per_image = exec_time / num_images if num_images > 0 else 0
 
-            self.console.print(f"   {model_name}: {success_rate:.1%} success, {exec_time:.1f}s total, {avg_time_per_image:.1f}s per image")
+            self.console.print(
+                f"   {model_name}: {success_rate:.1%} success, {exec_time:.1f}s total, {avg_time_per_image:.1f}s per image"
+            )
 
         # Best performers with detailed explanations
-        if self.results.comparison_metrics and self.results.comparison_metrics.get("summary"):
+        if self.results.comparison_metrics and self.results.comparison_metrics.get(
+            "summary"
+        ):
             summary = self.results.comparison_metrics["summary"]
             best_performers = summary.get("best_performers", {})
             performance_explanations = summary.get("performance_explanations", {})
-
 
             if best_performers:
                 self.console.print("\n🥇 Best Performers:")
@@ -591,10 +558,14 @@ class ComparisonRunner:
                     self.console.print("-" * 50)
 
                     for category, details in performance_explanations.items():
-                        category_display = category.replace('_', ' ').title()
+                        category_display = category.replace("_", " ").title()
                         self.console.print(f"\n🎯 [bold]{category_display}[/bold]:")
-                        self.console.print(f"   [green]Winner[/green]: {details['winner']} ([cyan]Score: {details['score']}[/cyan])")
-                        self.console.print(f"   [yellow]Why[/yellow]: {details['explanation']}")
+                        self.console.print(
+                            f"   [green]Winner[/green]: {details['winner']} ([cyan]Score: {details['score']}[/cyan])"
+                        )
+                        self.console.print(
+                            f"   [yellow]Why[/yellow]: {details['explanation']}"
+                        )
 
             # Processing time comparison
             self.console.print("\n⏱️  Processing Speed Comparison:")
@@ -602,7 +573,9 @@ class ComparisonRunner:
                 exec_time = self.results.model_execution_times.get(model_name, 0)
                 num_images = len(self.results.dataset_info.verified_images)
                 avg_time_per_image = exec_time / num_images if num_images > 0 else 0
-                self.console.print(f"   {model_name}: {avg_time_per_image:.1f}s per image")
+                self.console.print(
+                    f"   {model_name}: {avg_time_per_image:.1f}s per image"
+                )
 
         # Memory Usage Analysis
         self._print_memory_summary()
@@ -623,17 +596,33 @@ class ComparisonRunner:
         summary = self.memory_monitor.get_memory_summary()
         if summary:
             self.console.print("\n📈 [bold]Memory Statistics:[/bold]")
-            self.console.print(f"   📊 Peak Process Memory: {summary.get('peak_process_memory_gb', 0):.1f}GB")
-            self.console.print(f"   📊 Average Process Memory: {summary.get('avg_process_memory_gb', 0):.1f}GB")
+            self.console.print(
+                f"   📊 Peak Process Memory: {summary.get('peak_process_memory_gb', 0):.1f}GB"
+            )
+            self.console.print(
+                f"   📊 Average Process Memory: {summary.get('avg_process_memory_gb', 0):.1f}GB"
+            )
 
-            if 'peak_gpu_memory_gb' in summary and summary['gpu_total_memory_gb']:
-                self.console.print(f"   🎮 Peak GPU Memory: {summary['peak_gpu_memory_gb']:.1f}GB / {summary['gpu_total_memory_gb']:.1f}GB")
-                self.console.print(f"   🎮 Average GPU Memory: {summary['avg_gpu_memory_gb']:.1f}GB")
-                gpu_utilization = (summary['peak_gpu_memory_gb'] / summary['gpu_total_memory_gb']) * 100
-                self.console.print(f"   🎮 Peak GPU Utilization: {gpu_utilization:.1f}%")
+            if "peak_gpu_memory_gb" in summary and summary["gpu_total_memory_gb"]:
+                self.console.print(
+                    f"   🎮 Peak GPU Memory: {summary['peak_gpu_memory_gb']:.1f}GB / {summary['gpu_total_memory_gb']:.1f}GB"
+                )
+                self.console.print(
+                    f"   🎮 Average GPU Memory: {summary['avg_gpu_memory_gb']:.1f}GB"
+                )
+                gpu_utilization = (
+                    summary["peak_gpu_memory_gb"] / summary["gpu_total_memory_gb"]
+                ) * 100
+                self.console.print(
+                    f"   🎮 Peak GPU Utilization: {gpu_utilization:.1f}%"
+                )
 
-            self.console.print(f"   ⏱️  Monitoring Duration: {summary.get('monitoring_duration_s', 0):.1f}s")
-            self.console.print(f"   📸 Total Snapshots: {summary.get('total_snapshots', 0)}")
+            self.console.print(
+                f"   ⏱️  Monitoring Duration: {summary.get('monitoring_duration_s', 0):.1f}s"
+            )
+            self.console.print(
+                f"   📸 Total Snapshots: {summary.get('total_snapshots', 0)}"
+            )
 
     def get_results(self) -> Optional[ComparisonResults]:
         """Get comparison results.
@@ -648,6 +637,7 @@ class ComparisonRunner:
         gc.collect()
         try:
             import torch
+
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 torch.cuda.synchronize()
@@ -655,12 +645,12 @@ class ComparisonRunner:
             pass
 
     def export_dataframe(self) -> Optional[Any]:
-        """Export results as pandas DataFrame.
+        """Export results as simple data structure.
 
         Returns:
-            DataFrame with all extraction results or None
+            Raw comparison results or None
         """
         if not self.results:
             return None
 
-        return self.metrics_calculator.create_dataframe(self.results)
+        return self.results

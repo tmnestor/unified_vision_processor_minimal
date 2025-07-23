@@ -77,7 +77,9 @@ class PatternLibrary:
         # GST specific
         "GST_AMOUNT": re.compile(r"GST[:\s]*\$?([\d,]+\.?\d*)", re.IGNORECASE),
         # Total amount
-        "TOTAL_AMOUNT": re.compile(r"(?:Total|Amount\s+Due|Balance)[:\s]*\$?([\d,]+\.?\d*)", re.IGNORECASE),
+        "TOTAL_AMOUNT": re.compile(
+            r"(?:Total|Amount\s+Due|Balance)[:\s]*\$?([\d,]+\.?\d*)", re.IGNORECASE
+        ),
     }
 
     # Field-specific patterns with metadata
@@ -91,7 +93,9 @@ class PatternLibrary:
         ),
         "TOTAL": FieldPattern(
             name="TOTAL",
-            pattern=re.compile(r"(?:Total|Amount\s+Due)[:\s]*\$?([\d,]+\.?\d*)", re.IGNORECASE),
+            pattern=re.compile(
+                r"(?:Total|Amount\s+Due)[:\s]*\$?([\d,]+\.?\d*)", re.IGNORECASE
+            ),
             type=FieldType.CURRENCY,
             description="Total amount",
             example="$1,234.56",
@@ -224,7 +228,10 @@ class PatternLibrary:
         field_upper = field_name.upper()
 
         # Currency fields
-        if any(curr in field_upper for curr in ["TOTAL", "AMOUNT", "GST", "SUBTOTAL", "PRICE", "COST"]):
+        if any(
+            curr in field_upper
+            for curr in ["TOTAL", "AMOUNT", "GST", "SUBTOTAL", "PRICE", "COST"]
+        ):
             cleaned = cls.extract_currency(value)
             return cleaned if cleaned else value
 
@@ -270,7 +277,9 @@ class PatternLibrary:
         return results
 
     @classmethod
-    def validate_field_format(cls, field_name: str, value: str) -> Tuple[bool, Optional[str]]:
+    def validate_field_format(
+        cls, field_name: str, value: str
+    ) -> Tuple[bool, Optional[str]]:
         """Validate field format and return (is_valid, error_message)."""
         if not value:
             return True, None
@@ -283,7 +292,10 @@ class PatternLibrary:
         if field_pattern.extract(value):
             return True, None
         else:
-            return False, f"Value '{value}' doesn't match expected format: {field_pattern.example}"
+            return (
+                False,
+                f"Value '{value}' doesn't match expected format: {field_pattern.example}",
+            )
 
 
 class FieldCleaner:

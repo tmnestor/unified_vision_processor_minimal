@@ -22,9 +22,15 @@ console = Console()
 def compare(
     ground_truth_csv: str = typer.Argument(..., help="Path to ground truth CSV file"),
     images_dir: str = typer.Option("datasets", help="Directory containing test images"),
-    models: str = typer.Option("internvl3,llama32_vision", help="Models to compare (comma-separated)"),
-    output_dir: str = typer.Option("evaluation_results", help="Output directory for results"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
+    models: str = typer.Option(
+        "internvl3,llama32_vision", help="Models to compare (comma-separated)"
+    ),
+    output_dir: str = typer.Option(
+        "evaluation_results", help="Output directory for results"
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
 ) -> None:
     """Compare extraction performance between vision models."""
 
@@ -73,9 +79,13 @@ def compare(
 
 @app.command()
 def benchmark(
-    images_dir: str = typer.Argument(..., help="Directory containing images to benchmark"),
+    images_dir: str = typer.Argument(
+        ..., help="Directory containing images to benchmark"
+    ),
     model: str = typer.Option("internvl3", help="Model to benchmark"),
-    output_file: str = typer.Option("benchmark_results.json", help="Output file for results"),
+    output_file: str = typer.Option(
+        "benchmark_results.json", help="Output file for results"
+    ),
     iterations: int = typer.Option(3, help="Number of iterations per image"),
 ) -> None:
     """Benchmark processing speed and consistency for a single model."""
@@ -98,7 +108,9 @@ def benchmark(
         manager = SimpleExtractionManager(config)
 
         # Find images
-        image_files = list(Path(images_dir).glob("*.png")) + list(Path(images_dir).glob("*.jpg"))
+        image_files = list(Path(images_dir).glob("*.png")) + list(
+            Path(images_dir).glob("*.jpg")
+        )
         console.print(f"📸 Found {len(image_files)} images")
 
         benchmark_results = []
@@ -138,11 +150,14 @@ def benchmark(
                     "avg_processing_time": avg_time,
                     "min_processing_time": min_time,
                     "max_processing_time": max_time,
-                    "consistency": (max_time - min_time) / avg_time,  # Lower is more consistent
+                    "consistency": (max_time - min_time)
+                    / avg_time,  # Lower is more consistent
                 }
             )
 
-            console.print(f"  Average: {avg_time:.2f}s (range: {min_time:.2f}s - {max_time:.2f}s)")
+            console.print(
+                f"  Average: {avg_time:.2f}s (range: {min_time:.2f}s - {max_time:.2f}s)"
+            )
 
         # Save results
         with Path(output_file).open("w") as f:
@@ -153,9 +168,13 @@ def benchmark(
                     "iterations_per_image": iterations,
                     "results": benchmark_results,
                     "summary": {
-                        "avg_processing_time": sum(r["avg_processing_time"] for r in benchmark_results)
+                        "avg_processing_time": sum(
+                            r["avg_processing_time"] for r in benchmark_results
+                        )
                         / len(benchmark_results),
-                        "total_processing_time": sum(r["avg_processing_time"] for r in benchmark_results)
+                        "total_processing_time": sum(
+                            r["avg_processing_time"] for r in benchmark_results
+                        )
                         * iterations,
                     },
                 },

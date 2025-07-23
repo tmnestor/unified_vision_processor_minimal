@@ -11,8 +11,9 @@ import logging
 import platform
 from typing import TYPE_CHECKING, Union
 
+import torch
+
 if TYPE_CHECKING:
-    import torch
     from torch import nn
     from transformers import BitsAndBytesConfig
 
@@ -112,7 +113,8 @@ class DeviceManager:
         # Priority 1: Multiple high-memory GPUs (H200 development)
         if torch.cuda.device_count() > 1:
             gpu_memory = [
-                torch.cuda.get_device_properties(i).total_memory for i in range(torch.cuda.device_count())
+                torch.cuda.get_device_properties(i).total_memory
+                for i in range(torch.cuda.device_count())
             ]
             if all(mem >= 70 * 1024**3 for mem in gpu_memory):  # 70GB+ for H200
                 logger.info(
@@ -236,7 +238,9 @@ class DeviceManager:
             return {
                 "allocated_mb": torch.cuda.memory_allocated(device) / 1024 / 1024,
                 "reserved_mb": torch.cuda.memory_reserved(device) / 1024 / 1024,
-                "total_mb": torch.cuda.get_device_properties(device).total_memory / 1024 / 1024,
+                "total_mb": torch.cuda.get_device_properties(device).total_memory
+                / 1024
+                / 1024,
             }
         return {"allocated_mb": 0.0, "reserved_mb": 0.0, "total_mb": 0.0}
 

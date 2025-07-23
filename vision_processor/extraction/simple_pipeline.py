@@ -48,7 +48,10 @@ class SimpleExtractionPipeline:
 
         if fields and len(fields) >= 3:  # Success threshold
             if self.verbose:
-                console.print(f"✅ Primary extraction successful: {len(fields)} fields", style="green")
+                console.print(
+                    f"✅ Primary extraction successful: {len(fields)} fields",
+                    style="green",
+                )
             return fields, "primary"
 
         # Stage 2: AWK fallback for markdown
@@ -59,12 +62,17 @@ class SimpleExtractionPipeline:
             awk_fields = self._awk_fallback(response, image_name)
             if awk_fields:
                 if self.verbose:
-                    console.print(f"✅ AWK extraction successful: {len(awk_fields)} fields", style="green")
+                    console.print(
+                        f"✅ AWK extraction successful: {len(awk_fields)} fields",
+                        style="green",
+                    )
                 return awk_fields, "awk_fallback"
 
         # Return whatever we got from primary extraction
         if self.verbose:
-            console.print(f"⚠️  Limited extraction: {len(fields)} fields", style="yellow")
+            console.print(
+                f"⚠️  Limited extraction: {len(fields)} fields", style="yellow"
+            )
         return fields, "primary_limited"
 
     def _primary_extraction(self, response: str) -> Dict[str, str]:
@@ -72,40 +80,46 @@ class SimpleExtractionPipeline:
         fields = {}
 
         # Try structured key-value extraction
-        kv_pattern = re.compile(r'^([A-Z][A-Z\s_/-]+?):\s*(.+)$', re.MULTILINE | re.IGNORECASE)
+        kv_pattern = re.compile(
+            r"^([A-Z][A-Z\s_/-]+?):\s*(.+)$", re.MULTILINE | re.IGNORECASE
+        )
         matches = kv_pattern.findall(response)
 
         for key, value in matches:
-            clean_key = key.strip().replace(' ', '_').upper()
+            clean_key = key.strip().replace(" ", "_").upper()
             clean_value = value.strip()
-            if clean_key and clean_value and clean_value.upper() not in ['N/A', 'NONE', 'NULL']:
+            if (
+                clean_key
+                and clean_value
+                and clean_value.upper() not in ["N/A", "NONE", "NULL"]
+            ):
                 fields[clean_key] = clean_value
 
         # Try pattern-based extraction for common fields
-        if 'DATE' not in fields:
+        if "DATE" not in fields:
             date = self.pattern_library.extract_date(response)
             if date:
-                fields['DATE'] = date
+                fields["DATE"] = date
 
-        if 'TOTAL' not in fields:
+        if "TOTAL" not in fields:
             total = self.pattern_library.extract_currency(response)
             if total:
-                fields['TOTAL'] = total
+                fields["TOTAL"] = total
 
-        if 'ABN' not in fields:
+        if "ABN" not in fields:
             abn = self.pattern_library.extract_abn(response)
             if abn:
-                fields['ABN'] = abn
+                fields["ABN"] = abn
 
         return fields
 
     def _is_markdown_response(self, response: str) -> bool:
         """Check if response contains markdown formatting."""
         markdown_indicators = [
-            r'\|.*\|.*\|',  # Table
-            r'^#+\s',  # Headers
-            r'^\*\s',  # Bullets
-            r'\*\*[^*]+\*\*',  # Bold
+            r"\|.*\|.*\|",  # Table
+            r"^#+\s",  # Headers
+            r"^\*\s",  # Bullets
+            r"\*\*[^*]+\*\*",  # Bold
         ]
 
         for pattern in markdown_indicators:
@@ -117,21 +131,25 @@ class SimpleExtractionPipeline:
         """Use AWK script to process markdown content."""
         if not self.awk_script_path.exists():
             if self.verbose:
-                console.print(f"❌ AWK script not found: {self.awk_script_path}", style="red")
+                console.print(
+                    f"❌ AWK script not found: {self.awk_script_path}", style="red"
+                )
             return {}
 
         try:
             # Write response to temp file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as tmp:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".md", delete=False
+            ) as tmp:
                 tmp.write(response)
                 tmp_path = tmp.name
 
             # Run AWK processor
             result = subprocess.run(
-                ['python', str(self.awk_script_path), tmp_path],
+                ["python", str(self.awk_script_path), tmp_path],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
 
             if result.returncode == 0:
@@ -139,7 +157,9 @@ class SimpleExtractionPipeline:
                 return self._parse_awk_output(result.stdout)
             else:
                 if self.verbose:
-                    console.print(f"❌ AWK processing failed: {result.stderr}", style="red")
+                    console.print(
+                        f"❌ AWK processing failed: {result.stderr}", style="red"
+                    )
 
         except Exception as e:
             if self.verbose:
@@ -159,11 +179,11 @@ class SimpleExtractionPipeline:
         fields = {}
 
         # AWK output is typically key: value format
-        lines = output.strip().split('\n')
+        lines = output.strip().split("\n")
         for line in lines:
-            if ':' in line:
-                key, value = line.split(':', 1)
-                clean_key = key.strip().upper().replace(' ', '_')
+            if ":" in line:
+                key, value = line.split(":", 1)
+                clean_key = key.strip().upper().replace(" ", "_")
                 clean_value = value.strip()
                 if clean_key and clean_value:
                     fields[clean_key] = clean_value

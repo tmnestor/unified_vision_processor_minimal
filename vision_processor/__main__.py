@@ -12,7 +12,9 @@ def main():
         app()
     except ImportError as e:
         print(f"Error importing dependencies: {e}")
-        print("Please ensure all dependencies are installed and environment is activated:")
+        print(
+            "Please ensure all dependencies are installed and environment is activated:"
+        )
         print("  conda activate unified_vision_processor")
         print("  pip install torch torchvision transformers")
         sys.exit(1)

@@ -85,12 +85,23 @@ class BaseExtractor(ABC):
         # Define core fields that are commonly expected in Australian tax documents
         # These are the actual field names we extract, not schema-mapped names
         self.core_fields = {
-            "DATE", "TOTAL", "GST", "ABN", "SUPPLIER_NAME",
-            "INVOICE_NUMBER", "AMOUNT", "DESCRIPTION",
-            "BSB", "ACCOUNT_NUMBER", "BUSINESS_NAME", "RECEIPT_NUMBER"
+            "DATE",
+            "TOTAL",
+            "GST",
+            "ABN",
+            "SUPPLIER_NAME",
+            "INVOICE_NUMBER",
+            "AMOUNT",
+            "DESCRIPTION",
+            "BSB",
+            "ACCOUNT_NUMBER",
+            "BUSINESS_NAME",
+            "RECEIPT_NUMBER",
         }
 
-    def extract(self, response: str, image_name: str, model_name: str) -> ExtractionResult:
+    def extract(
+        self, response: str, image_name: str, model_name: str
+    ) -> ExtractionResult:
         """Main extraction method.
 
         Args:
@@ -114,7 +125,9 @@ class BaseExtractor(ABC):
 
         # Calculate metrics
         fields_extracted = len(validated_fields)
-        core_fields_found = len([f for f in validated_fields if f.upper() in self.core_fields])
+        core_fields_found = len(
+            [f for f in validated_fields if f.upper() in self.core_fields]
+        )
 
         # Determine success
         success = fields_extracted > 0
@@ -161,7 +174,13 @@ class BaseExtractor(ABC):
 
         # Remove special tokens
         cleaned = response
-        for token in ["<|begin_of_text|>", "<|end_of_text|>", "<|image|>", "[INST]", "[/INST]"]:
+        for token in [
+            "<|begin_of_text|>",
+            "<|end_of_text|>",
+            "<|image|>",
+            "[INST]",
+            "[/INST]",
+        ]:
             cleaned = cleaned.replace(token, "")
 
         # Remove excessive whitespace
@@ -188,21 +207,32 @@ class BaseExtractor(ABC):
             clean_value = self.pattern_library.clean_field_value(clean_name, value)
 
             # Validate format
-            is_valid, error = self.pattern_library.validate_field_format(clean_name, clean_value)
+            is_valid, error = self.pattern_library.validate_field_format(
+                clean_name, clean_value
+            )
             if not is_valid and self.verbose:
-                console.print(f"⚠️  Validation error for {clean_name}: {error}", style="yellow")
+                console.print(
+                    f"⚠️  Validation error for {clean_name}: {error}", style="yellow"
+                )
 
             validated[clean_name] = clean_value
 
         return validated
 
-    def _calculate_confidence(self, fields: Dict[str, str], extraction_mode: str) -> float:
+    def _calculate_confidence(
+        self, fields: Dict[str, str], extraction_mode: str
+    ) -> float:
         """Calculate confidence score for extraction."""
         if not fields:
             return 0.0
 
         # Base score from extraction mode
-        mode_scores = {"structured": 0.9, "markdown": 0.7, "fallback": 0.5, "unknown": 0.3}
+        mode_scores = {
+            "structured": 0.9,
+            "markdown": 0.7,
+            "fallback": 0.5,
+            "unknown": 0.3,
+        }
         base_score = mode_scores.get(extraction_mode, 0.3)
 
         # Adjust based on field coverage
@@ -225,7 +255,10 @@ class BaseExtractor(ABC):
         console.print(f"   Time: {result.processing_time:.2f}s")
 
         if result.validation_errors:
-            console.print(f"   ⚠️  Validation errors: {len(result.validation_errors)}", style="yellow")
+            console.print(
+                f"   ⚠️  Validation errors: {len(result.validation_errors)}",
+                style="yellow",
+            )
 
     # Shared utility methods
 
@@ -234,18 +267,26 @@ class BaseExtractor(ABC):
         fields = {}
 
         # Pattern 1: KEY: VALUE
-        pattern1 = re.compile(r"^([A-Z][A-Z\s_/-]+?):\s*(.+)$", re.MULTILINE | re.IGNORECASE)
+        pattern1 = re.compile(
+            r"^([A-Z][A-Z\s_/-]+?):\s*(.+)$", re.MULTILINE | re.IGNORECASE
+        )
 
         # Pattern 2: KEY = VALUE
-        pattern2 = re.compile(r"^([A-Z][A-Z\s_/-]+?)\s*=\s*(.+)$", re.MULTILINE | re.IGNORECASE)
+        pattern2 = re.compile(
+            r"^([A-Z][A-Z\s_/-]+?)\s*=\s*(.+)$", re.MULTILINE | re.IGNORECASE
+        )
 
         # Pattern 3: KEY - VALUE
-        pattern3 = re.compile(r"^([A-Z][A-Z\s_/-]+?)\s*-\s*(.+)$", re.MULTILINE | re.IGNORECASE)
+        pattern3 = re.compile(
+            r"^([A-Z][A-Z\s_/-]+?)\s*-\s*(.+)$", re.MULTILINE | re.IGNORECASE
+        )
 
         for pattern in [pattern1, pattern2, pattern3]:
             matches = pattern.findall(text)
             for key, value in matches:
-                clean_key = key.strip().replace(" ", "_").replace("/", "_").replace("-", "_")
+                clean_key = (
+                    key.strip().replace(" ", "_").replace("/", "_").replace("-", "_")
+                )
                 clean_value = value.strip()
                 if clean_key and clean_value:
                     fields[clean_key] = clean_value
@@ -285,7 +326,12 @@ class BaseExtractor(ABC):
             clean_key = key.strip().replace(" ", "_").upper()
             clean_value = value.strip()
 
-            if clean_key and clean_value and clean_key != "FIELD" and clean_value != "VALUE":
+            if (
+                clean_key
+                and clean_value
+                and clean_key != "FIELD"
+                and clean_value != "VALUE"
+            ):
                 fields[clean_key] = clean_value
 
         return fields
@@ -300,7 +346,9 @@ class BaseExtractor(ABC):
             fields["BSB"] = bsb
 
         # Account number (usually follows BSB)
-        account_pattern = re.compile(r"(?:Account|Acc|A/C)[\s#:]*(\d{6,12})", re.IGNORECASE)
+        account_pattern = re.compile(
+            r"(?:Account|Acc|A/C)[\s#:]*(\d{6,12})", re.IGNORECASE
+        )
         match = account_pattern.search(text)
         if match:
             fields["ACCOUNT_NUMBER"] = match.group(1)

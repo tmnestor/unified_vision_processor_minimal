@@ -75,15 +75,21 @@ class SimpleExtractionManager:
         print("🧠 Memory Configuration:")
         print(f"  - Memory Limit: {self.config.memory_limit_mb}MB")
         print(f"  - GPU Memory Fraction: {self.config.gpu_memory_fraction}")
-        print(f"  - Quantization: {'Enabled' if self.config.enable_quantization else 'Disabled'}")
-        print(f"  - Multi-GPU: {'Enabled' if self.config.enable_multi_gpu else 'Disabled'}")
+        print(
+            f"  - Quantization: {'Enabled' if self.config.enable_quantization else 'Disabled'}"
+        )
+        print(
+            f"  - Multi-GPU: {'Enabled' if self.config.enable_multi_gpu else 'Disabled'}"
+        )
 
         # Print processing optimizations
         print("⚡ Processing Optimizations:")
         print(
             f"  - Gradient Checkpointing: {'Enabled' if self.config.enable_gradient_checkpointing else 'Disabled'}"
         )
-        print(f"  - Flash Attention: {'Enabled' if self.config.use_flash_attention else 'Disabled'}")
+        print(
+            f"  - Flash Attention: {'Enabled' if self.config.use_flash_attention else 'Disabled'}"
+        )
 
         # Load the model
         start_time = time.time()
@@ -102,7 +108,9 @@ class SimpleExtractionManager:
             if torch.cuda.is_available():
                 allocated = torch.cuda.memory_allocated() / 1024**3
                 cached = torch.cuda.memory_reserved() / 1024**3
-                print(f"📊 GPU Memory Usage: {allocated:.2f}GB allocated, {cached:.2f}GB cached")
+                print(
+                    f"📊 GPU Memory Usage: {allocated:.2f}GB allocated, {cached:.2f}GB cached"
+                )
 
             return model
 
@@ -171,7 +179,9 @@ class SimpleExtractionManager:
         return ExtractionResult(
             extracted_fields=validated_data,
             processing_time=processing_time,
-            model_confidence=response.confidence if hasattr(response, "confidence") else 0.9,
+            model_confidence=response.confidence
+            if hasattr(response, "confidence")
+            else 0.9,
             extraction_method="single_step",
         )
 
@@ -205,11 +215,15 @@ class SimpleExtractionManager:
 
         # Warn about missing required keys
         if missing_required:
-            console.print(f"[yellow]⚠️  Missing required keys: {', '.join(missing_required)}[/yellow]")
+            console.print(
+                f"[yellow]⚠️  Missing required keys: {', '.join(missing_required)}[/yellow]"
+            )
 
         return validated
 
-    def process_batch(self, image_paths: list[Union[str, Path]]) -> list[ExtractionResult]:
+    def process_batch(
+        self, image_paths: list[Union[str, Path]]
+    ) -> list[ExtractionResult]:
         """Process multiple documents.
 
         Args:

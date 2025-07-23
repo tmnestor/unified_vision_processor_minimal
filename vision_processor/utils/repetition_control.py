@@ -44,10 +44,10 @@ class UltraAggressiveRepetitionController(RepetitionController):
         super().__init__(**kwargs)
 
         # Legacy compatibility properties
-        self.max_tokens_limit = kwargs.get('max_tokens_limit', 1000)
-        self.word_threshold = kwargs.get('word_threshold', 10)
-        self.phrase_threshold = kwargs.get('phrase_threshold', 5)
-        self.enabled = kwargs.get('enabled', True)
+        self.max_tokens_limit = kwargs.get("max_tokens_limit", 1000)
+        self.word_threshold = kwargs.get("word_threshold", 10)
+        self.phrase_threshold = kwargs.get("phrase_threshold", 5)
+        self.enabled = kwargs.get("enabled", True)
 
     def clean_response(self, response: str, image_name: str = None) -> str:
         """Clean response with ultra-aggressive repetition removal.
@@ -70,15 +70,15 @@ class UltraAggressiveRepetitionController(RepetitionController):
             # If still has severe repetition, truncate at reasonable length
             words = cleaned.split()
             if len(words) > self.max_tokens_limit:
-                cleaned = ' '.join(words[:self.max_tokens_limit])
+                cleaned = " ".join(words[: self.max_tokens_limit])
 
         return cleaned
 
     def get_stats(self) -> dict:
         """Get repetition control statistics (for compatibility)."""
         return {
-            'enabled': self.enabled,
-            'max_tokens_limit': self.max_tokens_limit,
-            'word_threshold': self.word_threshold,
-            'phrase_threshold': self.phrase_threshold,
+            "enabled": self.enabled,
+            "max_tokens_limit": self.max_tokens_limit,
+            "word_threshold": self.word_threshold,
+            "phrase_threshold": self.phrase_threshold,
         }

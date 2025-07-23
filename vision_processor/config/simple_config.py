@@ -26,7 +26,7 @@ class SimpleConfig:
         # Load YAML configuration if provided
         self.yaml_config = {}
         if yaml_file and Path(yaml_file).exists():
-            with Path(yaml_file).open('r') as f:
+            with Path(yaml_file).open("r") as f:
                 self.yaml_config = yaml.safe_load(f) or {}
 
         # Model settings
@@ -46,17 +46,25 @@ class SimpleConfig:
 
         # GPU and memory settings
         self.device_config = os.getenv("VISION_DEVICE_CONFIG", "auto")
-        self.enable_multi_gpu = os.getenv("VISION_ENABLE_MULTI_GPU", "false").lower() == "true"
+        self.enable_multi_gpu = (
+            os.getenv("VISION_ENABLE_MULTI_GPU", "false").lower() == "true"
+        )
         self.gpu_memory_fraction = float(os.getenv("VISION_GPU_MEMORY_FRACTION", "0.9"))
         self.memory_limit_mb = int(os.getenv("VISION_MEMORY_LIMIT_MB", "15360"))
-        self.enable_quantization = os.getenv("VISION_ENABLE_QUANTIZATION", "false").lower() == "true"
+        self.enable_quantization = (
+            os.getenv("VISION_ENABLE_QUANTIZATION", "false").lower() == "true"
+        )
 
         # Processing settings
         self.enable_gradient_checkpointing = (
             os.getenv("VISION_ENABLE_GRADIENT_CHECKPOINTING", "true").lower() == "true"
         )
-        self.use_flash_attention = os.getenv("VISION_USE_FLASH_ATTENTION", "true").lower() == "true"
-        self.trust_remote_code = os.getenv("VISION_TRUST_REMOTE_CODE", "true").lower() == "true"
+        self.use_flash_attention = (
+            os.getenv("VISION_USE_FLASH_ATTENTION", "true").lower() == "true"
+        )
+        self.trust_remote_code = (
+            os.getenv("VISION_TRUST_REMOTE_CODE", "true").lower() == "true"
+        )
         self.offline_mode = os.getenv("VISION_OFFLINE_MODE", "true").lower() == "true"
 
         # Output settings
@@ -91,17 +99,21 @@ class SimpleConfig:
 
         # Load model paths from YAML
         yaml_model_paths = self.yaml_config.get("model_paths", {})
-        self.model_paths = type('ModelPaths', (), yaml_model_paths)()
+        self.model_paths = type("ModelPaths", (), yaml_model_paths)()
 
         # Create processing object with all required attributes for model loading
-        self.processing = type('Processing', (), {
-            'memory_limit_mb': self.memory_limit_mb,
-            'enable_gradient_checkpointing': self.enable_gradient_checkpointing,
-            'use_flash_attention': self.use_flash_attention,
-            'quantization': self.enable_quantization,
-            'batch_size': 1,
-            'max_tokens': 256,
-        })()
+        self.processing = type(
+            "Processing",
+            (),
+            {
+                "memory_limit_mb": self.memory_limit_mb,
+                "enable_gradient_checkpointing": self.enable_gradient_checkpointing,
+                "use_flash_attention": self.use_flash_attention,
+                "quantization": self.enable_quantization,
+                "batch_size": 1,
+                "max_tokens": 256,
+            },
+        )()
 
         # Create device config object with device map method
         yaml_device_config = self.yaml_config.get("device_config", {})
@@ -251,7 +263,10 @@ class SimpleConfig:
 
     def get_prompts(self) -> dict[str, str]:
         """Get model-specific prompts from YAML configuration."""
-        return self.yaml_config.get("prompts", {
-            "llama": "Extract data from this image in KEY-VALUE format.",
-            "internvl": "Extract data from this image in KEY-VALUE format."
-        })
+        return self.yaml_config.get(
+            "prompts",
+            {
+                "llama": "Extract data from this image in KEY-VALUE format.",
+                "internvl": "Extract data from this image in KEY-VALUE format.",
+            },
+        )

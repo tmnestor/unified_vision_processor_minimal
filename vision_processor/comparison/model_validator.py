@@ -59,13 +59,17 @@ class ModelValidator:
             # Step 1: Check model registration
             registration = self.model_registry.get_model(model_name)
             if not registration:
-                validation_result["error_message"] = f"Model not registered: {model_name}"
+                validation_result["error_message"] = (
+                    f"Model not registered: {model_name}"
+                )
                 self.validation_results[model_name] = validation_result
                 return False
 
             # Step 2: Check model path exists
             if not Path(model_path).exists():
-                validation_result["error_message"] = f"Model path does not exist: {model_path}"
+                validation_result["error_message"] = (
+                    f"Model path does not exist: {model_path}"
+                )
                 self.validation_results[model_name] = validation_result
                 return False
 
@@ -76,7 +80,10 @@ class ModelValidator:
             initial_memory = self._get_memory_usage()
 
             model = self.model_registry.create_model(
-                model_name, processing_config, model_path=model_path, device_config=DeviceConfig.AUTO
+                model_name,
+                processing_config,
+                model_path=model_path,
+                device_config=DeviceConfig.AUTO,
             )
 
             # Load the model
@@ -110,7 +117,9 @@ class ModelValidator:
             del model
 
             # Success if all checks pass
-            validation_result["success"] = inference_success and capabilities is not None
+            validation_result["success"] = (
+                inference_success and capabilities is not None
+            )
 
         except Exception as e:
             validation_result["error_message"] = str(e)
@@ -122,7 +131,9 @@ class ModelValidator:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
-            validation_result["total_time"] = time.time() - validation_result["start_time"]
+            validation_result["total_time"] = (
+                time.time() - validation_result["start_time"]
+            )
             self.validation_results[model_name] = validation_result
 
         return validation_result["success"]
@@ -162,7 +173,10 @@ class ModelValidator:
         return False
 
     def validate_all_models(
-        self, model_names: List[str], model_paths: Dict[str, str], processing_config: SimpleConfig
+        self,
+        model_names: List[str],
+        model_paths: Dict[str, str],
+        processing_config: SimpleConfig,
     ) -> Tuple[List[str], List[str]]:
         """Validate multiple models.
 
@@ -208,25 +222,37 @@ class ModelValidator:
             return {"error": "No validation results available"}
 
         total_models = len(self.validation_results)
-        successful_models = sum(1 for r in self.validation_results.values() if r["success"])
+        successful_models = sum(
+            1 for r in self.validation_results.values() if r["success"]
+        )
 
         # Calculate average metrics for successful models
-        successful_results = [r for r in self.validation_results.values() if r["success"]]
+        successful_results = [
+            r for r in self.validation_results.values() if r["success"]
+        ]
 
         avg_load_time = 0.0
         avg_memory_usage = 0.0
 
         if successful_results:
-            avg_load_time = sum(r["load_time"] for r in successful_results) / len(successful_results)
-            avg_memory_usage = sum(r["memory_usage"] for r in successful_results) / len(successful_results)
+            avg_load_time = sum(r["load_time"] for r in successful_results) / len(
+                successful_results
+            )
+            avg_memory_usage = sum(r["memory_usage"] for r in successful_results) / len(
+                successful_results
+            )
 
         # Identify fastest and slowest models
         fastest_model = None
         slowest_model = None
 
         if successful_results:
-            fastest_model = min(successful_results, key=lambda x: x["load_time"])["model_name"]
-            slowest_model = max(successful_results, key=lambda x: x["load_time"])["model_name"]
+            fastest_model = min(successful_results, key=lambda x: x["load_time"])[
+                "model_name"
+            ]
+            slowest_model = max(successful_results, key=lambda x: x["load_time"])[
+                "model_name"
+            ]
 
         # Get error summary
         failed_models = {
@@ -238,7 +264,9 @@ class ModelValidator:
         return {
             "total_models_tested": total_models,
             "successful_validations": successful_models,
-            "validation_success_rate": successful_models / total_models if total_models > 0 else 0,
+            "validation_success_rate": successful_models / total_models
+            if total_models > 0
+            else 0,
             "average_load_time": avg_load_time,
             "average_memory_usage": avg_memory_usage,
             "fastest_model": fastest_model,
@@ -259,8 +287,12 @@ class ModelValidator:
             recommendations.append("No validation data available")
             return recommendations
 
-        successful_results = [r for r in self.validation_results.values() if r["success"]]
-        failed_results = [r for r in self.validation_results.values() if not r["success"]]
+        successful_results = [
+            r for r in self.validation_results.values() if r["success"]
+        ]
+        failed_results = [
+            r for r in self.validation_results.values() if not r["success"]
+        ]
 
         # Memory recommendations
         if successful_results:
@@ -289,19 +321,27 @@ class ModelValidator:
 
             for error_type, count in common_errors.items():
                 if count > 1:
-                    recommendations.append(f"Multiple models failed with {error_type} errors")
+                    recommendations.append(
+                        f"Multiple models failed with {error_type} errors"
+                    )
 
         # Success rate recommendations
         total_models = len(self.validation_results)
         success_rate = len(successful_results) / total_models if total_models > 0 else 0
 
         if success_rate < 0.5:
-            recommendations.append("Low model validation success rate. Check environment setup.")
+            recommendations.append(
+                "Low model validation success rate. Check environment setup."
+            )
         elif success_rate == 1.0:
-            recommendations.append("All models validated successfully. Ready for production comparison.")
+            recommendations.append(
+                "All models validated successfully. Ready for production comparison."
+            )
 
         if not recommendations:
-            recommendations.append("Model validation completed successfully with no issues detected.")
+            recommendations.append(
+                "Model validation completed successfully with no issues detected."
+            )
 
         return recommendations
 

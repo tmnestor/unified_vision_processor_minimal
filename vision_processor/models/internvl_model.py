@@ -85,7 +85,9 @@ class InternVLModel(BaseVisionModel):
             # This ensures fair comparison with Llama model that's V100-optimized
             available_gpus = torch.cuda.device_count()
             self.num_gpus = 1  # Force single GPU regardless of available GPUs
-            logger.info(f"🔧 V100 Production Mode: Using 1 GPU (detected {available_gpus} available)")
+            logger.info(
+                f"🔧 V100 Production Mode: Using 1 GPU (detected {available_gpus} available)"
+            )
         else:
             self.num_gpus = 0
 
@@ -164,10 +166,10 @@ class InternVLModel(BaseVisionModel):
         # Model layer counts for InternVL Version 3 models only
         # Reference: https://huggingface.co/collections/OpenGVLab/internvl3-67f7f690be79c2fe9d74fe9d
         num_layers_mapping = {
-            "InternVL3-1B": 24,   # 0.9B parameters
-            "InternVL3-2B": 24,   # 2B parameters
-            "InternVL3-8B": 28,   # 8B parameters (primary)
-            "InternVL3-9B": 32,   # 9B parameters
+            "InternVL3-1B": 24,  # 0.9B parameters
+            "InternVL3-2B": 24,  # 2B parameters
+            "InternVL3-8B": 28,  # 8B parameters (primary)
+            "InternVL3-9B": 32,  # 9B parameters
             "InternVL3-14B": 40,  # 15B parameters
             "InternVL3-38B": 60,  # 38B parameters
             "InternVL3-78B": 80,  # 78B parameters
@@ -176,7 +178,10 @@ class InternVLModel(BaseVisionModel):
         # Extract model size from path
         model_size = None
         for size_key in num_layers_mapping:
-            if size_key in str(model_name) or size_key.replace("-", "_").lower() in str(model_name).lower():
+            if (
+                size_key in str(model_name)
+                or size_key.replace("-", "_").lower() in str(model_name).lower()
+            ):
                 model_size = size_key
                 break
 
@@ -185,7 +190,9 @@ class InternVLModel(BaseVisionModel):
             logger.warning(
                 f"Could not determine InternVL3 model size from {model_name}, defaulting to InternVL3-8B",
             )
-            logger.info("Supported InternVL3 models: InternVL3-1B, InternVL3-2B, InternVL3-8B, InternVL3-9B, InternVL3-14B, InternVL3-38B, InternVL3-78B")
+            logger.info(
+                "Supported InternVL3 models: InternVL3-1B, InternVL3-2B, InternVL3-8B, InternVL3-9B, InternVL3-14B, InternVL3-38B, InternVL3-78B"
+            )
             model_size = "InternVL3-8B"
 
         num_layers = num_layers_mapping[model_size]
@@ -252,7 +259,9 @@ class InternVLModel(BaseVisionModel):
             quantization_config = self._get_quantization_config()
             if quantization_config:
                 model_loading_args["quantization_config"] = quantization_config
-                logger.info("🔧 V100 Mode: Loading model on single GPU with 8-bit quantization...")
+                logger.info(
+                    "🔧 V100 Mode: Loading model on single GPU with 8-bit quantization..."
+                )
             else:
                 logger.info("🔧 V100 Mode: Loading model on single GPU...")
         elif hasattr(self, "kwargs") and self.kwargs.get("force_multi_gpu", False):
@@ -279,10 +288,13 @@ class InternVLModel(BaseVisionModel):
             try:
                 # Only enable if flash_attn is available
                 import flash_attn  # noqa: F401
+
                 model_loading_args["use_flash_attn"] = True
                 logger.info("🔧 Flash Attention enabled")
             except ImportError:
-                logger.info("🔧 Flash Attention not available - using standard attention")
+                logger.info(
+                    "🔧 Flash Attention not available - using standard attention"
+                )
 
         try:
             # Load tokenizer
@@ -519,7 +531,9 @@ class InternVLModel(BaseVisionModel):
                 # Try alternative interface with explicit device handling
                 input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
                 if self.device.type == "cuda":
-                    input_ids = input_ids.cuda()  # Use .cuda() to match pixel_values device
+                    input_ids = (
+                        input_ids.cuda()
+                    )  # Use .cuda() to match pixel_values device
 
                 try:
                     with torch.no_grad():

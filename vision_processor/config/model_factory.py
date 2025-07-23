@@ -88,9 +88,14 @@ class ModelFactory:
             if hasattr(config, "models") and hasattr(config, "get_model_config"):
                 # UnifiedConfig - need to determine which model to use
                 if model_type:
-                    model_name = model_type if isinstance(model_type, str) else model_type.value
+                    model_name = (
+                        model_type if isinstance(model_type, str) else model_type.value
+                    )
                     # Map model type to config name
-                    model_name_map = {"llama32_vision": "llama", "internvl3": "internvl"}
+                    model_name_map = {
+                        "llama32_vision": "llama",
+                        "internvl3": "internvl",
+                    }
                     config_name = model_name_map.get(model_name, model_name)
                     if config_name in config.models:
                         model_cfg = config.get_model_config(config_name)
@@ -108,7 +113,9 @@ class ModelFactory:
                 model_path = model_path or config.model_path
 
         # Validate path first
-        if model_path is None or (isinstance(model_path, str) and not model_path.strip()):
+        if model_path is None or (
+            isinstance(model_path, str) and not model_path.strip()
+        ):
             raise ValueError("Model path cannot be None or empty")
 
         # Convert string model_type to enum if needed
@@ -173,7 +180,10 @@ class ModelFactory:
             if hasattr(config, "models") and hasattr(config, "processing"):
                 # UnifiedConfig
                 # Map model type to config name
-                model_name_map = {ModelType.LLAMA32_VISION: "llama", ModelType.INTERNVL3: "internvl"}
+                model_name_map = {
+                    ModelType.LLAMA32_VISION: "llama",
+                    ModelType.INTERNVL3: "internvl",
+                }
                 config_name = model_name_map.get(model_type, model_type.value)
 
                 # Get model-specific config if available
@@ -220,7 +230,9 @@ class ModelFactory:
                             "multi_gpu": DeviceConfig.MULTI_GPU,
                             "mps": DeviceConfig.AUTO,  # MPS will be detected by AUTO
                         }
-                        device_config = device_mapping.get(device_config.lower(), DeviceConfig.AUTO)
+                        device_config = device_mapping.get(
+                            device_config.lower(), DeviceConfig.AUTO
+                        )
                         logger.warning(
                             f"Converted device config string '{config.device_config}' to {device_config}"
                         )
@@ -249,7 +261,9 @@ class ModelFactory:
         return model_config
 
     @classmethod
-    def _get_internvl_config(cls, config: Optional[Union["SimpleConfig", "UnifiedConfig"]]) -> dict:
+    def _get_internvl_config(
+        cls, config: Optional[Union["SimpleConfig", "UnifiedConfig"]]
+    ) -> dict:
         """Get InternVL-specific configuration optimizations."""
         # Handle UnifiedConfig vs SimpleConfig
         if config and hasattr(config, "processing"):
@@ -301,7 +315,9 @@ class ModelFactory:
         return internvl_config
 
     @classmethod
-    def _get_llama_config(cls, config: Optional[Union["SimpleConfig", "UnifiedConfig"]]) -> dict:
+    def _get_llama_config(
+        cls, _config: Optional[Union["SimpleConfig", "UnifiedConfig"]]
+    ) -> dict:
         """Get Llama-3.2-Vision specific configuration."""
         llama_config = {
             # Llama-specific optimizations - simplified for single-step
