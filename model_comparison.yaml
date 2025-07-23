@@ -166,8 +166,6 @@ prompts:
   #   Extract data from this image in markdown format.
 
   llama: |
-    <|begin_of_text|><|start_header_id|>user<|end_header_id|>
-
     <|image|>Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
 
     REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
@@ -198,7 +196,7 @@ prompts:
     CLOSING_BALANCE: [closing balance amount in dollars or N/A]
     TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    Output exactly 26 lines above. Include ALL keys even if value is N/A. No other text.<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+    Output exactly 26 lines above. Include ALL keys even if value is N/A. No other text.
 
 
   # Alternative prompt versions (commented out for reference)
