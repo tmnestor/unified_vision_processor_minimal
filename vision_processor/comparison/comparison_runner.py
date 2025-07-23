@@ -333,7 +333,7 @@ class ComparisonRunner:
                         )
 
                         # Only show debug output if VISION_DEBUG environment variable is set
-                        debug_mode = os.getenv("VISION_DEBUG", "false").lower() == "true"
+                        debug_mode = True  # Force DEBUG on to diagnose parsing issues
                         
                         if debug_mode:
                             # DEBUG: Print actual response length and content
@@ -416,9 +416,19 @@ class ComparisonRunner:
                             self.console.print(f"DEBUG: Parsing {len(lines)} lines", style="yellow")
                             if len(lines) > 0:
                                 self.console.print(f"DEBUG: First line: '{lines[0][:100]}...'", style="yellow")
+                            
+                            # Show what clean_text looks like before parsing
+                            self.console.print("DEBUG: Clean text being passed to parser:", style="cyan")
+                            self.console.print(f"'{clean_text[:200]}{'...' if len(clean_text) > 200 else ''}'", style="dim cyan")
 
                         # Extract key-value pairs using robust AWK-style parsing
                         extracted_pairs = self._extract_keyvalue_pairs_robust(clean_text)
+                        
+                        if debug_mode:
+                            self.console.print(f"DEBUG: Extracted {len(extracted_pairs)} pairs using robust parser", style="yellow")
+                            if len(extracted_pairs) == 0:
+                                self.console.print("DEBUG: No pairs extracted. First 500 chars of clean_text:", style="red")
+                                self.console.print(clean_text[:500], style="dim red")
 
                         # Display all extracted fields
                         if extracted_pairs:
@@ -937,6 +947,11 @@ class ComparisonRunner:
 
         extracted_pairs = {}
         lines = text.strip().split("\n")
+        
+        # Debug: show what we're parsing
+        if len(lines) > 0:
+            print(f"DEBUG _extract_keyvalue_pairs_robust: Processing {len(lines)} lines")
+            print(f"DEBUG: First 3 lines: {lines[:3]}")
 
         for line in lines:
             line = line.strip()
@@ -966,19 +981,24 @@ class ComparisonRunner:
                     value = value.replace("**", "").replace("*", "").strip()
                     value = value.strip('"').strip("'").strip()
                     
-                    # Remove bracketed instructions like [value or N/A]
-                    value = re.sub(r"\[.*?\]", "", value).strip()
+                    # Don't remove bracketed text - it might be the actual value!
+                    # Models are returning "[value or N/A]" as the literal response
 
                     # Validate key format - must be alphabetic (with underscores/spaces)
                     if (key and value and 
                         key.replace("_", "").replace(" ", "").isalpha() and 
                         not key.isdigit() and
-                        len(key) > 1 and  # At least 2 characters
-                        value.lower() not in ["n/a", "not available", "not visible", "none", ""]):
+                        len(key) > 1):  # At least 2 characters
                         
                         # Normalize key format
                         key = key.replace(" ", "_")
+                        
+                        # Keep ALL values, including N/A (for fair comparison)
                         extracted_pairs[key] = value
+                        
+                        # Debug
+                        if len(extracted_pairs) <= 5:  # Show first few extractions
+                            print(f"DEBUG: Extracted {key}: {value[:50]}...")
 
                 except ValueError:
                     continue
