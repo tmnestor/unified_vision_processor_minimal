@@ -6,7 +6,6 @@ model loading, extraction, analysis, and reporting generation.
 """
 
 import gc
-import re
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -332,9 +331,24 @@ class ComparisonRunner:
                         )
 
                         # DEBUG: Print actual response length and content to trace truncation
-                        self.console.print(f"DEBUG: Raw response length: {len(response.raw_text)} chars", style="red")
-                        self.console.print(f"DEBUG: Last 50 chars: '{response.raw_text[-50:]}'", style="red")
-                        
+                        self.console.print(
+                            f"DEBUG: Raw response length: {len(response.raw_text)} chars",
+                            style="red",
+                        )
+                        self.console.print(
+                            f"DEBUG: Last 50 chars: '{response.raw_text[-50:]}'",
+                            style="red",
+                        )
+
+                        # DEBUG: Show full raw response to understand format
+                        if (
+                            len(response.raw_text) < 3000
+                        ):  # Only show if reasonable length
+                            self.console.print(
+                                "DEBUG: Full raw response:", style="yellow"
+                            )
+                            self.console.print(response.raw_text, style="dim yellow")
+
                         # Pure model comparison: minimal processing to preserve raw outputs
                         analysis_dict = {
                             "img_name": image_path.name,
@@ -349,34 +363,62 @@ class ComparisonRunner:
                         model_results.append(analysis_dict)
 
                         # Print what the model sees with better formatting - ALL key-value pairs
-                        self.console.print(f"\n🔍 {model_name.upper()} sees in {image_path.name}:")
-                        
-                        # Parse key-value pairs - handle both multi-line and single-line formats
-                        lines = response.raw_text.strip().split('\n')
-                        
-                        if len(lines) == 1:
-                            # Single line format - parse key-value pairs from one line
-                            text = lines[0]
-                            # Look for pattern: WORD: [content until next WORD:]
-                            pattern = r'([A-Z_]+):\s*([^A-Z]*?)(?=\s[A-Z_]+:|$)'
-                            matches = re.findall(pattern, text)
-                            
-                            for key, value in matches:
-                                key = key.strip()
-                                value = value.strip()
-                                if value:  # Only show non-empty values
-                                    self.console.print(f"   {key:18}: {value}", style="dim cyan")
-                        else:
-                            # Multi-line format - parse line by line
-                            for line in lines:
-                                if ':' in line:
-                                    key, value = line.split(':', 1)
-                                    key = key.strip()
+                        self.console.print(
+                            f"\n🔍 {model_name.upper()} sees in {image_path.name}:"
+                        )
+
+                        # Parse key-value pairs - handle the 20-field format
+                        lines = response.raw_text.strip().split("\n")
+
+                        # Expected keys in order
+                        expected_keys = [
+                            "DATE",
+                            "SUPPLIER",
+                            "ABN",
+                            "GST",
+                            "TOTAL",
+                            "SUBTOTAL",
+                            "SUPPLIER_WEBSITE",
+                            "ITEMS",
+                            "QUANTITIES",
+                            "PRICES",
+                            "RECEIPT_NUMBER",
+                            "PAYMENT_METHOD",
+                            "DOCUMENT_TYPE",
+                            "BUSINESS_ADDRESS",
+                            "BUSINESS_PHONE",
+                            "PAYER_NAME",
+                            "PAYER_ADDRESS",
+                            "PAYER_PHONE",
+                            "PAYER_EMAIL",
+                            "BANK_ACCOUNT_NUMBER",
+                        ]
+
+                        # Extract key-value pairs from response
+                        extracted_pairs = {}
+
+                        # Try to parse structured format first
+                        for line in lines:
+                            if ":" in line:
+                                try:
+                                    key, value = line.split(":", 1)
+                                    key = key.strip().upper()
                                     value = value.strip()
-                                    self.console.print(f"   {key:18}: {value}", style="dim cyan")
-                                elif line.strip():  # Show non-empty lines that don't have colons
-                                    self.console.print(f"   [OTHER]         : {line.strip()}", style="dim yellow")
-                        
+                                    if key in expected_keys:
+                                        extracted_pairs[key] = value
+                                except ValueError:
+                                    pass
+
+                        # Display all expected fields (show N/A for missing ones)
+                        for key in expected_keys:
+                            value = extracted_pairs.get(key, "N/A")
+                            # Truncate very long values for display
+                            if len(value) > 100:
+                                value = value[:97] + "..."
+                            self.console.print(
+                                f"   {key:18}: {value}", style="dim cyan"
+                            )
+
                         # Print progress - raw model comparison
                         status = "✅"  # Always successful for raw comparison
                         response_str = f"{len(response.raw_text)} chars"

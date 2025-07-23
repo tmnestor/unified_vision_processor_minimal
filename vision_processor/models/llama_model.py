@@ -54,25 +54,27 @@ class LlamaVisionModel(BaseVisionModel):
 
         # Store repetition control settings
         self.repetition_enabled = repetition_config.get("enabled", True)
-        
+
         # Read max_new_tokens_limit from YAML config (single source of truth) FIRST
         yaml_limit = None
         if hasattr(self, "config") and self.config:
-            model_config = getattr(self.config, "yaml_config", {}).get("model_config", {})
+            model_config = getattr(self.config, "yaml_config", {}).get(
+                "model_config", {}
+            )
             yaml_limit = model_config.get("llama", {}).get("max_new_tokens_limit")
-        
+
         # Use YAML config as single source of truth, fallback to repetition_config, then default
         self.max_new_tokens_limit = (
-            yaml_limit or 
-            repetition_config.get("max_new_tokens_limit") or 
-            384  # Final fallback
+            yaml_limit
+            or repetition_config.get("max_new_tokens_limit")
+            or 384  # Final fallback
         )
 
         # Now create repetition controller with the correct token limit
         self.repetition_controller = UltraAggressiveRepetitionController(
-            word_threshold=word_threshold, 
+            word_threshold=word_threshold,
             phrase_threshold=phrase_threshold,
-            max_tokens_limit=self.max_new_tokens_limit  # Pass the YAML config limit
+            max_tokens_limit=self.max_new_tokens_limit,  # Pass the YAML config limit
         )
 
         logger.info(
@@ -596,7 +598,9 @@ class LlamaVisionModel(BaseVisionModel):
                 max_tokens = min(max_tokens, self.max_new_tokens_limit)
 
             # DEBUG: Show actual generation parameters
-            logger.info(f"DEBUG GENERATION: max_new_tokens={kwargs.get('max_new_tokens', 1024)}, max_new_tokens_limit={self.max_new_tokens_limit}, final_max_tokens={max_tokens}")
+            logger.info(
+                f"DEBUG GENERATION: max_new_tokens={kwargs.get('max_new_tokens', 1024)}, max_new_tokens_limit={self.max_new_tokens_limit}, final_max_tokens={max_tokens}"
+            )
 
             generation_kwargs = {
                 **inputs,
