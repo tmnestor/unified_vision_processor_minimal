@@ -166,9 +166,8 @@ prompts:
   #   Extract data from this image in markdown format.
 
   llama: |
-    <|image|>Extract data from this business document. Output ALL fields below using the EXACT format shown. Use "N/A" if field is not visible.
+    <|image|>Extract data from this business document. Return ONLY the 26 lines below in plain text format:
 
-    Output each line exactly like this:
     DOCUMENT_TYPE: [value or N/A]
     SUPPLIER: [value or N/A]
     ABN: [11-digit Australian Business Number or N/A]
@@ -196,7 +195,7 @@ prompts:
     CLOSING_BALANCE: [closing balance amount in dollars or N/A]
     TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    Use colon and space format (KEY: value). No bold text, no markdown, no explanations.
+    Format: KEY: value (no asterisks, no bold, no notes)
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
