@@ -6,7 +6,6 @@ model loading, extraction, analysis, and reporting generation.
 """
 
 import gc
-import os
 import re
 import time
 from dataclasses import dataclass
