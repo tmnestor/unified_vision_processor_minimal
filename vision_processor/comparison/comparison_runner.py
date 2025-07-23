@@ -945,13 +945,63 @@ class ComparisonRunner:
             return {}
 
         extracted_pairs = {}
+        
+        # First, try to split on newlines (multi-line format)
         lines = text.strip().split("\n")
         
         # Debug: show what we're parsing
+        print(f"DEBUG _extract_keyvalue_pairs_robust: Processing {len(lines)} lines")
         if len(lines) > 0:
-            print(f"DEBUG _extract_keyvalue_pairs_robust: Processing {len(lines)} lines")
             print(f"DEBUG: First 3 lines: {lines[:3]}")
 
+        # If we have only 1 line and it contains multiple field patterns, 
+        # it's likely a single-line response that needs field-boundary splitting
+        if len(lines) == 1 and len(lines[0]) > 200:  # Likely single-line response
+            single_line = lines[0]
+            print(f"DEBUG: Detected single-line response ({len(single_line)} chars), splitting on field boundaries")
+            
+            # Get expected fields from the prompt/config
+            expected_fields = [
+                "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS",
+                "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST",
+                "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "ITEMS", "QUANTITIES",
+                "PRICES", "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME",
+                "BSB_NUMBER", "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER",
+                "STATEMENT_PERIOD", "OPENING_BALANCE", "CLOSING_BALANCE", "TRANSACTIONS"
+            ]
+            
+            # Use regex to split on field boundaries (FIELD_NAME:)
+            # This handles the case where models return everything on one line
+            import re
+            
+            # Create pattern that matches any expected field followed by colon
+            field_pattern = r'\b(' + '|'.join(expected_fields) + r'):'
+            
+            # Split the text using the field pattern as delimiter, keeping the delimiter
+            parts = re.split(f'({field_pattern})', single_line)
+            
+            # Reconstruct as field:value pairs
+            reconstructed_lines = []
+            current_field = None
+            
+            for part in parts:
+                part = part.strip()
+                if not part:
+                    continue
+                    
+                # Check if this part is a field name
+                field_match = re.match(r'^(' + '|'.join(expected_fields) + r'):$', part)
+                if field_match:
+                    current_field = part  # Store "FIELD_NAME:"
+                elif current_field:
+                    # This is the value for the current field
+                    reconstructed_lines.append(f"{current_field} {part}")
+                    current_field = None
+            
+            print(f"DEBUG: Reconstructed {len(reconstructed_lines)} field lines from single-line response")
+            lines = reconstructed_lines
+
+        # Now process lines normally (whether original multi-line or reconstructed)
         for line in lines:
             line = line.strip()
             
@@ -959,8 +1009,8 @@ class ComparisonRunner:
             if not line or line.startswith("#") or line.startswith("NOTE:") or line.startswith("Note:"):
                 continue
 
-            # Skip instruction/format lines
-            if any(skip in line.lower() for skip in ["example:", "format:", "output:", "instruction:", "required output format"]):
+            # Skip instruction/format lines and answer sections
+            if any(skip in line.lower() for skip in ["example:", "format:", "output:", "instruction:", "required output format", "answer:", "final answer:"]):
                 continue
 
             # Look for KEY: VALUE pattern
@@ -976,12 +1026,26 @@ class ComparisonRunner:
                     # Remove markdown formatting from key
                     key = key.replace("**", "").replace("*", "")
                     
+                    # Clean value - handle multi-field concatenation in single line
+                    # Stop value at next field boundary if it contains another field
+                    expected_fields_set = {
+                        "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS",
+                        "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST",
+                        "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "ITEMS", "QUANTITIES", 
+                        "PRICES", "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME",
+                        "BSB_NUMBER", "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER",
+                        "STATEMENT_PERIOD", "OPENING_BALANCE", "CLOSING_BALANCE", "TRANSACTIONS"
+                    }
+                    
+                    # Check if value contains another field name and truncate there
+                    for field in expected_fields_set:
+                        if f" {field}:" in value:
+                            value = value.split(f" {field}:")[0].strip()
+                            break
+                    
                     # Clean value
                     value = value.replace("**", "").replace("*", "").strip()
                     value = value.strip('"').strip("'").strip()
-                    
-                    # Don't remove bracketed text - it might be the actual value!
-                    # Models are returning "[value or N/A]" as the literal response
 
                     # Validate key format - must be alphabetic (with underscores/spaces)
                     if (key and value and 
@@ -1002,6 +1066,7 @@ class ComparisonRunner:
                 except ValueError:
                     continue
 
+        print(f"DEBUG: Final extraction count: {len(extracted_pairs)} pairs")
         return extracted_pairs
 
     def _count_keyvalue_pairs(self, text: str) -> int:
