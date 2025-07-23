@@ -107,42 +107,48 @@ prompts:
   #   Extract data from this image in markdown format.
 
   llama: |
-    <|image|>Extract information from this business document.
+    <|image|>Extract information from this business document using ONLY the format shown below.
     
-    CRITICAL RULES:
-    1. Use ONLY this format: KEY: value
-    2. NO markdown, NO asterisks, NO bullets
-    3. Each field on its own line
-    4. NO repetition - output each field ONCE
-    5. STOP after all fields extracted
+    FORBIDDEN:
+    - NO markdown formatting
+    - NO ** or * characters
+    - NO bullet points
+    - NO tables
+    - NO explanations
+    - NO repetition
     
-    Output format:
-    DOCUMENT_TYPE: [invoice/receipt/bank statement/etc]
-    DATE: [date from document]
-    SUPPLIER: [supplier name if applicable]
-    ABN: [ABN if present]
-    GST: [GST amount if present]
-    TOTAL: [total amount]
-    SUBTOTAL: [subtotal if present]
-    ITEMS: [item names separated by |]
-    QUANTITIES: [quantities if present]
-    PRICES: [individual prices if present]
-    RECEIPT_NUMBER: [receipt/invoice number]
-    PAYMENT_METHOD: [payment method]
-    BUSINESS_ADDRESS: [business address]
-    BUSINESS_PHONE: [business phone]
-    PAYER_NAME: [payer name if present]
-    PAYER_EMAIL: [payer email if present]
+    REQUIRED FORMAT - each line must be exactly:
+    KEY: value
     
-    For bank statements also include:
-    BANK_NAME: [bank name]
-    ACCOUNT_NUMBER: [account number]
-    ACCOUNT_HOLDER: [account holder name]
-    STATEMENT_PERIOD: [statement period]
-    TRANSACTIONS: [brief transaction list]
-    BALANCE: [balance]
+    Start your response with this line:
+    DOCUMENT_TYPE: [the document type]
     
-    Extract all visible fields. Use exact KEY: value format. NO other text.
+    Then continue with these fields (use actual values or N/A):
+    DATE: [value]
+    SUPPLIER: [value]
+    ABN: [value]
+    GST: [value]
+    TOTAL: [value]
+    SUBTOTAL: [value]
+    ITEMS: [value]
+    QUANTITIES: [value]
+    PRICES: [value]
+    RECEIPT_NUMBER: [value]
+    PAYMENT_METHOD: [value]
+    BUSINESS_ADDRESS: [value]
+    BUSINESS_PHONE: [value]
+    PAYER_NAME: [value]
+    PAYER_EMAIL: [value]
+    
+    For bank statements add:
+    BANK_NAME: [value]
+    ACCOUNT_NUMBER: [value]
+    ACCOUNT_HOLDER: [value]
+    STATEMENT_PERIOD: [value]
+    TRANSACTIONS: [value]
+    BALANCE: [value]
+    
+    Output ONLY lines in KEY: value format. Nothing else.
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
