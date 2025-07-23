@@ -410,6 +410,15 @@ class ComparisonRunner:
                             if marker in clean_text:
                                 clean_text = clean_text.split(marker)[0].strip()
                                 break
+                        
+                        # Remove repetitive N/A values (Llama bug where it repeats N/A hundreds of times)
+                        # Look for pattern like "... N/A N/A N/A N/A N/A ..." and truncate
+                        na_repetition_pattern = r'(\b(N/A\s*){10,})'  # 10+ consecutive N/A values
+                        if re.search(na_repetition_pattern, clean_text):
+                            # Find where the repetition starts and truncate there
+                            match = re.search(na_repetition_pattern, clean_text)
+                            if match:
+                                clean_text = clean_text[:match.start()].strip()
 
                         # Parse key-value pairs - handle generic format
                         lines = clean_text.strip().split("\n")
@@ -945,7 +954,6 @@ class ComparisonRunner:
 
     def _extract_keyvalue_pairs_robust(self, text: str) -> dict[str, str]:
         """Extract key-value pairs using robust AWK-style parsing from backup."""
-        import re  # Move import to top to avoid scope issues
         
         if not text or not text.strip():
             return {}
