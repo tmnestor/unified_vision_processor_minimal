@@ -464,23 +464,36 @@ class ComparisonRunner:
                                                 "example:",
                                                 "format:",
                                                 "output:",
+                                                "note:",
                                             ]
                                         ):
                                             continue
-                                        key, value = line.split(":", 1)
-                                        key = key.strip().upper()
-                                        value = value.strip()
-                                        # Only add if key is uppercase (proper format) and value exists
-                                        # Also ensure key isn't just a number
-                                        if (
-                                            key
-                                            and value
-                                            and key.replace("_", "")
-                                            .replace(" ", "")
-                                            .isalpha()
-                                            and not key.isdigit()
-                                        ):
-                                            extracted_pairs[key] = value
+                                        
+                                        # Handle markdown format: **Field Name:** value
+                                        if "**" in line and ":**" in line:
+                                            # Extract from **Field:** value format
+                                            match = re.search(r'\*\*([^:]+):\*\*\s*(.+)', line)
+                                            if match:
+                                                key = match.group(1).strip().upper().replace(" ", "_")
+                                                value = match.group(2).strip()
+                                                if key and value and not value.lower().startswith("not applicable"):
+                                                    extracted_pairs[key] = value
+                                        else:
+                                            # Regular KEY: value format
+                                            key, value = line.split(":", 1)
+                                            key = key.strip().upper()
+                                            value = value.strip()
+                                            # Only add if key is uppercase (proper format) and value exists
+                                            # Also ensure key isn't just a number
+                                            if (
+                                                key
+                                                and value
+                                                and key.replace("_", "")
+                                                .replace(" ", "")
+                                                .isalpha()
+                                                and not key.isdigit()
+                                            ):
+                                                extracted_pairs[key] = value
                                     except ValueError:
                                         pass
 
