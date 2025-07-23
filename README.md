@@ -1,34 +1,34 @@
-# Unified Vision Processor
+# Vision Model Comparison Framework
 
-A flexible vision document processing system with model-agnostic architecture supporting both InternVL3 and Llama-3.2-Vision models. Features dynamic field extraction, YAML-driven configuration, and comprehensive evaluation framework.
+A pure model comparison system designed to answer the critical question: **"Which vision model better understands business documents?"** This framework provides unbiased, reproducible comparisons between InternVL3 and Llama-3.2-Vision models on real-world document understanding tasks.
 
 ## 🎯 Overview
 
-This system provides a simplified, production-ready solution for extracting structured data from document images using state-of-the-art vision language models.
+This codebase implements a fair, transparent comparison methodology for evaluating vision language models on business document understanding. By preserving raw model outputs and avoiding processing bias, it enables objective assessment of each model's capabilities.
 
-### Key Features
+### Core Principles
 
-- **Dynamic Field Extraction**: Automatically detects and extracts fields without predefined schemas
-- **Model Agnostic**: Supports InternVL3-8B and Llama-3.2-Vision with identical interfaces
-- **YAML Configuration**: All settings and prompts managed through YAML files
-- **Memory Optimized**: 8-bit quantization support for V100 16GB GPUs
-- **Comprehensive Evaluation**: Built-in model comparison and benchmarking tools
+- **Unbiased Comparison**: Raw model outputs preserved without favoring any specific format
+- **Identical Prompts**: Both models receive exactly the same instructions
+- **No Post-Processing**: Model responses analyzed as-is, without extraction logic that could introduce bias
+- **Reproducible Results**: Complete output preservation enables re-analysis and validation
+- **Production Constraints**: Designed for real-world deployment on V100 16GB GPUs
 
-## 🏗️ Architecture
+## 🏗️ Comparison Architecture
 
-The system implements a streamlined extraction pipeline:
+The framework implements a pure comparison pipeline:
 
 ```
-Document Image → Unified Prompt → Vision Model → Key-Value Extraction → Validation → Results
+Document Image → Unified Prompt → Vision Model → Raw Output Capture → Analysis → Comparison Report
 ```
 
-### Core Components
+### Key Components for Fair Comparison
 
-- **ModelFactory**: Dynamic model instantiation based on configuration
-- **DynamicExtractor**: Flexible field detection and extraction
-- **SimpleExtractionManager**: Orchestrates the extraction process
-- **UniversalKeyValueParser**: Parses structured data from model outputs
-- **ComparisonRunner**: Evaluates and compares model performance
+- **ComparisonRunner**: Orchestrates unbiased model evaluation across all test images
+- **Analysis Dictionary**: Preserves complete model outputs without interpretation
+- **Model Registry**: Ensures identical configuration for both models
+- **Memory Monitor**: Tracks resource usage for performance comparison
+- **Unified Prompts**: Guarantees both models receive identical instructions
 
 ## 📦 Project Structure
 
@@ -81,7 +81,7 @@ unified_vision_processor_minimal/
 └── docs/                         # Documentation
 ```
 
-## 🚀 Quick Start
+## 🚀 Quick Start - Model Comparison
 
 ### Prerequisites
 
@@ -98,17 +98,28 @@ model_paths:
   internvl: "/path/to/InternVL3-8B"
 ```
 
-### Basic Usage
+### Primary Usage - Running Model Comparisons
 
 ```bash
-# Run model comparison on test dataset
+# Run the main comparison - this is the core purpose of the codebase
 python model_comparison.py
 
-# Extract from single document
-python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png
+# This will:
+# 1. Load both vision models sequentially (V100-optimized)
+# 2. Process all 25 test images with each model
+# 3. Capture raw, unprocessed outputs from each model
+# 4. Display side-by-side comparison of what each model "sees"
+# 5. Generate performance metrics and analysis
+```
 
-# Compare models on single document
+### Additional Tools
+
+```bash
+# Compare models on a specific document
 python -m vision_processor.cli.simple_extract_cli compare datasets/image14.png
+
+# Test individual model (for debugging)
+python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --model llama32_vision
 ```
 
 ## ⚙️ Configuration
@@ -217,6 +228,60 @@ The system evaluates models based on:
 - **Success Rate**: Percentage of documents meeting minimum field threshold
 - **Memory Usage**: GPU memory consumption
 
+## 🔍 Pure Model Comparison Architecture
+
+### The Analysis Dictionary
+
+At the heart of the comparison system is the `analysis_dict`, a carefully designed data structure that captures the complete, unbiased output from each vision model. This approach ensures fair comparison by preserving raw model capabilities without imposing any post-processing that might favor one model over another.
+
+#### Structure and Purpose
+
+```python
+analysis_dict = {
+    "img_name": image_path.name,           # Name of the image file being processed
+    "raw_response": response.raw_text,     # Complete, unmodified output from the model
+    "model_name": model_name,              # Which model produced this result (llama/internvl)
+    "processing_time": response.processing_time,  # How long the model took to process
+    "response_length": len(response.raw_text),   # Character count of the response
+    "successful": True,                    # Always True for raw comparison (no validation)
+    "timestamp": datetime.now().isoformat(),      # When this processing occurred
+}
+```
+
+#### Key Benefits
+
+1. **Complete Output Preservation**: The `raw_response` field stores exactly what each model generates, including:
+   - Properly formatted KEY: VALUE pairs
+   - Markdown-formatted responses
+   - OCR fallback outputs (marked with `<OCR/>`)
+   - Any model-specific formatting quirks
+
+2. **Fair Comparison**: By avoiding any extraction or parsing logic in the data collection phase, we ensure:
+   - No bias toward models that output specific formats
+   - Complete visibility into what each model "sees" in documents
+   - Ability to analyze different response strategies
+
+3. **Performance Tracking**: Processing time and response length provide insights into:
+   - Model efficiency on different document types
+   - Trade-offs between speed and output quality
+   - Resource utilization patterns
+
+4. **Traceability**: The combination of image name, model name, and timestamp enables:
+   - Reproducible comparisons
+   - Debugging of model behavior on specific images
+   - Historical analysis of model improvements
+
+#### Usage in the Pipeline
+
+The `analysis_dict` flows through the comparison pipeline as follows:
+
+1. **Collection Phase**: Each model processes each image, generating an `analysis_dict`
+2. **Aggregation**: Dictionaries are collected in `extraction_results[model_name]`
+3. **Analysis**: The raw data feeds into performance metrics and comparison reports
+4. **Export**: Complete results can be exported for further analysis
+
+This architecture exemplifies the principle of "measure first, interpret later" - by preserving complete model outputs, researchers can apply different analysis approaches without re-running expensive model inference.
+
 ## 📈 Model Support
 
 Both models use the identical prompt defined in `model_comparison.yaml`, ensuring consistent behavior and fair comparison.
@@ -304,7 +369,9 @@ This project is designed for research and evaluation purposes. Model licenses:
 
 ---
 
+**Purpose**: Model Comparison Framework  
 **Status**: Production Ready  
 **Version**: 2.0.0  
-**Last Updated**: 2025-07-22  
-**Models**: InternVL3-8B, Llama-3.2-11B-Vision
+**Last Updated**: 2025-07-23  
+**Core Question**: "Which vision model better understands business documents?"  
+**Models Under Comparison**: InternVL3-8B vs Llama-3.2-11B-Vision

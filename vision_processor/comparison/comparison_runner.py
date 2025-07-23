@@ -471,10 +471,19 @@ class ComparisonRunner:
                             for key, value in sorted_pairs:
                                 # Clean up values - remove trailing asterisks and whitespace
                                 value = value.rstrip("*").strip()
-                                # NO TRUNCATION - show complete extracted data for fair comparison
-                                self.console.print(
-                                    f"   {key:20}: {value}", style="dim cyan"
-                                )
+                                
+                                # Handle OCR fallback in TRANSACTIONS field
+                                if key == "TRANSACTIONS" and "<OCR/>" in value:
+                                    # Extract just the marker for display
+                                    value = "[OCR output returned - model provided full document instead of transaction list]"
+                                    self.console.print(
+                                        f"   {key:20}: {value}", style="dim yellow"
+                                    )
+                                else:
+                                    # NO TRUNCATION - show complete extracted data for fair comparison
+                                    self.console.print(
+                                        f"   {key:20}: {value}", style="dim cyan"
+                                    )
                         else:
                             self.console.print(
                                 "   No structured data extracted", style="dim red"
