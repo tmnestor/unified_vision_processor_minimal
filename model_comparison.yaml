@@ -62,26 +62,26 @@ prompts:
     <|image|>Extract data from this business document in KEY-VALUE format.
     
     Output format:
-    DATE_q: [date from receipt]
-    SUPPLIER_q: [SUPPLIER name]
-    ABN_q: [11-digit Australian Business Number if visible]
-    GST_q: [GST amount]
-    TOTAL_q: [total amount]
-    SUBTOTAL_q: [subtotal amount]
-    SUPPLIER_WEBSITE_q: [supplier website if visible]
-    ITEMS_q: [item names separated by |]
-    QUANTITIES_q: [quantities separated by |]
-    PRICES_q: [prices separated by |]
-    RECEIPT_NUMBER_q: [receipt number if visible]
-    PAYMENT_METHOD_q: [payment method if visible]
-    DOCUMENT_TYPE_q: [if visible]
-    BUSINESS_ADDRESS_q: [business address if visible]
-    BUSINESS_PHONE_q: [business phone if visible]
-    PAYER_NAME_q: [customer/payer name if visible]
-    PAYER_ADDRESS_q: [customer/payer address if visible]
-    PAYER_PHONE_q: [customer/payer phone if visible]
-    PAYER_EMAIL_q: [customer/payer email if visible]
-    BANK_ACCOUNT_NUMBER_q: [bank account number if visible]
+    DATE: [date from receipt]
+    SUPPLIER: [SUPPLIER name]
+    ABN: [11-digit Australian Business Number if visible]
+    GST: [GST amount]
+    TOTAL: [total amount]
+    SUBTOTAL: [subtotal amount]
+    SUPPLIER_WEBSITE: [supplier website if visible]
+    ITEMS: [item names separated by |]
+    QUANTITIES: [quantities separated by |]
+    PRICES: [prices separated by |]
+    RECEIPT_NUMBER: [receipt number if visible]
+    PAYMENT_METHOD: [payment method if visible]
+    DOCUMENT_TYPE: [if visible]
+    BUSINESS_ADDRESS: [business address if visible]
+    BUSINESS_PHONE: [business phone if visible]
+    PAYER_NAME: [customer/payer name if visible]
+    PAYER_ADDRESS: [customer/payer address if visible]
+    PAYER_PHONE: [customer/payer phone if visible]
+    PAYER_EMAIL: [customer/payer email if visible]
+    BANK_ACCOUNT_NUMBER: [bank account number if visible]
 
     Extract all visible text and format as KEY: VALUE pairs only.
 
@@ -89,56 +89,31 @@ prompts:
   #   Extract data from this image in markdown format.
 
   llama: |
+
     <|image|>Extract data from this business document in KEY-VALUE format.
     
     Output format:
-    DATE_q: [date from receipt]
-    SUPPLIER_q: [SUPPLIER name]
-    ABN_q: [11-digit Australian Business Number if visible]
-    GST_q: [GST amount]
-    TOTAL_q: [total amount]
-    SUBTOTAL_q: [subtotal amount]
-    SUPPLIER_WEBSITE_q: [supplier website if visible]
-    ITEMS_q: [item names separated by |]
-    QUANTITIES_q: [quantities separated by |]
-    PRICES_q: [prices separated by |]
-    RECEIPT_NUMBER_q: [receipt number if visible]
-    PAYMENT_METHOD_q: [payment method if visible]
-    DOCUMENT_TYPE_q: [if visible]
-    BUSINESS_ADDRESS_q: [business address if visible]
-    BUSINESS_PHONE_q: [business phone if visible]
-    PAYER_NAME_q: [customer/payer name if visible]
-    PAYER_ADDRESS_q: [customer/payer address if visible]
-    PAYER_PHONE_q: [customer/payer phone if visible]
-    PAYER_EMAIL_q: [customer/payer email if visible]
-    BANK_ACCOUNT_NUMBER_q: [bank account number if visible]
-
+    DATE: [date from receipt]
+    SUPPLIER: [SUPPLIER name]
+    ABN: [11-digit Australian Business Number if visible]
+    GST: [GST amount]
+    TOTAL: [total amount]
+    SUBTOTAL: [subtotal amount]
+    ITEMS: [item names separated by |]
+    QUANTITIES: [quantities separated by |]
+    PRICES: [prices separated by |]
+    RECEIPT_NUMBER: [receipt number if visible]
+    PAYMENT_METHOD: [payment method if visible]
+    DOCUMENT_TYPE: [if visible]
+    BUSINESS_ADDRESS: [business address if visible]
+    BUSINESS_PHONE: [business phone if visible]
+    PAYER_NAME: [customer/payer name if visible]
+    PAYER_ADDRESS: [customer/payer address if visible]
+    PAYER_PHONE: [customer/payer phone if visible]
+    PAYER_EMAIL: [customer/payer email if visible]
+    BANK_ACCOUNT_NUMBER: [bank account number if visible]
+    
     Extract all visible text and format as KEY: VALUE pairs only.
-
-    # <|image|>Extract data from this business document in KEY-VALUE format.
-    
-    # Output format:
-    # DATE: [date from receipt]
-    # SUPPLIER: [SUPPLIER name]
-    # ABN: [11-digit Australian Business Number if visible]
-    # GST: [GST amount]
-    # TOTAL: [total amount]
-    # SUBTOTAL: [subtotal amount]
-    # ITEMS: [item names separated by |]
-    # QUANTITIES: [quantities separated by |]
-    # PRICES: [prices separated by |]
-    # RECEIPT_NUMBER: [receipt number if visible]
-    # PAYMENT_METHOD: [payment method if visible]
-    # DOCUMENT_TYPE: [if visible]
-    # BUSINESS_ADDRESS: [business address if visible]
-    # BUSINESS_PHONE: [business phone if visible]
-    # PAYER_NAME: [customer/payer name if visible]
-    # PAYER_ADDRESS: [customer/payer address if visible]
-    # PAYER_PHONE: [customer/payer phone if visible]
-    # PAYER_EMAIL: [customer/payer email if visible]
-    # BANK_ACCOUNT_NUMBER: [bank account number if visible]
-    
-    # Extract all visible text and format as KEY: VALUE pairs only.
 
 
 
