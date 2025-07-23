@@ -343,10 +343,20 @@ class ComparisonRunner:
 
                         model_results.append(analysis_dict)
 
-                        # Print what the model sees (first 200 chars for readability)
-                        response_preview = response.raw_text[:200] + "..." if len(response.raw_text) > 200 else response.raw_text
+                        # Print what the model sees with better formatting - ALL key-value pairs
                         self.console.print(f"\n🔍 {model_name.upper()} sees in {image_path.name}:")
-                        self.console.print(f"   {response_preview}", style="dim cyan")
+                        
+                        # Parse ALL key-value pairs for readable display
+                        lines = response.raw_text.strip().split('\n')
+                        for line in lines:
+                            if ':' in line:
+                                key, value = line.split(':', 1)
+                                key = key.strip()
+                                value = value.strip()
+                                # Don't truncate - show full values
+                                self.console.print(f"   {key:18}: {value}", style="dim cyan")
+                            elif line.strip():  # Show non-empty lines that don't have colons
+                                self.console.print(f"   [OTHER]         : {line.strip()}", style="dim yellow")
                         
                         # Print progress - raw model comparison
                         status = "✅"  # Always successful for raw comparison
