@@ -504,8 +504,10 @@ class ComparisonRunner:
                             for key, value in sorted_pairs:
                                 # Clean up values - remove trailing asterisks and whitespace
                                 value = value.rstrip("*").strip()
-                                # Truncate very long values for display
-                                if len(value) > 100:
+                                # Truncate very long values for display (except TRANSACTIONS and ITEMS)
+                                if key in ["TRANSACTIONS", "ITEMS"] and len(value) > 500:
+                                    value = value[:497] + "..."
+                                elif key not in ["TRANSACTIONS", "ITEMS"] and len(value) > 100:
                                     value = value[:97] + "..."
                                 self.console.print(
                                     f"   {key:20}: {value}", style="dim cyan"
