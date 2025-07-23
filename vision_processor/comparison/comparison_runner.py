@@ -385,32 +385,8 @@ class ComparisonRunner:
                                         0
                                     ].strip()
 
-                        # Parse key-value pairs - handle the 20-field format
+                        # Parse key-value pairs - handle generic format
                         lines = clean_text.strip().split("\n")
-
-                        # Expected keys in order
-                        expected_keys = [
-                            "DATE",
-                            "SUPPLIER",
-                            "ABN",
-                            "GST",
-                            "TOTAL",
-                            "SUBTOTAL",
-                            "SUPPLIER_WEBSITE",
-                            "ITEMS",
-                            "QUANTITIES",
-                            "PRICES",
-                            "RECEIPT_NUMBER",
-                            "PAYMENT_METHOD",
-                            "DOCUMENT_TYPE",
-                            "BUSINESS_ADDRESS",
-                            "BUSINESS_PHONE",
-                            "PAYER_NAME",
-                            "PAYER_ADDRESS",
-                            "PAYER_PHONE",
-                            "PAYER_EMAIL",
-                            "BANK_ACCOUNT_NUMBER",
-                        ]
 
                         # Extract key-value pairs from response
                         extracted_pairs = {}
@@ -435,39 +411,20 @@ class ComparisonRunner:
                             for num, key, value in numbered_matches:
                                 key = key.strip().upper()
                                 value = value.strip()
-                                if key in expected_keys:
-                                    extracted_pairs[key] = value
+                                extracted_pairs[key] = value
                                 # DEBUG: Show what we're extracting
                                 if len(numbered_matches) < 25:  # Only show if reasonable number
                                     self.console.print(f"DEBUG:   {num}. {key}: {value[:50]}{'...' if len(value) > 50 else ''}", style="dim yellow")
-                        elif len(lines) == 1 or (
-                            len(lines) > 0
-                            and all(
-                                key in lines[0]
-                                for key in ["DATE:", "SUPPLIER:", "ABN:"]
-                            )
-                        ):
-                            # Single line format - parse all key-value pairs from the first line
+                        elif len(lines) == 1:
+                            # Single line format - parse all key-value pairs
                             text = lines[0] if lines else ""
-
-                            # Extract each expected key in order
-                            for i, key in enumerate(expected_keys):
-                                key_pattern = f"{key}:"
-                                if key_pattern in text:
-                                    start_idx = text.find(key_pattern) + len(
-                                        key_pattern
-                                    )
-                                    # Find the next key or end of string
-                                    next_key_idx = len(text)
-                                    for next_key in expected_keys[i + 1 :]:
-                                        next_pattern = f" {next_key}:"
-                                        if next_pattern in text[start_idx:]:
-                                            next_key_idx = text.find(
-                                                next_pattern, start_idx
-                                            )
-                                            break
-                                    value = text[start_idx:next_key_idx].strip()
-                                    extracted_pairs[key] = value
+                            # Generic pattern to find all KEY: VALUE pairs
+                            kv_pattern = r'([A-Z_]+):\s*([^:]+?)(?=\s+[A-Z_]+:|$)'
+                            kv_matches = re.findall(kv_pattern, text)
+                            for key, value in kv_matches:
+                                key = key.strip().upper()
+                                value = value.strip()
+                                extracted_pairs[key] = value
                         else:
                             # Multi-line format - parse line by line
                             for line in lines:
@@ -478,20 +435,22 @@ class ComparisonRunner:
                                         key, value = line.split(":", 1)
                                         key = key.strip().upper()
                                         value = value.strip()
-                                        if key in expected_keys:
+                                        if key and value:  # Only add if both key and value exist
                                             extracted_pairs[key] = value
                                     except ValueError:
                                         pass
 
-                        # Display all expected fields (show N/A for missing ones)
-                        for key in expected_keys:
-                            value = extracted_pairs.get(key, "N/A")
-                            # Truncate very long values for display
-                            if len(value) > 100:
-                                value = value[:97] + "..."
-                            self.console.print(
-                                f"   {key:18}: {value}", style="dim cyan"
-                            )
+                        # Display all extracted fields
+                        if extracted_pairs:
+                            for key, value in extracted_pairs.items():
+                                # Truncate very long values for display
+                                if len(value) > 100:
+                                    value = value[:97] + "..."
+                                self.console.print(
+                                    f"   {key:20}: {value}", style="dim cyan"
+                                )
+                        else:
+                            self.console.print("   No structured data extracted", style="dim red")
 
                         # Print progress - raw model comparison
                         status = "✅"  # Always successful for raw comparison

@@ -66,66 +66,47 @@ model_paths:
 prompts:
 
   internvl: |
-    <|image|>Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
-
-    REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
-    DATE: [value or N/A]
-    SUPPLIER: [value or N/A]
-    ABN: [value or N/A]
-    GST: [value or N/A]
-    TOTAL: [value or N/A]
-    SUBTOTAL: [value or N/A]
-    SUPPLIER_WEBSITE: [value or N/A]
-    ITEMS: [value or N/A]
-    QUANTITIES: [value or N/A]
-    PRICES: [value or N/A]
-    RECEIPT_NUMBER: [value or N/A]
-    PAYMENT_METHOD: [value or N/A]
-    DOCUMENT_TYPE: [value or N/A]
-    BUSINESS_ADDRESS: [value or N/A]
-    BUSINESS_PHONE: [value or N/A]
-    PAYER_NAME: [value or N/A]
-    PAYER_ADDRESS: [value or N/A]
-    PAYER_PHONE: [value or N/A]
-    PAYER_EMAIL: [value or N/A]
-    BANK_ACCOUNT_NUMBER: [value or N/A]
-
-    Output exactly 20 lines above. Include ALL keys even if value is N/A. No other text.
+    <|image|>Analyze this business document and extract ALL relevant information.
+    
+    INSTRUCTIONS:
+    1. First identify the document type (invoice, receipt, bank statement, etc.)
+    2. Extract ALL key information you can see
+    3. Use KEY: VALUE format
+    4. NO repetition - output each piece of information ONLY ONCE
+    5. NO explanations or additional text
+    
+    Start with:
+    DOCUMENT_TYPE: [type of document]
+    
+    Then extract all relevant fields based on document type, such as:
+    - For invoices/receipts: date, supplier, items, prices, totals, tax info
+    - For bank statements: bank name, account info, transactions, balances
+    - For other documents: extract whatever information is present
+    
+    Output information in clear KEY: VALUE format.
 
   # llama: |
   #   Extract data from this image in markdown format.
 
   llama: |
-    <|image|>Extract data from this business document. 
+    <|image|>Analyze this business document and extract ALL relevant information.
     
-    CRITICAL INSTRUCTIONS:
-    1. Output EXACTLY 20 lines in the format below
-    2. NO repetition - output each field ONLY ONCE
-    3. NO explanations or additional text
-    4. STOP immediately after line 20
-    5. Use "N/A" for missing fields
+    INSTRUCTIONS:
+    1. First identify the document type (invoice, receipt, bank statement, etc.)
+    2. Extract ALL key information you can see
+    3. Use KEY: VALUE format
+    4. NO repetition - output each piece of information ONLY ONCE
+    5. NO explanations or additional text
     
-    REQUIRED OUTPUT (exactly these 20 lines):
-    DATE: [value or N/A]
-    SUPPLIER: [value or N/A]
-    ABN: [value or N/A]
-    GST: [value or N/A]
-    TOTAL: [value or N/A]
-    SUBTOTAL: [value or N/A]
-    SUPPLIER_WEBSITE: [value or N/A]
-    ITEMS: [value or N/A]
-    QUANTITIES: [value or N/A]
-    PRICES: [value or N/A]
-    RECEIPT_NUMBER: [value or N/A]
-    PAYMENT_METHOD: [value or N/A]
-    DOCUMENT_TYPE: [value or N/A]
-    BUSINESS_ADDRESS: [value or N/A]
-    BUSINESS_PHONE: [value or N/A]
-    PAYER_NAME: [value or N/A]
-    PAYER_ADDRESS: [value or N/A]
-    PAYER_PHONE: [value or N/A]
-    PAYER_EMAIL: [value or N/A]
-    BANK_ACCOUNT_NUMBER: [value or N/A]
+    Start with:
+    DOCUMENT_TYPE: [type of document]
+    
+    Then extract all relevant fields based on document type, such as:
+    - For invoices/receipts: date, supplier, items, prices, totals, tax info
+    - For bank statements: bank name, account info, transactions, balances
+    - For other documents: extract whatever information is present
+    
+    Output information in clear KEY: VALUE format.
 
   # Alternative prompt versions (commented out for reference)
   # internvl_simple: |
