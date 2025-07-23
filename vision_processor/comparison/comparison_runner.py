@@ -331,24 +331,24 @@ class ComparisonRunner:
                             max_new_tokens=self.config.processing.max_tokens,
                         )
 
-                        # DEBUG: Print actual response length and content (commented out - enable if needed)
-                        # self.console.print(
-                        #     f"DEBUG: Raw response length: {len(response.raw_text)} chars",
-                        #     style="red",
-                        # )
-                        # self.console.print(
-                        #     f"DEBUG: Last 50 chars: '{response.raw_text[-50:]}'",
-                        #     style="red",
-                        # )
+                        # DEBUG: Print actual response length and content
+                        self.console.print(
+                            f"DEBUG: Raw response length: {len(response.raw_text)} chars",
+                            style="red",
+                        )
+                        self.console.print(
+                            f"DEBUG: Last 50 chars: '{response.raw_text[-50:]}'",
+                            style="red",
+                        )
 
-                        # DEBUG: Show full raw response to understand format (commented out - enable if needed)
-                        # if (
-                        #     len(response.raw_text) < 3000
-                        # ):  # Only show if reasonable length
-                        #     self.console.print(
-                        #         "DEBUG: Full raw response:", style="yellow"
-                        #     )
-                        #     self.console.print(response.raw_text, style="dim yellow")
+                        # DEBUG: Show full raw response to understand format
+                        if (
+                            len(response.raw_text) < 3000
+                        ):  # Only show if reasonable length
+                            self.console.print(
+                                "DEBUG: Full raw response:", style="yellow"
+                            )
+                            self.console.print(response.raw_text, style="dim yellow")
 
                         # Pure model comparison: minimal processing to preserve raw outputs
                         analysis_dict = {
