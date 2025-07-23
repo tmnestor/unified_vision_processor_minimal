@@ -47,6 +47,9 @@ output/
 results/
 logs/
 
+# Timestamped output files
+output_????????_??????.txt
+
 # Dataset cache
 .cache/
 datasets_cache/
