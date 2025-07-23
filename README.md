@@ -122,29 +122,79 @@ python -m vision_processor.cli.simple_extract_cli compare datasets/image14.png
 python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --model llama32_vision
 ```
 
+### Debug Mode
+
+To enable detailed debug output (raw responses, parsing info):
+```bash
+# Enable debug mode
+export VISION_DEBUG=true
+python model_comparison.py
+
+# Disable debug mode (default)
+export VISION_DEBUG=false
+python model_comparison.py
+```
+
 ## ⚙️ Configuration
+
+**CRITICAL FOR PRODUCTION**: All configuration parameters are now in YAML files as the single source of truth. No hardcoded values remain in the code, enabling easy debugging and tuning without code changes.
 
 The system uses YAML-based configuration with two main files:
 
 ### model_comparison.yaml
-Primary configuration for model paths, device settings, and prompts:
+Primary configuration for model paths, device settings, and ALL comparison parameters:
 ```yaml
 # Model paths
 model_paths:
   llama: "/path/to/Llama-3.2-11B-Vision-Instruct"
   internvl: "/path/to/InternVL3-8B"
 
-# Device configuration
-device_config:
-  gpu_strategy: "single_gpu"
-  v100_mode: true
-  memory_limit_gb: 16
+# Quality rating thresholds (realistic for business documents)
+quality_thresholds:
+  excellent: 12    # 12+ fields = Excellent (nearly half of possible fields)
+  good: 8          # 8-11 fields = Good (solid extraction)
+  fair: 5          # 5-7 fields = Fair (basic extraction)
+  poor: 0          # <5 fields = Poor
 
-# Extraction settings  
-min_fields_for_success: 1
-defaults:
-  max_tokens: 256
-  quantization: true
+# Processing speed rating thresholds (realistic for H200/V100 hardware)
+speed_thresholds:
+  very_fast: 15.0  # <15s = Very Fast (optimized)
+  fast: 25.0       # 15-25s = Fast (good performance)
+  moderate: 40.0   # 25-40s = Moderate (acceptable)
+
+# Expected fields for extraction (26 fields total)
+expected_fields:
+  - DOCUMENT_TYPE
+  - SUPPLIER
+  - ABN
+  # ... (full list of 26 fields)
+# Note: ALL 26 fields are compared - no arbitrary subset
+
+# Memory and hardware configuration
+memory_config:
+  v100_limit_gb: 16.0      # V100 GPU memory limit
+  safety_margin: 0.85      # Use 85% of available memory
+
+# Image processing configuration  
+image_processing:
+  max_image_size: 1024     # Maximum image dimension
+  timeout_seconds: 10      # Processing timeout
+
+# Repetition control configuration
+repetition_control:
+  enabled: true               # Enable repetition detection
+  word_threshold: 0.15        # 15% word repetition threshold
+  phrase_threshold: 2         # 2 phrase repetitions trigger cleaning
+  fallback_max_tokens: 1000   # Fallback token limit
+
+# Model-specific configurations
+model_config:
+  llama:
+    max_new_tokens_limit: 2024  # Token generation limit
+    confidence_score: 0.85      # Default confidence
+  internvl:
+    max_new_tokens_limit: 2024  # Token generation limit
+    confidence_score: 0.95      # Default confidence
 ```
 
 ### prompts.yaml
@@ -221,14 +271,53 @@ python model_comparison.py
 python -m vision_processor.cli.simple_extract_cli config-info
 ```
 
-### Evaluation Metrics
-The system evaluates models based on:
-- **Field Extraction Rate**: Number of fields successfully extracted
+### Current Evaluation Metrics
+The system currently measures:
 - **Processing Speed**: Time per document
-- **Success Rate**: Percentage of documents meeting minimum field threshold
-- **Memory Usage**: GPU memory consumption
+- **Response Length**: Average character count of model outputs
+- **Memory Usage**: GPU memory consumption during inference
+- **Output Format**: Observation of response patterns (structured vs. markdown vs. OCR)
+
+Note: The system preserves all data needed for quality comparison but does not currently implement automated scoring.
 
 ## 🔍 Pure Model Comparison Architecture
+
+### Field Extraction Comparison
+
+The framework now implements comprehensive field-by-field comparison:
+
+**The Crucial Metrics**:
+
+1. **Average Fields Extracted**: Mean number of fields (out of 26) that each model successfully extracts per document
+   - This metric best answers "Which model better understands business documents?"
+   - Shows instruction following, document comprehension, and extraction completeness
+   - **Realistic quality ratings**: Excellent (12+), Good (8-11), Fair (5-7), Poor (<5)
+   - Note: Most business documents won't have all 26 fields - invoices lack bank info, statements lack invoice details
+
+2. **Average Processing Time**: Mean time (in seconds) each model takes to process a document
+   - Critical for production deployment and user experience
+   - Determines throughput and scalability
+   - **Realistic speed ratings**: Very Fast (<15s), Fast (15-25s), Moderate (25-40s), Slow (>40s)
+   - Trade-off analysis: extraction quality vs. processing speed
+
+**Additional Metrics**:
+- **Extraction Rate**: How often each model successfully extracts each of the 26 defined fields
+- **Value Rate**: How often extracted fields contain actual values (not "N/A")
+- **Top Fields**: Which fields are most reliably extracted by each model
+- **Key Field Comparison**: Direct comparison on critical fields (DOCUMENT_TYPE, SUPPLIER, TOTAL, GST, ABN)
+- **Winner Declaration**: Clear statement of which model extracts more fields on average
+
+**Analysis Approach**:
+1. Both models receive identical prompts requesting 26 specific fields
+2. Responses are parsed to extract KEY: VALUE pairs
+3. Extracted fields are stored in `extracted_fields` dictionary
+4. Field-by-field comparison shows extraction success rates
+5. Raw responses are preserved for additional analysis
+
+**What's NOT implemented**:
+- Semantic accuracy validation (comparing extracted values to ground truth)
+- Fuzzy matching for similar but not exact field values
+- Confidence scoring for individual extractions
 
 ### The Analysis Dictionary
 
@@ -245,6 +334,13 @@ analysis_dict = {
     "response_length": len(response.raw_text),   # Character count of the response
     "successful": True,                    # Always True for raw comparison (no validation)
     "timestamp": datetime.now().isoformat(),      # When this processing occurred
+    "extracted_fields": {                  # Parsed KEY: VALUE pairs from the response
+        "DOCUMENT_TYPE": "Invoice",
+        "SUPPLIER": "Telstra Limited",
+        "ABN": "64 086 174 781",
+        "TOTAL": "$65.00",
+        # ... up to 26 fields as defined in prompt
+    }
 }
 ```
 

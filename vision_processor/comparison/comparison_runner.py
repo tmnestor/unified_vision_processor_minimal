@@ -6,6 +6,7 @@ model loading, extraction, analysis, and reporting generation.
 """
 
 import gc
+import os
 import re
 import time
 from dataclasses import dataclass
@@ -331,28 +332,32 @@ class ComparisonRunner:
                             max_new_tokens=self.config.processing.max_tokens,
                         )
 
-                        # DEBUG: Print actual response length and content
-                        self.console.print(
-                            f"DEBUG: Raw response length: {len(response.raw_text)} chars",
-                            style="red",
-                        )
-                        self.console.print(
-                            f"DEBUG: Last 50 chars: '{response.raw_text[-50:]}'",
-                            style="red",
-                        )
-
-                        # DEBUG: Show full raw response to understand format
-                        if (
-                            len(response.raw_text) < 4000
-                        ):  # Only show if reasonable length
+                        # Only show debug output if VISION_DEBUG environment variable is set
+                        debug_mode = os.getenv("VISION_DEBUG", "false").lower() == "true"
+                        
+                        if debug_mode:
+                            # DEBUG: Print actual response length and content
                             self.console.print(
-                                "DEBUG: Full raw response:", style="yellow"
+                                f"DEBUG: Raw response length: {len(response.raw_text)} chars",
+                                style="red",
                             )
-                            # Show first 2000 chars if longer
-                            if len(response.raw_text) > 2000:
-                                self.console.print(response.raw_text[:2000] + "...[TRUNCATED]", style="dim yellow")
-                            else:
-                                self.console.print(response.raw_text, style="dim yellow")
+                            self.console.print(
+                                f"DEBUG: Last 50 chars: '{response.raw_text[-50:]}'",
+                                style="red",
+                            )
+
+                            # DEBUG: Show full raw response to understand format
+                            if (
+                                len(response.raw_text) < 4000
+                            ):  # Only show if reasonable length
+                                self.console.print(
+                                    "DEBUG: Full raw response:", style="yellow"
+                                )
+                                # Show first 2000 chars if longer
+                                if len(response.raw_text) > 2000:
+                                    self.console.print(response.raw_text[:2000] + "...[TRUNCATED]", style="dim yellow")
+                                else:
+                                    self.console.print(response.raw_text, style="dim yellow")
 
                         # Pure model comparison: minimal processing to preserve raw outputs
                         analysis_dict = {
@@ -363,6 +368,7 @@ class ComparisonRunner:
                             "response_length": len(response.raw_text),
                             "successful": True,  # Always true for raw comparison
                             "timestamp": datetime.now().isoformat(),
+                            "extracted_fields": {},  # Initialize empty dict for parsed fields
                         }
 
                         model_results.append(analysis_dict)
@@ -405,10 +411,11 @@ class ComparisonRunner:
                         # Parse key-value pairs - handle generic format
                         lines = clean_text.strip().split("\n")
                         
-                        # DEBUG: Show parsing info
-                        self.console.print(f"DEBUG: Parsing {len(lines)} lines", style="yellow")
-                        if len(lines) > 0:
-                            self.console.print(f"DEBUG: First line: '{lines[0][:100]}...'", style="yellow")
+                        # DEBUG: Show parsing info (only if debug mode enabled)
+                        if debug_mode:
+                            self.console.print(f"DEBUG: Parsing {len(lines)} lines", style="yellow")
+                            if len(lines) > 0:
+                                self.console.print(f"DEBUG: First line: '{lines[0][:100]}...'", style="yellow")
 
                         # Extract key-value pairs from response
                         extracted_pairs = {}
@@ -484,6 +491,9 @@ class ComparisonRunner:
                                     self.console.print(
                                         f"   {key:20}: {value}", style="dim cyan"
                                     )
+                            
+                            # Store the extracted fields in the analysis_dict
+                            analysis_dict["extracted_fields"] = extracted_pairs
                         else:
                             self.console.print(
                                 "   No structured data extracted", style="dim red"
@@ -577,50 +587,243 @@ class ComparisonRunner:
     def _run_analysis(
         self, extraction_results: Dict[str, List[Dict[str, Any]]]
     ) -> Dict[str, Any]:
-        """Run simple analysis on raw model outputs for document understanding comparison."""
+        """Run analysis comparing extracted fields between models."""
         self.console.print(
-            "\n📊 RAW MODEL DOCUMENT UNDERSTANDING COMPARISON", style="bold green"
+            "\n📊 MODEL FIELD EXTRACTION COMPARISON", style="bold green"
         )
 
-        # Simple raw response comparison
         analysis_results = {}
+        
+        # Get expected fields from YAML config (single source of truth)
+        expected_fields = self.config.yaml_config.get("expected_fields", [
+            "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS",
+            "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST",
+            "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "ITEMS", "QUANTITIES",
+            "PRICES", "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME",
+            "BSB_NUMBER", "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER",
+            "STATEMENT_PERIOD", "OPENING_BALANCE", "CLOSING_BALANCE", "TRANSACTIONS"
+        ])
 
-        # Basic statistics for each model
+        # Analyze field extraction by model
+        model_field_stats = {}
+        
+        for model_name, results in extraction_results.items():
+            total_fields_extracted = 0
+            field_extraction_counts = {field: 0 for field in expected_fields}
+            fields_with_values = {field: 0 for field in expected_fields}
+            
+            for result in results:
+                extracted = result.get("extracted_fields", {})
+                total_fields_extracted += len(extracted)
+                
+                for field in expected_fields:
+                    if field in extracted:
+                        field_extraction_counts[field] += 1
+                        if extracted[field] not in ["N/A", "n/a", ""]:
+                            fields_with_values[field] += 1
+            
+            avg_fields_per_doc = total_fields_extracted / len(results) if results else 0
+            
+            model_field_stats[model_name] = {
+                "total_docs": len(results),
+                "avg_fields_extracted": avg_fields_per_doc,
+                "field_extraction_rates": {
+                    field: count / len(results) if results else 0
+                    for field, count in field_extraction_counts.items()
+                },
+                "field_value_rates": {
+                    field: count / len(results) if results else 0
+                    for field, count in fields_with_values.items()
+                }
+            }
+            
+            # Print summary with emphasis on the crucial metric
+            self.console.print(f"\n📝 {model_name.upper()} Field Extraction:")
+            self.console.print(
+                f"   [bold cyan]Average fields extracted: {avg_fields_per_doc:.1f}/26 ({(avg_fields_per_doc/26)*100:.1f}%)[/bold cyan]"
+            )
+            
+            # Show completion quality using YAML config thresholds
+            quality_thresholds = self.config.yaml_config.get("quality_thresholds", {
+                "excellent": 24, "good": 20, "fair": 15, "poor": 0
+            })
+            
+            if avg_fields_per_doc >= quality_thresholds["excellent"]:
+                quality = "Excellent - Near complete extraction"
+                style = "bold green"
+            elif avg_fields_per_doc >= quality_thresholds["good"]:
+                quality = "Good - Most fields extracted"
+                style = "green"
+            elif avg_fields_per_doc >= quality_thresholds["fair"]:
+                quality = "Fair - Moderate extraction"
+                style = "yellow"
+            else:
+                quality = "Poor - Many fields missing"
+                style = "red"
+            self.console.print(f"   Quality: [{style}]{quality}[/{style}]")
+            
+            # Show top extracted fields
+            top_fields = sorted(
+                fields_with_values.items(), 
+                key=lambda x: x[1], 
+                reverse=True
+            )[:5]
+            self.console.print("   Top extracted fields with values:")
+            for field, count in top_fields:
+                rate = (count / len(results)) * 100 if results else 0
+                self.console.print(f"     - {field}: {rate:.1f}%")
+
+        # Compare models on ALL expected fields (why limit to just 5?)
+        self.console.print("\n🔍 Complete Field-by-Field Comparison:")
+        self.console.print("   (Showing all fields with >0% extraction by at least one model)")
+        
+        # Find fields that at least one model extracted with some success
+        active_fields = []
+        for field in expected_fields:
+            has_extractions = any(
+                stats["field_value_rates"][field] > 0 
+                for stats in model_field_stats.values()
+            )
+            if has_extractions:
+                active_fields.append(field)
+        
+        for field in active_fields:
+            self.console.print(f"\n   {field}:")
+            for model_name, stats in model_field_stats.items():
+                rate = stats["field_value_rates"][field] * 100
+                if rate > 0:
+                    self.console.print(f"     {model_name}: {rate:.1f}% extraction rate")
+                else:
+                    self.console.print(f"     {model_name}: [dim]0% extraction rate[/dim]")
+
+        # Calculate and display performance metrics
+        self.console.print("\n⏱️  Processing Speed Comparison:")
+        processing_times = {}
         for model_name, results in extraction_results.items():
             total_responses = len(results)
-            avg_response_length = (
-                sum(r.get("response_length", 0) for r in results) / total_responses
-                if total_responses > 0
-                else 0
-            )
             avg_processing_time = (
                 sum(r.get("processing_time", 0) for r in results) / total_responses
                 if total_responses > 0
                 else 0
             )
-
+            processing_times[model_name] = avg_processing_time
+            
+            # Determine speed rating using YAML config thresholds
+            speed_thresholds = self.config.yaml_config.get("speed_thresholds", {
+                "very_fast": 2.0, "fast": 5.0, "moderate": 10.0
+            })
+            
+            if avg_processing_time < speed_thresholds["very_fast"]:
+                speed_rating = "Very Fast"
+                speed_style = "bold green"
+            elif avg_processing_time < speed_thresholds["fast"]:
+                speed_rating = "Fast"
+                speed_style = "green"
+            elif avg_processing_time < speed_thresholds["moderate"]:
+                speed_rating = "Moderate"
+                speed_style = "yellow"
+            else:
+                speed_rating = "Slow"
+                speed_style = "red"
+            
             self.console.print(
-                f"📝 {model_name.upper()}: {total_responses} responses, avg {avg_response_length:.0f} chars, {avg_processing_time:.1f}s"
+                f"   {model_name.upper()}: [{speed_style}]{avg_processing_time:.1f}s per document ({speed_rating})[/{speed_style}]"
             )
+        
+        # Show speed advantage
+        if len(processing_times) == 2:
+            models = list(processing_times.items())
+            faster = min(models, key=lambda x: x[1])
+            slower = max(models, key=lambda x: x[1])
+            if slower[1] > 0:
+                speed_advantage = ((slower[1] - faster[1]) / slower[1]) * 100
+                self.console.print(
+                    f"   [cyan]{faster[0].upper()} is {speed_advantage:.1f}% faster[/cyan]"
+                )
 
         analysis_results["performance"] = {
-            "comparison": "Raw model output comparison - no complex metrics",
+            "comparison": "Field-by-field extraction comparison",
             "models": list(extraction_results.keys()),
             "total_images": len(next(iter(extraction_results.values()), [])),
         }
 
         analysis_results["field"] = {
-            "summary": "Raw output analysis - no field extraction performed",
+            "summary": "Detailed field extraction analysis",
+            "model_stats": model_field_stats,
+            "expected_fields": expected_fields
         }
 
         analysis_results["metrics"] = {
             "summary": {
-                "analysis_type": "Pure document understanding comparison",
-                "focus": "Raw model responses without regex processing",
+                "analysis_type": "Structured field extraction comparison",
+                "focus": "Comparing extraction rates for 26 defined fields",
             },
         }
 
-        self.console.print("✅ Information Extraction Capability analysis complete")
+        # Determine the winner based on both crucial metrics
+        self.console.print("\n🏆 OVERALL COMPARISON RESULTS:")
+        
+        # Field extraction winner
+        model_scores = {
+            model: stats["avg_fields_extracted"] 
+            for model, stats in model_field_stats.items()
+        }
+        
+        field_winner = max(model_scores.items(), key=lambda x: x[1])
+        field_loser = min(model_scores.items(), key=lambda x: x[1])
+        
+        self.console.print("\n   📊 Field Extraction Quality:")
+        if field_winner[1] - field_loser[1] < 1.0:  # Less than 1 field difference
+            self.console.print(
+                f"      [yellow]Too close to call! Both models extracted ~{field_winner[1]:.1f} fields on average[/yellow]"
+            )
+        else:
+            self.console.print(
+                f"      [bold green]{field_winner[0].upper()} wins with {field_winner[1]:.1f}/26 fields[/bold green]"
+            )
+            self.console.print(
+                f"      [dim]{field_loser[0].upper()} extracted {field_loser[1]:.1f}/26 fields[/dim]"
+            )
+            advantage = ((field_winner[1] - field_loser[1]) / field_loser[1]) * 100 if field_loser[1] > 0 else 0
+            self.console.print(
+                f"      [cyan]Advantage: {advantage:.1f}% more fields extracted[/cyan]"
+            )
+        
+        # Speed winner
+        self.console.print("\n   ⚡ Processing Speed:")
+        speed_winner = None
+        if len(processing_times) >= 2:
+            speed_winner = min(processing_times.items(), key=lambda x: x[1])
+            speed_loser = max(processing_times.items(), key=lambda x: x[1])
+            self.console.print(
+                f"      [bold green]{speed_winner[0].upper()} wins at {speed_winner[1]:.1f}s per document[/bold green]"
+            )
+            self.console.print(
+                f"      [dim]{speed_loser[0].upper()} takes {speed_loser[1]:.1f}s per document[/dim]"
+            )
+            
+        # Overall recommendation
+        self.console.print("\n   💡 Recommendation:")
+        if speed_winner and field_winner[0] == speed_winner[0]:
+            self.console.print(
+                f"      [bold green]{field_winner[0].upper()} is the clear winner - best quality AND fastest![/bold green]"
+            )
+        elif speed_winner:
+            self.console.print(
+                "      [yellow]Trade-off decision required:[/yellow]"
+            )
+            self.console.print(
+                f"      - Choose {field_winner[0].upper()} for better extraction quality ({field_winner[1]:.1f} fields)"
+            )
+            self.console.print(
+                f"      - Choose {speed_winner[0].upper()} for faster processing ({speed_winner[1]:.1f}s per doc)"
+            )
+        else:
+            self.console.print(
+                f"      [bold green]{field_winner[0].upper()} wins on extraction quality![/bold green]"
+            )
+
+        self.console.print("\n✅ Field extraction comparison complete")
         return analysis_results
 
     def _calculate_success_metrics(

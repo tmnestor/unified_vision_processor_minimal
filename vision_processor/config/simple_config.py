@@ -72,16 +72,20 @@ class SimpleConfig:
         self.output_format = os.getenv("VISION_OUTPUT_FORMAT", "table")
         self.log_level = os.getenv("VISION_LOG_LEVEL", "INFO")
 
-        # Repetition control settings (ultra-aggressive for Llama-3.2-Vision)
+        # Repetition control settings - read from YAML first (single source of truth)
+        yaml_repetition = self.yaml_config.get("repetition_control", {})
         self.repetition_control_enabled = (
-            os.getenv("VISION_REPETITION_CONTROL_ENABLED", "true").lower() == "true"
+            os.getenv("VISION_REPETITION_CONTROL_ENABLED", 
+                     str(yaml_repetition.get("enabled", "true"))).lower() == "true"
         )
         self.repetition_word_threshold = float(
-            os.getenv("VISION_REPETITION_WORD_THRESHOLD", "0.15")
-        )  # 15% threshold - ultra-aggressive
+            os.getenv("VISION_REPETITION_WORD_THRESHOLD", 
+                     str(yaml_repetition.get("word_threshold", "0.15")))
+        )
         self.repetition_phrase_threshold = int(
-            os.getenv("VISION_REPETITION_PHRASE_THRESHOLD", "2")
-        )  # 2 repetitions trigger cleaning
+            os.getenv("VISION_REPETITION_PHRASE_THRESHOLD", 
+                     str(yaml_repetition.get("phrase_threshold", "2")))
+        )
         # Read max_tokens_limit from YAML config (single source of truth)
         yaml_token_limit = (
             self.yaml_config.get("model_config", {})

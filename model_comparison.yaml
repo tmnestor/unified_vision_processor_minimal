@@ -3,8 +3,63 @@
 
 
 
-# Success criteria - simplified
+# Success criteria and quality thresholds
 min_fields_for_success: 1  # Document is successful if it extracts at least 1 fields
+
+# Quality rating thresholds for field extraction (realistic for business documents)
+quality_thresholds:
+  excellent: 12    # 12+ fields = Excellent (nearly half of possible fields)
+  good: 8          # 8-11 fields = Good (solid extraction)
+  fair: 5          # 5-7 fields = Fair (basic extraction)
+  poor: 0          # <5 fields = Poor
+
+# Processing speed rating thresholds (seconds per document - realistic for H200/V100)
+speed_thresholds:
+  very_fast: 15.0  # <15s = Very Fast (optimized)
+  fast: 25.0       # 15-25s = Fast (good performance)
+  moderate: 40.0   # 25-40s = Moderate (acceptable)
+                   # >40s = Slow (needs optimization)
+
+# Memory and hardware configuration
+memory_config:
+  v100_limit_gb: 16.0      # V100 GPU memory limit
+  safety_margin: 0.85      # Use 85% of available memory for safety
+  
+# Image processing configuration  
+image_processing:
+  max_image_size: 1024     # Maximum image dimension for resizing
+  timeout_seconds: 10      # Processing timeout per image
+
+# Expected fields for extraction (single source of truth)
+expected_fields:
+  - DOCUMENT_TYPE
+  - SUPPLIER
+  - ABN
+  - PAYER_NAME
+  - PAYER_ADDRESS
+  - PAYER_PHONE
+  - PAYER_EMAIL
+  - INVOICE_DATE
+  - DUE_DATE
+  - GST
+  - TOTAL
+  - SUBTOTAL
+  - SUPPLIER_WEBSITE
+  - ITEMS
+  - QUANTITIES
+  - PRICES
+  - BUSINESS_ADDRESS
+  - BUSINESS_PHONE
+  - BANK_NAME
+  - BSB_NUMBER
+  - BANK_ACCOUNT_NUMBER
+  - ACCOUNT_HOLDER
+  - STATEMENT_PERIOD
+  - OPENING_BALANCE
+  - CLOSING_BALANCE
+  - TRANSACTIONS
+
+# Note: All expected_fields are compared - no arbitrary subset selection
 
 # CLI defaults
 defaults:
@@ -19,8 +74,17 @@ defaults:
 model_config:
   llama:
     max_new_tokens_limit: 2024  # Exact multiple of model architecture
+    confidence_score: 0.85      # Default confidence for Llama responses
   internvl:
     max_new_tokens_limit: 2024  # Ensure consistent limits across models
+    confidence_score: 0.95      # Default confidence for InternVL responses
+
+# Repetition control configuration
+repetition_control:
+  enabled: true               # Enable repetition detection and cleanup
+  word_threshold: 0.15        # 15% word repetition threshold
+  phrase_threshold: 2         # 2 phrase repetitions trigger cleaning
+  fallback_max_tokens: 1000   # Fallback token limit for repetition control
 
 # Device configuration for V100 production deployment
 device_config:

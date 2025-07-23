@@ -47,8 +47,9 @@ class LlamaVisionModel(BaseVisionModel):
         self.config = kwargs.get("config")
 
         # Initialize ultra-aggressive repetition controller
-        # Extract configuration from kwargs
-        repetition_config = kwargs.get("repetition_control", {})
+        # Extract configuration from YAML config first, then kwargs
+        yaml_repetition_config = getattr(self.config, "yaml_config", {}).get("repetition_control", {})
+        repetition_config = kwargs.get("repetition_control", yaml_repetition_config)
         word_threshold = repetition_config.get("word_threshold", 0.15)
         phrase_threshold = repetition_config.get("phrase_threshold", 2)
 
@@ -64,10 +65,11 @@ class LlamaVisionModel(BaseVisionModel):
             yaml_limit = model_config.get("llama", {}).get("max_new_tokens_limit")
 
         # Use YAML config as single source of truth, fallback to repetition_config, then default
+        fallback_tokens = yaml_repetition_config.get("fallback_max_tokens", 1000)
         self.max_new_tokens_limit = (
             yaml_limit
             or repetition_config.get("max_new_tokens_limit")
-            or 384  # Final fallback
+            or fallback_tokens
         )
 
         # Now create repetition controller with the correct token limit
@@ -253,8 +255,10 @@ class LlamaVisionModel(BaseVisionModel):
 
     def _validate_v100_compliance(self, estimated_memory_gb: float) -> None:
         """Validate that estimated memory usage complies with V100 limits."""
-        v100_limit_gb = 16.0
-        safety_margin = 0.85  # Use 85% of available memory for safety
+        # Get memory config from YAML (single source of truth)
+        memory_config = getattr(self.config, "yaml_config", {}).get("memory_config", {})
+        v100_limit_gb = memory_config.get("v100_limit_gb", 16.0)
+        safety_margin = memory_config.get("safety_margin", 0.85)
         effective_limit = v100_limit_gb * safety_margin
 
         if estimated_memory_gb > effective_limit:
@@ -494,8 +498,10 @@ class LlamaVisionModel(BaseVisionModel):
         if image.mode != "RGB":
             image = image.convert("RGB")
 
-        # Resize if too large (Llama has size limits)
-        max_size = 1024
+        # Resize if too large using YAML config
+        image_config = getattr(self.config, "yaml_config", {}).get("image_processing", {})
+        max_size = image_config.get("max_image_size", 1024)
+        
         if max(image.size) > max_size:
             image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
             logger.info(f"Image resized to {image.size} (max: {max_size})")
@@ -597,10 +603,11 @@ class LlamaVisionModel(BaseVisionModel):
             if self.repetition_enabled:
                 max_tokens = min(max_tokens, self.max_new_tokens_limit)
 
-            # DEBUG: Show actual generation parameters
-            logger.info(
-                f"DEBUG GENERATION: max_new_tokens={kwargs.get('max_new_tokens', 1024)}, max_new_tokens_limit={self.max_new_tokens_limit}, final_max_tokens={max_tokens}"
-            )
+            # Only log generation parameters in debug mode
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Generation parameters: max_new_tokens={kwargs.get('max_new_tokens', 1024)}, max_new_tokens_limit={self.max_new_tokens_limit}, final_max_tokens={max_tokens}"
+                )
 
             generation_kwargs = {
                 **inputs,
@@ -628,9 +635,13 @@ class LlamaVisionModel(BaseVisionModel):
             processing_time = time.time() - start_time
             logger.info(f"Inference completed in {processing_time:.2f}s")
 
+            # Get confidence score from YAML config
+            model_config = getattr(self.config, "yaml_config", {}).get("model_config", {})
+            confidence_score = model_config.get("llama", {}).get("confidence_score", 0.85)
+            
             return ModelResponse(
                 raw_text=response.strip(),
-                confidence=0.85,  # Llama doesn't provide confidence scores
+                confidence=confidence_score,
                 processing_time=processing_time,
                 device_used=str(self.device),
                 memory_usage=self.get_memory_usage(),
