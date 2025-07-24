@@ -144,9 +144,8 @@ system_prompts:
 
 # Prompts
 prompts:
-
-  internvl: |
-    <|image|>Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
+  llama: |
+    Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
 
     REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
     DOCUMENT_TYPE: [value or N/A]
@@ -176,12 +175,23 @@ prompts:
     CLOSING_BALANCE: [closing balance amount in dollars or N/A]
     TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    STOP after the 26 lines above. Do not add explanations, notes, or additional text.
-
-  # llama: |
-  #   Extract data from this image in markdown format.
-
-  llama: |
+    CRITICAL: Output in PLAIN TEXT format only. Do NOT use markdown formatting.
+    
+    CORRECT format: DOCUMENT_TYPE: TAX INVOICE
+    WRONG format: **DOCUMENT_TYPE:** TAX INVOICE
+    WRONG format: **DOCUMENT_TYPE: TAX INVOICE**
+    WRONG format: DOCUMENT_TYPE: **TAX INVOICE**
+    
+    Use exactly: KEY: value (with colon and space)
+    Never use: **KEY:** or **KEY** or any asterisks
+    Never use bold, italic, or any markdown formatting
+    
+    ABSOLUTELY CRITICAL: Output EXACTLY 26 lines using ONLY the keys listed above. 
+    Do NOT add extra fields like "Balance", "Credit", "Debit", "Date", "Description".
+    Do NOT include ANY fields not in the required list above.
+    Include ALL 26 keys listed above even if value is N/A.
+    STOP after exactly 26 lines.
+  internvl: |
     Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
 
     REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
