@@ -110,30 +110,17 @@ else
     echo "   Current PYTHONPATH: $PYTHONPATH"
 fi
 
-# Load .env file if it exists (for model paths and configuration)
-if [ -f ".env" ]; then
-    # Check if .env has export statements
-    if grep -q "^export" .env; then
-        source .env
-        echo "✅ Sourced .env file with configuration"
-    else
-        echo "⚠️ .env file found but no export statements"
-        echo "   The CLI will still load .env variables automatically"
-    fi
+# Check YAML configuration file
+if [ -f "model_comparison.yaml" ]; then
+    echo "✅ Found model_comparison.yaml configuration"
+    echo "   All settings now configured via YAML (no .env needed)"
 else
-    echo "⚠️ No .env file found"
-    echo "   Create one with your model paths and configuration:"
-    echo "   cat >> .env << 'EOF'"
-    echo "   # Model configuration"
-    echo "   VISION_MODEL_TYPE=internvl"
-    echo "   VISION_MODEL_PATH=/path/to/InternVL3-8B"
-    echo "   VISION_DEVICE_CONFIG=auto"
-    echo "   VISION_OUTPUT_FORMAT=yaml"
-    echo "   VISION_ENABLE_QUANTIZATION=true"
-    echo "   VISION_OFFLINE_MODE=true"
-    echo "   # Optional: export PYTHONPATH for persistence"
-    echo "   export PYTHONPATH=$(pwd):\\\$PYTHONPATH"
-    echo "   EOF"
+    echo "⚠️ No model_comparison.yaml found"
+    echo "   This file contains all model paths and configuration"
+    echo "   Ensure model_paths section has correct paths:"
+    echo "   model_paths:"
+    echo "     llama: \"/path/to/Llama-3.2-11B-Vision-Instruct\""
+    echo "     internvl: \"/path/to/InternVL3-8B\""
 fi
 
 # Detect hardware environment and suggest optimizations

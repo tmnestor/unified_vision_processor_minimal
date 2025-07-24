@@ -97,12 +97,8 @@ class SimpleExtractionManager:
             from ..config.model_registry import get_model_registry
             model_registry = get_model_registry()
             
-            # Use CLI-overridden model_path if available, otherwise get from YAML model_paths
-            try:
-                model_path = getattr(self.config.model_paths, self.config.model_type)
-            except AttributeError:
-                # Fallback to the single model_path set by CLI override
-                model_path = self.config.model_path
+            # Get model path from YAML model_paths
+            model_path = getattr(self.config.model_paths, self.config.model_type)
                 
             model = model_registry.create_model(
                 self.config.model_type,

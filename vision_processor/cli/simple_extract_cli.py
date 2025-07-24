@@ -52,12 +52,14 @@ def extract(
         from ..config.simple_config import SimpleConfig
         from ..extraction.simple_extraction_manager import SimpleExtractionManager
 
-        # Load configuration
-        config = SimpleConfig(config_file if config_file != ".env" else None)
+        # Load configuration from YAML only
+        config = SimpleConfig("model_comparison.yaml")
 
-        # Apply CLI overrides using update_from_cli method
-        if model or output_format:
-            config.update_from_cli(model=model, output_format=output_format)
+        # Apply simple CLI overrides
+        if model:
+            config.set_model_type(model)
+        if output_format:
+            config.set_output_format(output_format)
 
         # Validate configuration
         if not config.validate():
@@ -137,8 +139,8 @@ def compare(
             console.print(f"{'=' * 50}")
 
             # Create config with model override
-            config = SimpleConfig(config_file if config_file != ".env" else None)
-            config.update_from_cli(model=model_name)
+            config = SimpleConfig("model_comparison.yaml")
+            config.set_model_type(model_name)
 
             # Validate configuration
             if not config.validate():
@@ -187,7 +189,7 @@ def config_info(
 
         from ..config.simple_config import SimpleConfig
 
-        config = SimpleConfig(config_file if config_file != ".env" else None)
+        config = SimpleConfig("model_comparison.yaml")
         config.print_configuration()
 
         # Also show .env file location
@@ -243,10 +245,10 @@ def batch(
         from ..extraction.simple_extraction_manager import SimpleExtractionManager
 
         # Load configuration
-        config = SimpleConfig(config_file if config_file != ".env" else None)
+        config = SimpleConfig("model_comparison.yaml")
 
         if model:
-            config.update_from_cli(model=model)
+            config.set_model_type(model)
 
         # Find image files
         image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
