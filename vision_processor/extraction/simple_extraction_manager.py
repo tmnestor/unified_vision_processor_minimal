@@ -8,7 +8,6 @@ import torch
 import yaml
 from rich.console import Console
 
-from ..config.model_factory import ModelFactory
 from ..config.simple_config import SimpleConfig
 from .universal_key_value_parser import UniversalKeyValueParser
 
@@ -94,7 +93,16 @@ class SimpleExtractionManager:
         # Load the model
         start_time = time.time()
         try:
-            model = ModelFactory.create_model(self.config)
+            # Use same model creation pattern as ComparisonRunner
+            from ..config.model_registry import get_model_registry
+            model_registry = get_model_registry()
+            model_path = getattr(self.config.model_paths, self.config.model_type)
+            model = model_registry.create_model(
+                self.config.model_type,
+                self.config.processing,
+                model_path=model_path,
+                config=self.config,
+            )
             load_time = time.time() - start_time
 
             # Print successful loading
