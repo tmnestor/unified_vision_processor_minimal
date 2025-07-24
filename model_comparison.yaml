@@ -81,7 +81,8 @@ model_config:
 
 # Post-processing configuration
 post_processing:
-  enabled: false              # Disable post-processing by default (chat template provides clean output)
+  enabled: true               # Keep post-processing enabled (some responses still need markdown cleaning)
+  smart_mode: true            # Use smart detection: skip processing for clean responses, process messy ones
   force_parsing: false        # Force field parsing even with clean output
   
 # Repetition control configuration  

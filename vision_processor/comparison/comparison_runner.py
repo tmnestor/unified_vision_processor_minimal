@@ -377,17 +377,57 @@ class ComparisonRunner:
                             f"\n🔍 {model_name.upper()} sees in {image_path.name}:"
                         )
 
-                        # Check if post-processing is disabled (chat template provides clean output)
+                        # Check post-processing configuration
                         post_processing_config = self.config.yaml_config.get("post_processing", {})
-                        post_processing_enabled = post_processing_config.get("enabled", True)  # Default to True for backward compatibility
+                        post_processing_enabled = post_processing_config.get("enabled", True)
+                        smart_mode = post_processing_config.get("smart_mode", False)
                         
-                        if not post_processing_enabled:
-                            # 🚀 DIRECT OUTPUT: Skip all post-processing for clean chat template responses
-                            self.console.print("📋 Raw model output (post-processing disabled):")
-                            self.console.print(response.raw_text, style="dim green")
+                        # Smart detection: check if response needs cleaning
+                        needs_processing = ("**" in response.raw_text or 
+                                          "```" in response.raw_text or 
+                                          "Answer:" in response.raw_text or
+                                          len(response.raw_text) > 2000)  # Very long responses usually need cleaning
+                        
+                        if not post_processing_enabled or (smart_mode and not needs_processing):
+                            # 🚀 SMART BYPASS: Response is clean, use simple parsing
+                            processing_type = "disabled" if not post_processing_enabled else "clean (smart mode)"
+                            self.console.print(f"📋 Clean model output ({processing_type}):")
                             
-                            # Store raw response without parsing
-                            analysis_dict["extracted_fields"] = {"raw_output": response.raw_text}
+                            # Simple parsing for clean KEY: value format (no complex cleaning needed)
+                            extracted_fields = {}
+                            raw_text = response.raw_text.strip()
+                            
+                            # Split on spaces and look for KEY: value patterns
+                            parts = raw_text.split()
+                            i = 0
+                            while i < len(parts) - 1:
+                                part = parts[i]
+                                if part.endswith(':'):
+                                    key = part[:-1]  # Remove the colon
+                                    # Collect value(s) until next key or end
+                                    value_parts = []
+                                    j = i + 1
+                                    while j < len(parts) and not parts[j].endswith(':'):
+                                        value_parts.append(parts[j])
+                                        j += 1
+                                    value = ' '.join(value_parts) if value_parts else 'N/A'
+                                    extracted_fields[key] = value
+                                    i = j
+                                else:
+                                    i += 1
+                            
+                            # Store parsed fields
+                            analysis_dict["extracted_fields"] = extracted_fields
+                            
+                            # Display parsed fields (matching full post-processing format)
+                            if extracted_fields:
+                                sorted_pairs = sorted(extracted_fields.items())
+                                for key, value in sorted_pairs:
+                                    # Clean up values - remove trailing asterisks and whitespace
+                                    value = value.rstrip("*").strip()
+                                    self.console.print(f"   {key:20}: {value}", style="dim green")
+                            else:
+                                self.console.print("   No key-value pairs found", style="dim red")
                             
                             # Simple status display
                             status = "✅"
@@ -398,7 +438,11 @@ class ComparisonRunner:
                             )
                             continue  # Skip all the post-processing below
                         
-                        # 🔧 LEGACY POST-PROCESSING: Clean response to remove markdown artifacts and repetition
+                        # 🔧 FULL POST-PROCESSING: Handle messy responses (markdown, explanations, etc.)
+                        processing_type = "full (messy response detected)" if smart_mode else "full (always enabled)"
+                        self.console.print(f"🔧 Processing response ({processing_type}):")
+                        
+                        # Clean response to remove markdown artifacts and repetition
                         clean_text = response.raw_text
                         
                         # Apply cleaning based on content patterns
