@@ -132,6 +132,14 @@ model_paths:
   internvl: "/home/jovyan/nfs_share/models/InternVL3-8B"
 
 
+# System prompts for controlling model behavior
+system_prompts:
+  llama: |
+    You are a helpful assistant. When responding, do not use asterisks (*) for emphasis or bold formatting. Use plain text only without any markdown formatting symbols. Do not use **bold** formatting, _italics_, or any other special characters for text formatting. Present all text in a simple, unformatted manner with just KEY: value pairs.
+  
+  internvl: |
+    Extract data accurately from business documents.
+
 # Prompts
 prompts:
 

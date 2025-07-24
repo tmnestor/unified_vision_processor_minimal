@@ -521,8 +521,16 @@ class LlamaVisionModel(BaseVisionModel):
         # Clean prompt of any existing image tokens - chat template will handle this
         clean_prompt = prompt.replace("<|image|>", "").strip()
         
-        # Use official HuggingFace chat template format
+        # Get system prompt from YAML configuration
+        system_prompts = getattr(self.config, "yaml_config", {}).get("system_prompts", {})
+        system_prompt = system_prompts.get("llama", "You are a helpful assistant.")
+        
+        # Use official HuggingFace chat template format with configurable system prompt
         messages = [
+            {
+                "role": "system",
+                "content": system_prompt
+            },
             {
                 "role": "user",
                 "content": [
