@@ -215,8 +215,11 @@ class ModelFactory:
                     )
             else:
                 # SimpleConfig
-                # Convert device_config to enum if it's a string
-                device_config = config.device_config
+                # Extract device_config string from SimpleDeviceConfig object
+                if hasattr(config.device_config, 'original_device_config'):
+                    device_config = config.device_config.original_device_config
+                else:
+                    device_config = config.device_config
                 if isinstance(device_config, str):
                     try:
                         device_config = DeviceConfig(device_config)
