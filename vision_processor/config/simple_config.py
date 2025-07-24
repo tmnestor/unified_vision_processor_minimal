@@ -30,15 +30,15 @@ class SimpleConfig:
                 self.yaml_config = yaml.safe_load(f) or {}
 
         # Model settings
-        self.model_type = os.getenv("VISION_MODEL_TYPE", "internvl3")
+        self.model_type = os.getenv("VISION_MODEL_TYPE", "internvl")
 
         # Try model-specific path first, then fall back to generic path
         match self.model_type:
-            case "internvl3":
+            case "internvl":
                 self.model_path = os.getenv("VISION_INTERNVL_MODEL_PATH") or os.getenv(
                     "VISION_MODEL_PATH", "/path/to/models"
                 )
-            case "llama32_vision":
+            case "llama":
                 self.model_path = os.getenv("VISION_LLAMA_MODEL_PATH") or os.getenv(
                     "VISION_MODEL_PATH", "/path/to/models"
                 )
@@ -183,7 +183,7 @@ class SimpleConfig:
             True if configuration is valid, False otherwise.
         """
         # Check model type
-        if self.model_type not in ["internvl3", "llama32_vision"]:
+        if self.model_type not in ["internvl", "llama"]:
             print(f"❌ Invalid model type: {self.model_type}")
             return False
 
@@ -256,11 +256,11 @@ class SimpleConfig:
             load_dotenv(override=True)
 
             # Update model path based on new model type
-            if self.model_type == "internvl3":
+            if self.model_type == "internvl":
                 self.model_path = os.getenv("VISION_INTERNVL_MODEL_PATH") or os.getenv(
                     "VISION_MODEL_PATH", "/path/to/models"
                 )
-            elif self.model_type == "llama32_vision":
+            elif self.model_type == "llama":
                 self.model_path = os.getenv("VISION_LLAMA_MODEL_PATH") or os.getenv(
                     "VISION_MODEL_PATH", "/path/to/models"
                 )
