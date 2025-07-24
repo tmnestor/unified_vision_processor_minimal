@@ -136,6 +136,8 @@ model_paths:
 system_prompts:
   llama: |
     You are a helpful assistant. When responding, do not use asterisks (*) for emphasis or bold formatting. Use plain text only without any markdown formatting symbols. Do not use **bold** formatting, _italics_, or any other special characters for text formatting. Present all text in a simple, unformatted manner with just KEY: value pairs.
+    
+    CRITICAL: Output EXACTLY 26 lines in the specified order. Do NOT add extra fields you find in the document. Do NOT include fields like "Balance", "Credit", "Debit", "Date", "Description" or any other fields not in the required list. Only output the 26 fields specified in the prompt, even if you see other data in the document.
   
   internvl: |
     Extract data accurately from business documents.
@@ -220,7 +222,12 @@ prompts:
     Use exactly: KEY: value (with colon and space)
     Never use: **KEY:** or **KEY** or any asterisks
     Never use bold, italic, or any markdown formatting
-    Output exactly 26 lines. Include ALL keys even if value is N/A.
+    
+    ABSOLUTELY CRITICAL: Output EXACTLY 26 lines using ONLY the keys listed above. 
+    Do NOT add extra fields like "Balance", "Credit", "Debit", "Date", "Description".
+    Do NOT include ANY fields not in the required list above.
+    Include ALL 26 keys listed above even if value is N/A.
+    STOP after exactly 26 lines.
 
 
   # Alternative prompt versions (commented out for reference)
