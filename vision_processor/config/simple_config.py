@@ -283,6 +283,35 @@ class SimpleConfig:
             self.enable_quantization = kwargs["quantization"]
             print(f"🔄 Overriding quantization to: {self.enable_quantization}")
 
+    def get_expected_fields(self) -> list[str]:
+        """Get expected fields by parsing from llama prompt or using YAML configuration.
+        
+        Priority:
+        1. If expected_fields is defined in YAML, use that
+        2. Otherwise, parse fields from the llama prompt
+        """
+        # First check if expected_fields is explicitly defined
+        expected_fields = self.yaml_config.get("expected_fields", [])
+        if expected_fields:
+            return expected_fields
+            
+        # Otherwise, parse from llama prompt
+        prompts = self.yaml_config.get("prompts", {})
+        llama_prompt = prompts.get("llama", "")
+        
+        if not llama_prompt:
+            return []
+            
+        # Parse field names from lines that match "FIELD_NAME: [value or N/A]"
+        import re
+        fields = []
+        for line in llama_prompt.split('\n'):
+            match = re.match(r'^\s*([A-Z_]+):\s*\[.*\]', line.strip())
+            if match:
+                fields.append(match.group(1))
+                
+        return fields
+
     def get_prompts(self) -> dict[str, str]:
         """Get model-specific prompts from YAML configuration."""
         return self.yaml_config.get(

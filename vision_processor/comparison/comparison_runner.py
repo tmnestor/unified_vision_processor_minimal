@@ -634,15 +634,18 @@ class ComparisonRunner:
 
         analysis_results = {}
         
-        # Get expected fields from YAML config (single source of truth)
-        expected_fields = self.config.yaml_config.get("expected_fields", [
-            "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS",
-            "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST",
-            "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "ITEMS", "QUANTITIES",
-            "PRICES", "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME",
-            "BSB_NUMBER", "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER",
-            "STATEMENT_PERIOD", "OPENING_BALANCE", "CLOSING_BALANCE", "TRANSACTIONS"
-        ])
+        # Get expected fields from config (parses from prompt if not explicitly defined)
+        expected_fields = self.config.get_expected_fields()
+        if not expected_fields:
+            # Fallback to hardcoded list if parsing fails
+            expected_fields = [
+                "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS",
+                "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST",
+                "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "ITEMS", "QUANTITIES",
+                "PRICES", "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME",
+                "BSB_NUMBER", "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER",
+                "STATEMENT_PERIOD", "OPENING_BALANCE", "CLOSING_BALANCE", "TRANSACTIONS"
+            ]
 
         # Analyze field extraction by model
         model_field_stats = {}
@@ -1183,7 +1186,8 @@ class ComparisonRunner:
                 
                 # Add extracted fields as columns
                 extracted_fields = result.get('extracted_fields', {})
-                for field_name in self.config.yaml_config.get('expected_fields', []):
+                expected_fields = self.config.get_expected_fields()
+                for field_name in expected_fields:
                     row[f'field_{field_name}'] = extracted_fields.get(field_name, 'N/A')
                 
                 rows.append(row)
