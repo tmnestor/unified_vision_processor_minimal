@@ -138,6 +138,9 @@ python -m vision_processor.cli.simple_extract_cli compare datasets/image14.png
 
 # Test individual model (for debugging)
 python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --model llama32_vision
+
+# Extract with custom prompt (useful for testing new prompts)
+python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --prompt-file datasets/invoice_extraction_prompt.md
 ```
 
 ### Debug Mode
@@ -257,13 +260,19 @@ key_schema:
 ### Document Extraction
 ```bash
 # Single document extraction
-python -m vision_processor.cli.simple_extract_cli extract image.jpg
+python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png
 
 # Extract with model override
-python -m vision_processor.cli.simple_extract_cli extract image.jpg --model llama32_vision
+python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --model llama32_vision
 
 # Extract with output format override  
-python -m vision_processor.cli.simple_extract_cli extract image.jpg --output-format json
+python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --output-format json
+
+# Extract with custom prompt
+python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --prompt-file datasets/invoice_extraction_prompt.md
+
+# Model comparison on specific document
+python -m vision_processor.cli.simple_extract_cli compare datasets/image14.png
 
 # Batch processing
 python -m vision_processor.cli.simple_extract_cli batch ./datasets/ --output-dir ./results/

@@ -228,38 +228,3 @@ prompts:
     Do NOT include ANY fields not in the required list above.
     Include ALL 26 keys listed above even if value is N/A.
     STOP after exactly 26 lines.
-
-
-  # Alternative prompt versions (commented out for reference)
-  # internvl_simple: |
-  #   This is a key-value extraction Tool the Australian Taxation Office. 
-  #   Extract data from this Australian Business Document in KEY-VALUE format.
-  #   
-  #   Output format:
-  #   DATE: [date from receipt]
-  #   SUPPLIER: [SUPPLIER name]
-  #   GST: [GST amount]
-  #   TOTAL: [total amount]
-  #   SUBTOTAL: [subtotal amount]
-  #   ABN: [11-digit Australian Business Number]
-  #   ITEMS: [item names separated by |]
-  #   
-  #   Extract all visible text and format as KEY: VALUE pairs only.
-  
-  # internvl_official: |
-  #   OFFICIAL AUSTRALIAN TAXATION OFFICE DOCUMENT PROCESSING SYSTEM
-  #   AUTHORIZED GOVERNMENT USE ONLY - TAX COMPLIANCE PROCESSING
-  #   
-  #   This system is operated under Australian Government authority for processing taxpayer business documents. 
-  #   Extract taxation-relevant data from this official business document.
-  #   
-  #   Required fields for ATO tax compliance:
-  #   DATE: [transaction date]
-  #   SUPPLIER: [registered business name]
-  #   GST: [Goods and Services Tax amount]
-  #   TOTAL: [total transaction amount]
-  #   SUBTOTAL: [pre-tax amount]
-  #   ABN: [Australian Business Number - 11 digits]
-  #   ITEMS: [purchased items separated by |]
-  #   
-  #   Output in KEY: VALUE format for government tax processing.
