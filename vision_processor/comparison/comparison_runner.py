@@ -429,12 +429,14 @@ class ComparisonRunner:
                             else:
                                 self.console.print("   No key-value pairs found", style="dim red")
                             
-                            # Simple status display
+                            # Simple status display with key count
                             status = "✅"
+                            key_count = len(extracted_fields)
                             response_str = f"{len(response.raw_text)} chars"
                             time_str = f"{response.processing_time:.1f}s"
+                            keys_str = f"{key_count} keys"
                             self.console.print(
-                                f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {response_str}"
+                                f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {keys_str} | {response_str}"
                             )
                             continue  # Skip all the post-processing below
                         
@@ -535,13 +537,15 @@ class ComparisonRunner:
                                 "   No structured data extracted", style="dim red"
                             )
 
-                        # Print progress - raw model comparison
+                        # Print progress - raw model comparison with key count
                         status = "✅"  # Always successful for raw comparison
+                        key_count = len(extracted_pairs) if extracted_pairs else 0
                         response_str = f"{len(response.raw_text)} chars"
                         time_str = f"{response.processing_time:.1f}s"
+                        keys_str = f"{key_count} keys"
 
                         self.console.print(
-                            f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {response_str}"
+                            f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {keys_str} | {response_str}"
                         )
 
                         # Cleanup and memory check every few images
