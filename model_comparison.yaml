@@ -202,10 +202,17 @@ prompts:
     CLOSING_BALANCE: [closing balance amount in dollars or N/A]
     TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    Output exactly 26 lines above in plain text format.
-    Use format: KEY: value (not **KEY:** value)
-    Include ALL keys even if value is N/A.
-    No bold text, no markdown, no other text.
+    CRITICAL: Output in PLAIN TEXT format only. Do NOT use markdown formatting.
+    
+    CORRECT format: DOCUMENT_TYPE: TAX INVOICE
+    WRONG format: **DOCUMENT_TYPE:** TAX INVOICE
+    WRONG format: **DOCUMENT_TYPE: TAX INVOICE**
+    WRONG format: DOCUMENT_TYPE: **TAX INVOICE**
+    
+    Use exactly: KEY: value (with colon and space)
+    Never use: **KEY:** or **KEY** or any asterisks
+    Never use bold, italic, or any markdown formatting
+    Output exactly 26 lines. Include ALL keys even if value is N/A.
 
 
   # Alternative prompt versions (commented out for reference)
