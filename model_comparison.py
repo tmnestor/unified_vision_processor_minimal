@@ -104,13 +104,15 @@ def run_production_comparison(
         console.print(f"✅ Documents processed: {results.dataset_info.total_images}")
         console.print("✅ Core fields: 12 essential fields")
 
-        # Export DataFrame for additional analysis
+        # Export DataFrame for downstream processing
         try:
             results_df = runner.export_dataframe()
             if results_df is not None:
                 csv_path = Path(output_dir) / "production_results.csv"
                 results_df.to_csv(csv_path, index=False)
                 console.print(f"✅ Production results exported: {csv_path}")
+                console.print(f"📊 DataFrame shape: {results_df.shape[0]} rows x {results_df.shape[1]} columns")
+                console.print("📋 Columns: model_name, image_name, processing_time, field_count, quality_rating, + all 26 field values")
         except Exception as e:
             console.print(f"⚠️  Failed to export DataFrame: {e}")
 

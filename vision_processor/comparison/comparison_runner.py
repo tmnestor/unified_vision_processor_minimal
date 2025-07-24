@@ -842,26 +842,6 @@ class ComparisonRunner:
                 f"      [dim]{speed_loser[0].upper()} takes {speed_loser[1]:.1f}s per document[/dim]"
             )
             
-        # Overall recommendation
-        self.console.print("\n   💡 Recommendation:")
-        if speed_winner and field_winner[0] == speed_winner[0]:
-            self.console.print(
-                f"      [bold green]{field_winner[0].upper()} is the clear winner - best quality AND fastest![/bold green]"
-            )
-        elif speed_winner:
-            self.console.print(
-                "      [yellow]Trade-off decision required:[/yellow]"
-            )
-            self.console.print(
-                f"      - Choose {field_winner[0].upper()} for better extraction quality ({field_winner[1]:.1f} fields)"
-            )
-            self.console.print(
-                f"      - Choose {speed_winner[0].upper()} for faster processing ({speed_winner[1]:.1f}s per doc)"
-            )
-        else:
-            self.console.print(
-                f"      [bold green]{field_winner[0].upper()} wins on extraction quality![/bold green]"
-            )
 
         self.console.print("\n✅ Field extraction comparison complete")
         return analysis_results
@@ -1171,12 +1151,68 @@ class ComparisonRunner:
             pass
 
     def export_dataframe(self) -> Optional[Any]:
-        """Export results as simple data structure.
+        """Export results as pandas DataFrame for downstream processing.
 
         Returns:
-            Raw comparison results or None
+            pandas DataFrame with extraction results or None
         """
         if not self.results:
             return None
 
-        return self.results
+        try:
+            import pandas as pd
+        except ImportError:
+            self.console.print("⚠️  pandas not available, returning raw results")
+            return self.results
+
+        # Flatten extraction results into DataFrame format
+        rows = []
+        
+        for model_name, model_results in self.results.extraction_results.items():
+            for result in model_results:
+                # Base row data
+                row = {
+                    'model_name': model_name,
+                    'image_name': result.get('img_name', ''),
+                    'processing_time': result.get('processing_time', 0.0),
+                    'response_length': result.get('response_length', 0),
+                    'successful': result.get('successful', False),
+                    'timestamp': result.get('timestamp', ''),
+                    'field_count': len(result.get('extracted_fields', {}))
+                }
+                
+                # Add extracted fields as columns
+                extracted_fields = result.get('extracted_fields', {})
+                for field_name in self.config.yaml_config.get('expected_fields', []):
+                    row[f'field_{field_name}'] = extracted_fields.get(field_name, 'N/A')
+                
+                rows.append(row)
+        
+        results_dataframe = pd.DataFrame(rows)
+        
+        # Add summary columns
+        if not results_dataframe.empty:
+            # Calculate fields with actual values (not N/A)
+            field_columns = [col for col in results_dataframe.columns if col.startswith('field_')]
+            results_dataframe['fields_with_values'] = results_dataframe[field_columns].apply(
+                lambda row: sum(1 for val in row if val not in ['N/A', 'n/a', '']), axis=1
+            )
+            
+            # Add performance rating based on field extraction
+            quality_thresholds = self.config.yaml_config.get('quality_thresholds', {
+                'excellent': 12, 'good': 8, 'fair': 5, 'poor': 0
+            })
+            
+            def get_quality_rating(field_count):
+                if field_count >= quality_thresholds['excellent']:
+                    return 'excellent'
+                elif field_count >= quality_thresholds['good']:
+                    return 'good'
+                elif field_count >= quality_thresholds['fair']:
+                    return 'fair'
+                else:
+                    return 'poor'
+            
+            results_dataframe['quality_rating'] = results_dataframe['fields_with_values'].apply(get_quality_rating)
+        
+        return results_dataframe
