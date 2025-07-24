@@ -22,7 +22,7 @@ console = Console()
 def extract(
     image_path: str = typer.Argument(..., help="Path to document image"),
     model: Optional[str] = typer.Option(
-        None, help="Override model type (internvl3 or llama32_vision)"
+        None, help="Override model type (internvl or llama)"
     ),
     output_format: Optional[str] = typer.Option(
         None, help="Override output format (table, json, yaml)"
@@ -101,7 +101,7 @@ def extract(
 def compare(
     image_path: str = typer.Argument(..., help="Path to document image"),
     models: str = typer.Option(
-        "internvl3,llama32_vision", help="Models to compare (comma-separated)"
+        "internvl,llama", help="Models to compare (comma-separated)"
     ),
     config_file: str = typer.Option(".env", help="Path to .env configuration file"),
     verbose: bool = typer.Option(
