@@ -50,18 +50,24 @@ class LlamaVisionModel(LlamaVisionModelBase):
         self._validate_config()
         
         # Initialize specialized managers first
+        # Filter out conflicting parameters from kwargs
+        quantization_kwargs = {k: v for k, v in kwargs.items() if k not in ['enable_quantization', 'config']}
         self.quantization_manager = LlamaQuantizationManager(
             self.config, 
             self.enable_quantization, 
-            **kwargs
+            **quantization_kwargs
         )
         
+        # Filter out conflicting parameters for memory manager
+        memory_kwargs = {k: v for k, v in kwargs.items() if k not in ['config', 'device_config', 'memory_limit_mb']}
         self.memory_manager = LlamaMemoryManager(
             self.config,
             self.device_config,
             self.memory_limit_mb
         )
         
+        # Filter out conflicting parameters for inference manager  
+        inference_kwargs = {k: v for k, v in kwargs.items() if k not in ['config']}
         self.inference_manager = LlamaInferenceManager(
             self.config,
             self.memory_manager,
