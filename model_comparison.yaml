@@ -30,36 +30,8 @@ image_processing:
   max_image_size: 1024     # Maximum image dimension for resizing
   timeout_seconds: 10      # Processing timeout per image
 
-# Expected fields for extraction (single source of truth)
-expected_fields:
-  - DOCUMENT_TYPE
-  - SUPPLIER
-  - ABN
-  - PAYER_NAME
-  - PAYER_ADDRESS
-  - PAYER_PHONE
-  - PAYER_EMAIL
-  - INVOICE_DATE
-  - DUE_DATE
-  - GST
-  - TOTAL
-  - SUBTOTAL
-  - SUPPLIER_WEBSITE
-  - ITEMS
-  - QUANTITIES
-  - PRICES
-  - BUSINESS_ADDRESS
-  - BUSINESS_PHONE
-  - BANK_NAME
-  - BSB_NUMBER
-  - BANK_ACCOUNT_NUMBER
-  - ACCOUNT_HOLDER
-  - STATEMENT_PERIOD
-  - OPENING_BALANCE
-  - CLOSING_BALANCE
-  - TRANSACTIONS
-
-# Note: All expected_fields are compared - no arbitrary subset selection
+# Note: Fields are defined in the prompts section below
+# The system parses expected fields dynamically from the prompt text
 
 # CLI defaults
 defaults:
@@ -142,99 +114,54 @@ system_prompts:
   internvl: |
     Extract data accurately from business documents.
 
-# Prompts
-prompts:
-  llama: |
-    Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
+# Main extraction prompt - shared by all models
+extraction_prompt: |
+  Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
 
-    REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
-    DOCUMENT_TYPE: [value or N/A]
-    SUPPLIER: [value or N/A]
-    ABN: [11-digit Australian Business Number or N/A]
-    PAYER_NAME: [value or N/A]
-    PAYER_ADDRESS: [value or N/A]
-    PAYER_PHONE: [value or N/A]
-    PAYER_EMAIL: [value or N/A]
-    INVOICE_DATE: [value or N/A]
-    DUE_DATE: [value or N/A]
-    GST: [GST amount in dollars or N/A]
-    TOTAL: [total amount in dollars or N/A]
-    SUBTOTAL: [subtotal amount in dollars or N/A]
-    SUPPLIER_WEBSITE: [value or N/A]
-    ITEMS: [value or N/A]
-    QUANTITIES: [value or N/A]
-    PRICES: [individual prices in dollars or N/A]
-    BUSINESS_ADDRESS: [value or N/A]
-    BUSINESS_PHONE: [value or N/A]
-    BANK_NAME: [bank name from bank statements only or N/A]
-    BSB_NUMBER: [6-digit BSB from bank statements only or N/A]
-    BANK_ACCOUNT_NUMBER: [account number from bank statements only or N/A]
-    ACCOUNT_HOLDER: [value or N/A]
-    STATEMENT_PERIOD: [value or N/A]
-    OPENING_BALANCE: [opening balance amount in dollars or N/A]
-    CLOSING_BALANCE: [closing balance amount in dollars or N/A]
-    TRANSACTIONS: [list of transactions with dates and amounts or N/A]
+  REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
+  DOCUMENT_TYPE: [value or N/A]
+  SUPPLIER: [value or N/A]
+  ABN: [11-digit Australian Business Number or N/A]
+  PAYER_NAME: [value or N/A]
+  PAYER_ADDRESS: [value or N/A]
+  PAYER_PHONE: [value or N/A]
+  PAYER_EMAIL: [value or N/A]
+  INVOICE_DATE: [value or N/A]
+  DUE_DATE: [value or N/A]
+  GST: [GST amount in dollars or N/A]
+  TOTAL: [total amount in dollars or N/A]
+  SUBTOTAL: [subtotal amount in dollars or N/A]
+  SUPPLIER_WEBSITE: [value or N/A]
+  ITEMS: [value or N/A]
+  QUANTITIES: [value or N/A]
+  PRICES: [individual prices in dollars or N/A]
+  BUSINESS_ADDRESS: [value or N/A]
+  BUSINESS_PHONE: [value or N/A]
+  BANK_NAME: [bank name from bank statements only or N/A]
+  BSB_NUMBER: [6-digit BSB from bank statements only or N/A]
+  BANK_ACCOUNT_NUMBER: [account number from bank statements only or N/A]
+  ACCOUNT_HOLDER: [value or N/A]
+  STATEMENT_PERIOD: [value or N/A]
+  OPENING_BALANCE: [opening balance amount in dollars or N/A]
+  CLOSING_BALANCE: [closing balance amount in dollars or N/A]
+  TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
-    CRITICAL: Output in PLAIN TEXT format only. Do NOT use markdown formatting.
-    
-    CORRECT format: DOCUMENT_TYPE: TAX INVOICE
-    WRONG format: **DOCUMENT_TYPE:** TAX INVOICE
-    WRONG format: **DOCUMENT_TYPE: TAX INVOICE**
-    WRONG format: DOCUMENT_TYPE: **TAX INVOICE**
-    
-    Use exactly: KEY: value (with colon and space)
-    Never use: **KEY:** or **KEY** or any asterisks
-    Never use bold, italic, or any markdown formatting
-    
-    ABSOLUTELY CRITICAL: Output EXACTLY 26 lines using ONLY the keys listed above. 
-    Do NOT add extra fields like "Balance", "Credit", "Debit", "Date", "Description".
-    Do NOT include ANY fields not in the required list above.
-    Include ALL 26 keys listed above even if value is N/A.
-    STOP after exactly 26 lines.
-  internvl: |
-    Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
+  CRITICAL: Output in PLAIN TEXT format only. Do NOT use markdown formatting.
+  
+  CORRECT format: DOCUMENT_TYPE: TAX INVOICE
+  WRONG format: **DOCUMENT_TYPE:** TAX INVOICE
+  WRONG format: **DOCUMENT_TYPE: TAX INVOICE**
+  WRONG format: DOCUMENT_TYPE: **TAX INVOICE**
+  
+  Use exactly: KEY: value (with colon and space)
+  Never use: **KEY:** or **KEY** or any asterisks
+  Never use bold, italic, or any markdown formatting
+  
+  ABSOLUTELY CRITICAL: Output EXACTLY 26 lines using ONLY the keys listed above. 
+  Do NOT add extra fields like "Balance", "Credit", "Debit", "Date", "Description".
+  Do NOT include ANY fields not in the required list above.
+  Include ALL 26 keys listed above even if value is N/A.
+  STOP after exactly 26 lines.
 
-    REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
-    DOCUMENT_TYPE: [value or N/A]
-    SUPPLIER: [value or N/A]
-    ABN: [11-digit Australian Business Number or N/A]
-    PAYER_NAME: [value or N/A]
-    PAYER_ADDRESS: [value or N/A]
-    PAYER_PHONE: [value or N/A]
-    PAYER_EMAIL: [value or N/A]
-    INVOICE_DATE: [value or N/A]
-    DUE_DATE: [value or N/A]
-    GST: [GST amount in dollars or N/A]
-    TOTAL: [total amount in dollars or N/A]
-    SUBTOTAL: [subtotal amount in dollars or N/A]
-    SUPPLIER_WEBSITE: [value or N/A]
-    ITEMS: [value or N/A]
-    QUANTITIES: [value or N/A]
-    PRICES: [individual prices in dollars or N/A]
-    BUSINESS_ADDRESS: [value or N/A]
-    BUSINESS_PHONE: [value or N/A]
-    BANK_NAME: [bank name from bank statements only or N/A]
-    BSB_NUMBER: [6-digit BSB from bank statements only or N/A]
-    BANK_ACCOUNT_NUMBER: [account number from bank statements only or N/A]
-    ACCOUNT_HOLDER: [value or N/A]
-    STATEMENT_PERIOD: [value or N/A]
-    OPENING_BALANCE: [opening balance amount in dollars or N/A]
-    CLOSING_BALANCE: [closing balance amount in dollars or N/A]
-    TRANSACTIONS: [list of transactions with dates and amounts or N/A]
-
-    CRITICAL: Output in PLAIN TEXT format only. Do NOT use markdown formatting.
-    
-    CORRECT format: DOCUMENT_TYPE: TAX INVOICE
-    WRONG format: **DOCUMENT_TYPE:** TAX INVOICE
-    WRONG format: **DOCUMENT_TYPE: TAX INVOICE**
-    WRONG format: DOCUMENT_TYPE: **TAX INVOICE**
-    
-    Use exactly: KEY: value (with colon and space)
-    Never use: **KEY:** or **KEY** or any asterisks
-    Never use bold, italic, or any markdown formatting
-    
-    ABSOLUTELY CRITICAL: Output EXACTLY 26 lines using ONLY the keys listed above. 
-    Do NOT add extra fields like "Balance", "Credit", "Debit", "Date", "Description".
-    Do NOT include ANY fields not in the required list above.
-    Include ALL 26 keys listed above even if value is N/A.
-    STOP after exactly 26 lines.
+# Note: Both models use the same extraction_prompt defined above
+# This ensures consistent field extraction across all models

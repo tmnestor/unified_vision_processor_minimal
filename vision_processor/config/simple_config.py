@@ -136,6 +136,58 @@ class SimpleConfig:
         print(f"  Phrase Threshold: {self.repetition_phrase_threshold}")
         print(f"  Max Tokens Limit: {self.repetition_max_tokens_limit}")
 
+    def validate_prompt_fields(self) -> tuple[bool, str]:
+        """Validate that all model prompts have the same fields.
+        
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        prompts = self.get_prompts()
+        if not prompts:
+            return False, "No prompts found in configuration"
+            
+        # Parse fields from each prompt
+        all_fields = {}
+        for model_type, prompt in prompts.items():
+            fields = self._parse_fields_from_prompt(prompt)
+            all_fields[model_type] = set(fields)
+            
+        if len(all_fields) < 2:
+            return True, ""  # Only one prompt, nothing to compare
+            
+        # Compare all field sets
+        field_sets = list(all_fields.values())
+        first_set = field_sets[0]
+        
+        for i, other_set in enumerate(field_sets[1:], 1):
+            if first_set != other_set:
+                model_names = list(all_fields.keys())
+                missing_in_second = first_set - other_set
+                extra_in_second = other_set - first_set
+                
+                error_msg = f"Field mismatch between {model_names[0]} and {model_names[i]}:\n"
+                if missing_in_second:
+                    error_msg += f"  Missing in {model_names[i]}: {missing_in_second}\n"
+                if extra_in_second:
+                    error_msg += f"  Extra in {model_names[i]}: {extra_in_second}"
+                    
+                return False, error_msg
+                
+        return True, ""
+    
+    def _parse_fields_from_prompt(self, prompt: str) -> list[str]:
+        """Parse field names from a prompt text."""
+        import re
+        
+        fields = []
+        for line in prompt.split("\n"):
+            match = re.match(r"^\s*([A-Z_]+):\s*\[.*\]", line.strip())
+            if match:
+                field_name = match.group(1)
+                if field_name not in ["CORRECT", "WRONG", "EXAMPLE"]:
+                    fields.append(field_name)
+        return fields
+
     def validate(self) -> bool:
         """Validate configuration settings.
 
@@ -219,37 +271,46 @@ class SimpleConfig:
             print(f"❌ Invalid output format: {output_format}")
 
     def get_expected_fields(self) -> list[str]:
-        """Get expected fields by parsing from llama prompt or using YAML configuration.
-
-        Priority:
-        1. If expected_fields is defined in YAML, use that
-        2. Otherwise, parse fields from the llama prompt
+        """Get expected fields by parsing from the prompt text.
+        
+        This ensures a single source of truth - the fields are defined
+        only in the prompt, not in a separate list.
         """
-        # First check if expected_fields is explicitly defined
-        expected_fields = self.yaml_config.get("expected_fields", [])
-        if expected_fields:
-            return expected_fields
-
-        # Otherwise, parse from llama prompt
-        prompts = self.yaml_config.get("prompts", {})
-        llama_prompt = prompts.get("llama", "")
-
-        if not llama_prompt:
+        # First try to get the shared extraction_prompt
+        extraction_prompt = self.yaml_config.get("extraction_prompt", "")
+        
+        if extraction_prompt:
+            return self._parse_fields_from_prompt(extraction_prompt)
+        
+        # Otherwise get the prompt for the current model type
+        prompts = self.get_prompts()
+        model_prompt = prompts.get(self.model_type, "")
+        
+        if not model_prompt:
+            # Fallback to llama prompt if model-specific prompt not found
+            model_prompt = prompts.get("llama", "")
+            
+        if not model_prompt:
             return []
 
-        # Parse field names from lines that match "FIELD_NAME: [value or N/A]"
-        import re
-
-        fields = []
-        for line in llama_prompt.split("\n"):
-            match = re.match(r"^\s*([A-Z_]+):\s*\[.*\]", line.strip())
-            if match:
-                fields.append(match.group(1))
-
-        return fields
+        return self._parse_fields_from_prompt(model_prompt)
 
     def get_prompts(self) -> dict[str, str]:
-        """Get model-specific prompts from YAML configuration."""
+        """Get prompts from YAML configuration.
+        
+        Returns the shared extraction_prompt for all models.
+        """
+        # First check if there's a shared extraction_prompt
+        extraction_prompt = self.yaml_config.get("extraction_prompt", "")
+        
+        if extraction_prompt:
+            # Return the same prompt for all models
+            return {
+                "llama": extraction_prompt,
+                "internvl": extraction_prompt,
+            }
+        
+        # Fallback to legacy model-specific prompts if they exist
         return self.yaml_config.get(
             "prompts",
             {

@@ -200,13 +200,8 @@ speed_thresholds:
   fast: 25.0       # 15-25s = Fast (good performance)
   moderate: 40.0   # 25-40s = Moderate (acceptable)
 
-# Expected fields for extraction (26 fields total)
-expected_fields:
-  - DOCUMENT_TYPE
-  - SUPPLIER
-  - ABN
-  # ... (full list of 26 fields)
-# Note: ALL 26 fields are compared - no arbitrary subset
+# Note: Fields are defined in the prompts section
+# The system parses fields dynamically from the prompt text
 
 # Memory and hardware configuration
 memory_config:
