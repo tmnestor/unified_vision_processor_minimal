@@ -378,10 +378,15 @@ class ComparisonRunner:
                             f"\n🔍 {model_name.upper()} sees in {image_path.name}:"
                         )
 
-                        # Check post-processing configuration
-                        post_processing_config = self.config.yaml_config.get(
-                            "post_processing", {}
-                        )
+                        # Check post-processing configuration with debug
+                        try:
+                            post_processing_config = self.config.get_legacy_config_dict().get(
+                                "post_processing", {}
+                            )
+                        except Exception as e:
+                            self.console.print(f"❌ DEBUG: Error accessing post_processing config: {e}")
+                            self.console.print(f"❌ DEBUG: ConfigManager methods: {[m for m in dir(self.config) if not m.startswith('_')]}")
+                            post_processing_config = {}
                         post_processing_enabled = post_processing_config.get(
                             "enabled", True
                         )
@@ -767,7 +772,7 @@ class ComparisonRunner:
             )
 
             # Show completion quality using YAML config thresholds
-            quality_thresholds = self.config.yaml_config.get(
+            quality_thresholds = self.config.get_legacy_config_dict().get(
                 "quality_thresholds",
                 {"excellent": 24, "good": 20, "fair": 15, "poor": 0},
             )
@@ -837,7 +842,7 @@ class ComparisonRunner:
             processing_times[model_name] = avg_processing_time
 
             # Determine speed rating using YAML config thresholds
-            speed_thresholds = self.config.yaml_config.get(
+            speed_thresholds = self.config.get_legacy_config_dict().get(
                 "speed_thresholds", {"very_fast": 2.0, "fast": 5.0, "moderate": 10.0}
             )
 
@@ -1342,7 +1347,7 @@ class ComparisonRunner:
             )
 
             # Add performance rating based on field extraction
-            quality_thresholds = self.config.yaml_config.get(
+            quality_thresholds = self.config.get_legacy_config_dict().get(
                 "quality_thresholds", {"excellent": 12, "good": 8, "fair": 5, "poor": 0}
             )
 
