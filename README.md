@@ -52,11 +52,10 @@ Document Image → Unified Prompt → Vision Model → Raw Output Capture → An
 
 ```
 unified_vision_processor_minimal/
-├── model_comparison.yaml          # Main configuration file
+├── model_comparison.yaml          # Main configuration file (model paths, device settings)
 ├── model_comparison.py            # Primary comparison script
 ├── environment.yml                # Conda environment specification
 ├── requirements.txt               # Python dependencies
-├── .env                          # Environment variables (optional)
 ├── 
 ├── datasets/                      # Test images (25 images)
 │   ├── image01.png through image25.png
@@ -137,10 +136,10 @@ python model_comparison.py
 python -m vision_processor.cli.simple_extract_cli compare datasets/image14.png
 
 # Test individual model (for debugging)
-python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --model llama32_vision
+python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --model llama
 
-# Extract with custom prompt (useful for testing new prompts)
-python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --prompt-file datasets/invoice_extraction_prompt.md
+# Extract with different output format
+python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --output-format json
 ```
 
 ### Debug Mode
@@ -263,13 +262,10 @@ key_schema:
 python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png
 
 # Extract with model override
-python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --model llama32_vision
+python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --model llama
 
 # Extract with output format override  
 python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --output-format json
-
-# Extract with custom prompt
-python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --prompt-file datasets/invoice_extraction_prompt.md
 
 # Model comparison on specific document
 python -m vision_processor.cli.simple_extract_cli compare datasets/image14.png
