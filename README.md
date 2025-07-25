@@ -90,8 +90,7 @@ unified_vision_processor_minimal/
 │   │   └── evaluation_cli.py
 │   │
 │   └── utils/                    # Utilities
-│       ├── memory_monitor.py    # GPU memory tracking
-│       └── repetition_control.py # Output deduplication
+│       └── memory_monitor.py    # GPU memory tracking
 │
 ├── backup/                       # Legacy code (not in git)
 └── docs/                         # Documentation

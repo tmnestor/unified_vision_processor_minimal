@@ -6,6 +6,7 @@ and production optimizations for single GPU deployment.
 
 import gc
 import logging
+import re
 import time
 import warnings
 from pathlib import Path
@@ -20,7 +21,6 @@ from transformers import (
 )
 
 # We'll suppress warnings during model loading using context managers
-from ..utils.repetition_control import UltraAggressiveRepetitionController
 from .base_model import BaseVisionModel, DeviceConfig, ModelCapabilities, ModelResponse
 from .model_utils import DeviceManager
 
@@ -46,19 +46,16 @@ class LlamaVisionModel(BaseVisionModel):
         # Extract config from kwargs and store as direct attribute
         self.config = kwargs.get("config")
 
-        # Initialize ultra-aggressive repetition controller
-        # Extract configuration from YAML config first, then kwargs
+        # Extract repetition control configuration
         yaml_repetition_config = getattr(self.config, "yaml_config", {}).get(
             "repetition_control", {}
         )
         repetition_config = kwargs.get("repetition_control", yaml_repetition_config)
-        word_threshold = repetition_config.get("word_threshold", 0.15)
-        phrase_threshold = repetition_config.get("phrase_threshold", 2)
-
+        
         # Store repetition control settings
         self.repetition_enabled = repetition_config.get("enabled", True)
 
-        # Read max_new_tokens_limit from YAML config (single source of truth) FIRST
+        # Read max_new_tokens_limit from YAML config
         yaml_limit = None
         if hasattr(self, "config") and self.config:
             model_config = getattr(self.config, "yaml_config", {}).get(
@@ -66,24 +63,22 @@ class LlamaVisionModel(BaseVisionModel):
             )
             yaml_limit = model_config.get("llama", {}).get("max_new_tokens_limit")
 
-        # Use YAML config as single source of truth, fallback to repetition_config, then default
-        fallback_tokens = yaml_repetition_config.get("fallback_max_tokens", 1000)
-        self.max_new_tokens_limit = (
-            yaml_limit
-            or repetition_config.get("max_new_tokens_limit")
-            or fallback_tokens
-        )
+        # Use YAML config as single source of truth
+        self.max_new_tokens_limit = yaml_limit or 1024
 
-        # Now create repetition controller with the correct token limit
-        self.repetition_controller = UltraAggressiveRepetitionController(
-            word_threshold=word_threshold,
-            phrase_threshold=phrase_threshold,
-            max_tokens_limit=self.max_new_tokens_limit,  # Pass the YAML config limit
-        )
+        # Special tokens to clean from responses
+        self.cleanup_tokens = [
+            "<|begin_of_text|>",
+            "<|end_of_text|>",
+            "<|image|>",
+            "[INST]",
+            "[/INST]",
+            "<s>",
+            "</s>",
+        ]
 
         logger.info(
-            f"UltraAggressiveRepetitionController initialized - "
-            f"word_threshold={word_threshold}, phrase_threshold={phrase_threshold}, "
+            f"Llama repetition control - enabled={self.repetition_enabled}, "
             f"max_new_tokens_limit={self.max_new_tokens_limit}"
         )
 
@@ -584,18 +579,43 @@ class LlamaVisionModel(BaseVisionModel):
         return inputs
 
     def _clean_response(self, response: str, image_name: str = "") -> str:
-        """Clean response using ultra-aggressive repetition control."""
-        if not self.repetition_enabled:
-            # Fallback to basic cleaning if repetition control is disabled
-            import re
-
-            response = re.sub(r"\s+", " ", response)
-            if len(response) > 1000:
-                response = response[:1000] + "..."
-            return response.strip()
-
-        # Use the ultra-aggressive repetition controller
-        return self.repetition_controller.clean_response(response, image_name)
+        """Clean response by removing repetition and special tokens."""
+        if not response:
+            return ""
+            
+        cleaned = response
+        
+        # Remove special tokens
+        if self.repetition_enabled:
+            for token in self.cleanup_tokens:
+                cleaned = cleaned.replace(token, "")
+        
+            # Remove consecutive duplicate lines
+            lines = cleaned.split("\n")
+            unique_lines = []
+            prev_line = None
+            
+            for line in lines:
+                line_cleaned = line.strip()
+                if line_cleaned and line_cleaned != prev_line:
+                    unique_lines.append(line)
+                    prev_line = line_cleaned
+                    
+            cleaned = "\n".join(unique_lines)
+            
+            # Remove excessive whitespace
+            cleaned = re.sub(r"\s+", " ", cleaned)
+            
+            # Truncate if too long
+            if len(cleaned) > self.max_new_tokens_limit * 5:  # Rough char estimate
+                cleaned = cleaned[:self.max_new_tokens_limit * 5] + "..."
+        else:
+            # Basic cleaning only
+            cleaned = re.sub(r"\s+", " ", cleaned)
+            if len(cleaned) > 1000:
+                cleaned = cleaned[:1000] + "..."
+                
+        return cleaned.strip()
 
     def process_image(
         self,

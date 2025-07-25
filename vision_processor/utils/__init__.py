@@ -1,8 +1,6 @@
 """Utility modules for vision processor."""
 
-from .repetition_control import (
-    RepetitionController,
-    UltraAggressiveRepetitionController,
-)
+# Memory monitor is the only utility we need now
+# Repetition control has been integrated directly into llama_model.py
 
-__all__ = ["RepetitionController", "UltraAggressiveRepetitionController"]
+__all__ = []
