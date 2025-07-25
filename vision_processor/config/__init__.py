@@ -5,12 +5,10 @@ Supports model factory pattern for InternVL3 and Llama-3.2-Vision.
 """
 
 from .config_manager import ConfigManager
-from .simple_config import SimpleConfig
 
-# ConfigManager is the new unified configuration system
-# SimpleConfig maintained for backward compatibility
+# ConfigManager is the unified configuration system
+# Legacy SimpleConfig moved to backup/legacy_config/
 
 __all__ = [
     "ConfigManager",
-    "SimpleConfig",
 ]

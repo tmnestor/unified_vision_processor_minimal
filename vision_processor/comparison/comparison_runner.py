@@ -17,8 +17,8 @@ from PIL import Image
 from rich.console import Console
 from rich.progress import track
 
+from ..config import ConfigManager
 from ..config.model_registry import get_model_registry
-from ..config.simple_config import SimpleConfig
 from ..exceptions import ValidationError
 from ..utils.memory_monitor import MemoryMonitor
 from .model_validator import ModelValidator
@@ -51,7 +51,7 @@ class ComparisonResults:
     """Complete comparison results."""
 
     # Configuration
-    config: SimpleConfig
+    config: ConfigManager
     dataset_info: DatasetInfo
     models_tested: List[str]
 
@@ -81,7 +81,7 @@ class ComparisonResults:
 class ComparisonRunner:
     """Main orchestrator for model comparison pipeline."""
 
-    def __init__(self, config: SimpleConfig):
+    def __init__(self, config: ConfigManager):
         """Initialize comparison runner.
 
         Args:
@@ -94,7 +94,7 @@ class ComparisonRunner:
         self.memory_monitor = MemoryMonitor(self.console)
 
         # Initialize components
-        self.model_registry = get_model_registry()
+        self.model_registry = get_model_registry(self.config)
         self.model_validator = ModelValidator(self.model_registry)
         # Pure model comparison - no complex extraction components needed
 

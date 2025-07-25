@@ -35,10 +35,10 @@ import yaml
 from rich.console import Console
 
 from vision_processor.comparison.comparison_runner import ComparisonRunner
-from vision_processor.config.model_registry import get_model_registry
 
 # Import simple configuration
-from vision_processor.config.simple_config import SimpleConfig
+from vision_processor.config import ConfigManager
+from vision_processor.config.model_registry import get_model_registry
 
 # Configure environment
 console = Console()
@@ -81,7 +81,7 @@ def run_production_comparison(
             config_overrides["internvl_path"] = internvl_path
 
         # Load simple configuration with YAML file
-        config = SimpleConfig(yaml_file=config_path)
+        config = ConfigManager(yaml_file=config_path)
 
         # Simple validation - just check if models exist
         if not Path(datasets_path).exists():

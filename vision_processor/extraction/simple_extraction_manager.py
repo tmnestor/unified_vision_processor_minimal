@@ -7,7 +7,7 @@ from typing import Any, Dict, Union
 import torch
 from rich.console import Console
 
-from ..config.simple_config import SimpleConfig
+# Legacy SimpleConfig import removed - now using ConfigManager
 from ..exceptions import (
     ImageProcessingError,
     ModelInferenceError,
@@ -36,16 +36,16 @@ class ExtractionResult:
 class SimpleExtractionManager:
     """Simplified single-step extraction manager."""
 
-    def __init__(self, config: SimpleConfig):
+    def __init__(self, config):
         """Initialize extraction manager.
 
         Args:
-            config: SimpleConfig instance with settings.
+            config: ConfigManager instance with settings.
         """
         self.config = config
 
-        # Print configuration before model loading
-        self.config.print_configuration()
+        # Configuration info is displayed elsewhere, model loading is what matters
+        console.print(f"🔧 Using model: {config.current_model_type}")
 
         # Initialize model with detailed logging
         self.model = self._load_model_with_logging()

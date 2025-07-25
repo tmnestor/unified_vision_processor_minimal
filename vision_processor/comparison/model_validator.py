@@ -13,8 +13,8 @@ from typing import Dict, List, Tuple
 import torch
 from PIL import Image
 
+from ..config import ConfigManager
 from ..config.model_registry import ModelRegistry
-from ..config.simple_config import SimpleConfig
 from ..models.base_model import BaseVisionModel, DeviceConfig
 
 
@@ -31,7 +31,7 @@ class ModelValidator:
         self.validation_results: Dict[str, Dict] = {}
 
     def validate_model_loading(
-        self, model_name: str, model_path: str, processing_config: SimpleConfig
+        self, model_name: str, model_path: str, processing_config: ConfigManager
     ) -> bool:
         """Validate that a model can be loaded successfully.
 
@@ -175,7 +175,7 @@ class ModelValidator:
         self,
         model_names: List[str],
         model_paths: Dict[str, str],
-        processing_config: SimpleConfig,
+        processing_config: ConfigManager,
     ) -> Tuple[List[str], List[str]]:
         """Validate multiple models.
 

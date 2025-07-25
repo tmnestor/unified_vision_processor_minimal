@@ -11,6 +11,7 @@ from typing import Any, Dict
 @dataclass
 class ModelPaths:
     """Model file paths configuration."""
+
     llama: str = ""
     internvl: str = ""
 
@@ -18,6 +19,7 @@ class ModelPaths:
 @dataclass
 class MemoryConfig:
     """Memory and hardware configuration."""
+
     v100_limit_gb: float = 16.0
     safety_margin: float = 0.85
 
@@ -25,6 +27,7 @@ class MemoryConfig:
 @dataclass
 class ImageProcessingConfig:
     """Image processing configuration."""
+
     max_image_size: int = 1024
     timeout_seconds: int = 10
 
@@ -32,6 +35,7 @@ class ImageProcessingConfig:
 @dataclass
 class DefaultsConfig:
     """CLI default settings."""
+
     datasets_path: str = "datasets"
     max_tokens: int = 700
     quantization: bool = True
@@ -43,6 +47,7 @@ class DefaultsConfig:
 @dataclass
 class ModelSpecificConfig:
     """Model-specific settings."""
+
     max_new_tokens_limit: int = 2024
     confidence_score: float = 0.85
 
@@ -50,6 +55,7 @@ class ModelSpecificConfig:
 @dataclass
 class RepetitionControlConfig:
     """Repetition control configuration."""
+
     enabled: bool = True
     word_threshold: float = 0.15
     phrase_threshold: int = 2
@@ -59,6 +65,7 @@ class RepetitionControlConfig:
 @dataclass
 class DeviceMapConfig:
     """Device mapping for a single model."""
+
     strategy: str = "single_gpu"
     device_map: Dict[str, Any] = field(default_factory=lambda: {"": 0})
     quantization_compatible: bool = True
@@ -67,6 +74,7 @@ class DeviceMapConfig:
 @dataclass
 class DeviceConfig:
     """Device configuration for deployment."""
+
     gpu_strategy: str = "single_gpu"
     target_gpu: int = 0
     v100_mode: bool = True
@@ -74,7 +82,7 @@ class DeviceConfig:
     device_maps: Dict[str, DeviceMapConfig] = field(default_factory=dict)
     # For backward compatibility
     original_device_config: str = "auto"
-    
+
     def get_device_map_for_model(self, model_name: str) -> Dict[str, Any]:
         """Get device map for a specific model."""
         if model_name in self.device_maps:
@@ -85,6 +93,7 @@ class DeviceConfig:
 @dataclass
 class ProcessingConfig:
     """Processing configuration for model loading."""
+
     memory_limit_mb: int
     enable_gradient_checkpointing: bool = True
     use_flash_attention: bool = True
@@ -96,6 +105,7 @@ class ProcessingConfig:
 @dataclass
 class QualityThresholds:
     """Quality rating thresholds for field extraction."""
+
     excellent: int = 12
     good: int = 8
     fair: int = 5
@@ -105,6 +115,7 @@ class QualityThresholds:
 @dataclass
 class SpeedThresholds:
     """Processing speed thresholds."""
+
     very_fast: float = 15.0
     fast: float = 25.0
     moderate: float = 40.0

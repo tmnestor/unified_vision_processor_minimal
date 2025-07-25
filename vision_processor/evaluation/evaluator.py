@@ -15,7 +15,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from ..config.simple_config import SimpleConfig
+# Legacy SimpleConfig import removed - now using ConfigManager
 from ..extraction.simple_extraction_manager import SimpleExtractionManager
 
 
@@ -225,9 +225,10 @@ class ExtractionEvaluator:
         """Evaluate a specific model on all test images using working extraction manager."""
         self.console.print(f"\n🔬 Evaluating {model_type.upper()} model...")
 
-        # Setup extraction manager using the working SimpleConfig approach
-        config = SimpleConfig()
-        config.update_from_cli(model=model_type)
+        # Setup extraction manager using ConfigManager
+        from ..config import ConfigManager
+        config = ConfigManager()
+        config.set_model_type(model_type)
         manager = SimpleExtractionManager(config)
 
         # Get test images

@@ -1,14 +1,14 @@
-"""Simplified Vision Document Processing System
+"""Unified Vision Document Processing System
 
-A streamlined system for processing documents using InternVL3 and Llama-3.2-Vision models.
-Single-step processing with YAML configuration and dynamic key extraction.
+A production-ready system for processing documents using InternVL3 and Llama-3.2-Vision models.
+Clean architecture with unified configuration management and maintainable patterns.
 
 Key Features:
-- Single-step processing pipeline
-- YAML configuration management
+- Clean, maintainable architecture
+- Unified ConfigManager system
 - Universal KEY-VALUE extraction
 - Model-agnostic interface (InternVL3, Llama-3.2-Vision)
-- YAML-driven key schema
+- Fail-fast configuration validation
 - Rich CLI with typer framework
 """
 

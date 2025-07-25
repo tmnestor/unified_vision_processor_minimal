@@ -95,7 +95,7 @@ def benchmark(
         raise typer.Exit(1) from None
 
     try:
-        from ..config.simple_config import SimpleConfig
+        # Legacy SimpleConfig import removed - now using ConfigManager
         from ..extraction.simple_extraction_manager import SimpleExtractionManager
 
         console.print(f"⚡ Benchmarking {model} performance")
@@ -103,8 +103,9 @@ def benchmark(
         console.print(f"🔄 Iterations: {iterations}")
 
         # Setup model
-        config = SimpleConfig()
-        config.update_from_cli(model=model)
+        from ..config import ConfigManager
+        config = ConfigManager()
+        config.set_model_type(model)
         manager = SimpleExtractionManager(config)
 
         # Find images

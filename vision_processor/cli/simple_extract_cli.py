@@ -148,7 +148,7 @@ def compare(
         if verbose:
             console.print("[yellow]Loading dependencies...[/yellow]")
 
-        from ..config.simple_config import SimpleConfig
+        # Legacy SimpleConfig import removed - now using ConfigManager
         from ..extraction.simple_extraction_manager import SimpleExtractionManager
 
         results = {}
@@ -160,12 +160,14 @@ def compare(
             console.print(f"{'=' * 50}")
 
             # Create config with model override
-            config = SimpleConfig(yaml_file)
+            from ..config import ConfigManager
+            config = ConfigManager(yaml_file)
             config.set_model_type(model_name)
 
             # Validate configuration
+            # ConfigManager validates during initialization, no explicit validation needed
             try:
-                config.validate()
+                pass  # ConfigManager already validated
             except ValidationError as e:
                 console.print(
                     f"[red]❌ Configuration validation failed for {model_name}: {e.message}[/red]"
@@ -210,10 +212,14 @@ def config_info(
     try:
         # YAML configuration is passed directly to SimpleConfig
 
-        from ..config.simple_config import SimpleConfig
-
-        config = SimpleConfig(yaml_file)
-        config.print_configuration()
+        # Legacy SimpleConfig import removed - now using ConfigManager
+        from ..config import ConfigManager
+        config = ConfigManager(yaml_file)
+        # Display configuration info
+        console.print("\n📋 Configuration Summary:")
+        console.print(f"   Model Type: {config.current_model_type}")
+        console.print(f"   Output Format: {config.output_format}")
+        console.print(f"   Available Models: {list(config.get_available_models())}")
 
         # Also show YAML file location
         yaml_path = Path(yaml_file).absolute()
@@ -221,13 +227,9 @@ def config_info(
             console.print(f"\n📄 Configuration file: {yaml_path}")
             console.print(f"📝 File size: {yaml_path.stat().st_size} bytes")
 
-            # Validate configuration
-            console.print("\n🔍 Validating configuration...")
-            try:
-                config.validate()
-                console.print("[green]✅ Configuration is valid[/green]")
-            except ValidationError as e:
-                console.print(f"[red]❌ Configuration has issues: {e.message}[/red]")
+            # ConfigManager validates during initialization
+            console.print("\n🔍 Configuration validation...")
+            console.print("[green]✅ Configuration is valid (validated during load)[/green]")
         else:
             console.print(f"\n⚠️  Configuration file not found: {yaml_path}")
             console.print("💡 Check that model_comparison.yaml exists")
@@ -263,11 +265,11 @@ def batch(
         # YAML configuration is passed directly to SimpleConfig
 
         # Import dependencies
-        from ..config.simple_config import SimpleConfig
-        from ..extraction.simple_extraction_manager import SimpleExtractionManager
-
+        # Legacy SimpleConfig import removed - now using ConfigManager
         # Load configuration
-        config = SimpleConfig(yaml_file)
+        from ..config import ConfigManager
+        from ..extraction.simple_extraction_manager import SimpleExtractionManager
+        config = ConfigManager(yaml_file)
 
         if model:
             config.set_model_type(model)

@@ -101,13 +101,13 @@ class ModelFactory:
             raise ModelLoadError(
                 model_name=registration.name,
                 original_error=e,
-                missing_dependency=str(e)
+                missing_dependency=str(e),
             ) from e
         except Exception as e:
             raise ModelLoadError(
                 model_name=registration.name,
                 original_error=e,
-                model_path=effective_path
+                model_path=effective_path,
             ) from e
 
 
@@ -116,7 +116,7 @@ class ModelRegistry:
 
     def __init__(self, config_manager: Optional[ConfigManager] = None):
         """Initialize registry with configuration manager.
-        
+
         Args:
             config_manager: Unified configuration manager (creates default if None)
         """
@@ -126,7 +126,7 @@ class ModelRegistry:
         self._register_builtin_models()
 
     def _register_builtin_models(self):
-        """Register built-in model implementations."""        
+        """Register built-in model implementations."""
         try:
             # Import and register Llama model
             from ..models.llama_model import LlamaVisionModel
@@ -154,7 +154,6 @@ class ModelRegistry:
             )
         except ImportError as e:
             print(f"⚠️  Failed to register InternVL model: {e}")
-    
 
     def register_model(
         self,
