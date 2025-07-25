@@ -1,13 +1,20 @@
-"""Simplified CLI with .env configuration support."""
+"""Simplified CLI with YAML configuration support."""
 
 import json
-import os
 from pathlib import Path
 from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.table import Table
+
+from ..exceptions import (
+    ConfigurationError,
+    ImageProcessingError,
+    ModelLoadError,
+    ValidationError,
+    VisionProcessorError,
+)
 
 app = typer.Typer(
     name="simple-vision-processor",
@@ -26,12 +33,12 @@ def extract(
     output_format: Optional[str] = typer.Option(
         None, help="Override output format (table, json, yaml)"
     ),
-    config_file: str = typer.Option(".env", help="Path to .env configuration file"),
+    yaml_file: str = typer.Option("model_comparison.yaml", help="Path to YAML configuration file"),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
 ) -> None:
-    """Extract data using single-step processing with .env configuration."""
+    """Extract data using single-step processing with YAML configuration."""
 
     # Check image file exists
     image_file = Path(image_path)
@@ -40,10 +47,6 @@ def extract(
         raise typer.Exit(1) from None
 
     try:
-        # Set environment file path if not default
-        if config_file != ".env":
-            os.environ["ENV_FILE_PATH"] = config_file
-
         # Import dependencies
         if verbose:
             console.print("[yellow]Loading dependencies...[/yellow]")
@@ -51,8 +54,8 @@ def extract(
         from ..config.simple_config import SimpleConfig
         from ..extraction.simple_extraction_manager import SimpleExtractionManager
 
-        # Load configuration from YAML only
-        config = SimpleConfig("model_comparison.yaml")
+        # Load configuration from YAML
+        config = SimpleConfig(yaml_file)
 
         # Apply simple CLI overrides
         if model:
@@ -61,8 +64,12 @@ def extract(
             config.set_output_format(output_format)
 
         # Validate configuration
-        if not config.validate():
-            console.print("[red]❌ Configuration validation failed[/red]")
+        try:
+            config.validate()
+        except ValidationError as e:
+            console.print(f"[red]❌ Configuration validation failed: {e.message}[/red]")
+            if verbose and e.details:
+                console.print(f"[yellow]Details: {e.details}[/yellow]")
             raise typer.Exit(1) from None
 
         # Process document
@@ -89,15 +96,34 @@ def extract(
         console.print(f"🎯 Model Confidence: {result.model_confidence:.3f}")
         console.print(f"🔧 Extraction Method: {result.extraction_method}")
 
+    except ConfigurationError as e:
+        console.print(f"[red]❌ Configuration error: {e.message}[/red]")
+        if verbose and e.details:
+            console.print(f"[yellow]Details: {e.details}[/yellow]")
+        raise typer.Exit(1) from None
+    except ModelLoadError as e:
+        console.print(f"[red]❌ Model loading error: {e.message}[/red]")
+        if verbose and e.details:
+            console.print(f"[yellow]Details: {e.details}[/yellow]")
+        raise typer.Exit(1) from None
+    except ImageProcessingError as e:
+        console.print(f"[red]❌ Image processing error: {e.message}[/red]")
+        if verbose and e.details:
+            console.print(f"[yellow]Details: {e.details}[/yellow]")
+        raise typer.Exit(1) from None
+    except VisionProcessorError as e:
+        console.print(f"[red]❌ {e.message}[/red]")
+        if verbose and e.details:
+            console.print(f"[yellow]Details: {e.details}[/yellow]")
+        raise typer.Exit(1) from None
     except ImportError as e:
         console.print(f"[red]❌ Import error: {e}[/red]")
         console.print("[yellow]Please ensure all dependencies are installed[/yellow]")
         raise typer.Exit(1) from None
     except Exception as e:
-        console.print(f"[red]❌ Processing failed: {e}[/red]")
+        console.print(f"[red]❌ Unexpected error: {e}[/red]")
         if verbose:
             import traceback
-
             console.print(traceback.format_exc())
         raise typer.Exit(1) from None
 
@@ -108,12 +134,12 @@ def compare(
     models: str = typer.Option(
         "internvl,llama", help="Models to compare (comma-separated)"
     ),
-    config_file: str = typer.Option(".env", help="Path to .env configuration file"),
+    yaml_file: str = typer.Option("model_comparison.yaml", help="Path to YAML configuration file"),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
 ) -> None:
-    """Compare extraction results between models using .env configuration."""
+    """Compare extraction results between models using YAML configuration."""
 
     # Check image file exists
     image_file = Path(image_path)
@@ -122,9 +148,7 @@ def compare(
         raise typer.Exit(1) from None
 
     try:
-        # Set environment file path if not default
-        if config_file != ".env":
-            os.environ["ENV_FILE_PATH"] = config_file
+        # YAML configuration is passed directly to SimpleConfig
 
         # Import dependencies
         if verbose:
@@ -181,35 +205,34 @@ def compare(
 
 @app.command()
 def config_info(
-    config_file: str = typer.Option(".env", help="Path to .env configuration file"),
+    yaml_file: str = typer.Option("model_comparison.yaml", help="Path to YAML configuration file"),
 ) -> None:
-    """Display current configuration from .env file."""
+    """Display current configuration from YAML file."""
 
     try:
-        # Set environment file path if not default
-        if config_file != ".env":
-            os.environ["ENV_FILE_PATH"] = config_file
+        # YAML configuration is passed directly to SimpleConfig
 
         from ..config.simple_config import SimpleConfig
 
-        config = SimpleConfig("model_comparison.yaml")
+        config = SimpleConfig(yaml_file)
         config.print_configuration()
 
-        # Also show .env file location
-        env_path = Path(config_file).absolute()
-        if env_path.exists():
-            console.print(f"\n📄 Configuration file: {env_path}")
-            console.print(f"📝 File size: {env_path.stat().st_size} bytes")
+        # Also show YAML file location
+        yaml_path = Path(yaml_file).absolute()
+        if yaml_path.exists():
+            console.print(f"\n📄 Configuration file: {yaml_path}")
+            console.print(f"📝 File size: {yaml_path.stat().st_size} bytes")
 
             # Validate configuration
             console.print("\n🔍 Validating configuration...")
-            if config.validate():
+            try:
+                config.validate()
                 console.print("[green]✅ Configuration is valid[/green]")
-            else:
-                console.print("[red]❌ Configuration has issues[/red]")
+            except ValidationError as e:
+                console.print(f"[red]❌ Configuration has issues: {e.message}[/red]")
         else:
-            console.print(f"\n⚠️  Configuration file not found: {env_path}")
-            console.print("💡 Create a .env file with VISION_* variables")
+            console.print(f"\n⚠️  Configuration file not found: {yaml_path}")
+            console.print("💡 Check that model_comparison.yaml exists")
 
     except ImportError as e:
         console.print(f"[red]❌ Import error: {e}[/red]")
@@ -224,7 +247,7 @@ def batch(
     input_dir: str = typer.Argument(..., help="Directory containing images to process"),
     output_dir: str = typer.Option("output", help="Directory to save results"),
     model: Optional[str] = typer.Option(None, help="Override model type"),
-    config_file: str = typer.Option(".env", help="Path to .env configuration file"),
+    yaml_file: str = typer.Option("model_comparison.yaml", help="Path to YAML configuration file"),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
@@ -239,16 +262,14 @@ def batch(
         raise typer.Exit(1) from None
 
     try:
-        # Set environment file path if not default
-        if config_file != ".env":
-            os.environ["ENV_FILE_PATH"] = config_file
+        # YAML configuration is passed directly to SimpleConfig
 
         # Import dependencies
         from ..config.simple_config import SimpleConfig
         from ..extraction.simple_extraction_manager import SimpleExtractionManager
 
         # Load configuration
-        config = SimpleConfig("model_comparison.yaml")
+        config = SimpleConfig(yaml_file)
 
         if model:
             config.set_model_type(model)

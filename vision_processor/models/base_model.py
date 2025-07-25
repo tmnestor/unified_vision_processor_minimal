@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     import torch
     from PIL import Image
 
+from ..exceptions import InvalidImageError
+
 
 class ModelType(Enum):
     """Supported vision model types."""
@@ -203,8 +205,11 @@ class BaseVisionModel(ABC):
 
             return True
 
-        except Exception:
-            return False
+        except Exception as e:
+            raise InvalidImageError(
+                image_path=Path(str(image_path)) if isinstance(image_path, (str, Path)) else Path("unknown"),
+                reason=f"Failed to validate image: {str(e)}"
+            ) from e
 
     def get_device_info(self) -> dict[str, Any]:
         """Get detailed device information."""

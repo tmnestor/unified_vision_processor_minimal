@@ -8,6 +8,11 @@ import torch
 from rich.console import Console
 
 from ..config.simple_config import SimpleConfig
+from ..exceptions import (
+    ImageProcessingError,
+    ModelInferenceError,
+    ModelLoadError,
+)
 
 console = Console()
 
@@ -123,9 +128,18 @@ class SimpleExtractionManager:
 
             return model
 
+        except ImportError as e:
+            raise ModelLoadError(
+                model_name=self.config.model_type,
+                original_error=e,
+                suggestion="Check if all model dependencies are installed"
+            ) from e
         except Exception as e:
-            print(f"❌ Error loading model: {str(e)}")
-            raise
+            raise ModelLoadError(
+                model_name=self.config.model_type,
+                original_error=e,
+                model_path=str(model_path)
+            ) from e
 
     def process_document(self, image_path: Union[str, Path]) -> ExtractionResult:
         """Single-step document processing.
@@ -274,12 +288,23 @@ class SimpleExtractionManager:
             try:
                 result = self.process_document(image_path)
                 results.append(result)
-            except Exception as e:
-                print(f"❌ Error processing {image_path}: {str(e)}")
-                # Create error result
+            except (ModelInferenceError, ImageProcessingError) as e:
+                print(f"❌ Error processing {image_path}: {e.message}")
+                # Create error result with specific error info
                 results.append(
                     ExtractionResult(
-                        extracted_fields={"error": str(e)},
+                        extracted_fields={"error": e.message, "error_type": type(e).__name__},
+                        processing_time=0.0,
+                        model_confidence=0.0,
+                        extraction_method="error",
+                    )
+                )
+            except Exception as e:
+                print(f"❌ Unexpected error processing {image_path}: {str(e)}")
+                # Create error result for unexpected errors
+                results.append(
+                    ExtractionResult(
+                        extracted_fields={"error": str(e), "error_type": "UnexpectedError"},
                         processing_time=0.0,
                         model_confidence=0.0,
                         extraction_method="error",

@@ -15,6 +15,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 
+import yaml
+
+from ..exceptions import ConfigurationError, ModelLoadError
 from ..models.base_model import (
     BaseVisionModel,
     DeviceConfig,
@@ -101,23 +104,39 @@ class ModelFactory:
 
         try:
             return registration.model_class(**model_kwargs)
+        except ImportError as e:
+            raise ModelLoadError(
+                model_name=registration.name,
+                original_error=e,
+                missing_dependency=str(e)
+            ) from e
         except Exception as e:
-            raise RuntimeError(
-                f"Failed to create {registration.name} model: {e}"
+            raise ModelLoadError(
+                model_name=registration.name,
+                original_error=e,
+                model_path=effective_path
             ) from e
 
 
 class ModelRegistry:
     """Registry for managing available vision models."""
 
-    def __init__(self):
-        """Initialize empty registry."""
+    def __init__(self, config_path: str = "model_comparison.yaml"):
+        """Initialize empty registry.
+        
+        Args:
+            config_path: Path to YAML configuration file with model paths
+        """
         self._models: Dict[str, ModelRegistration] = {}
         self._factory: Optional[ModelFactory] = None
+        self._config_path = config_path
         self._register_builtin_models()
 
     def _register_builtin_models(self):
         """Register built-in model implementations."""
+        # Load model paths from YAML configuration
+        model_paths = self._load_model_paths_from_config()
+        
         try:
             # Import and register Llama model
             from ..models.llama_model import LlamaVisionModel
@@ -126,7 +145,7 @@ class ModelRegistry:
                 name="llama",
                 model_type=ModelType.LLAMA32_VISION,
                 model_class=LlamaVisionModel,
-                default_path="/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision-Instruct",
+                default_path=model_paths.get("llama", "/path/to/llama/model"),
                 description="Llama-3.2-11B-Vision model with 7-step processing pipeline",
             )
         except ImportError as e:
@@ -140,11 +159,48 @@ class ModelRegistry:
                 name="internvl",
                 model_type=ModelType.INTERNVL3,
                 model_class=InternVLModel,
-                default_path="/home/jovyan/nfs_share/models/InternVL3-8B",
+                default_path=model_paths.get("internvl", "/path/to/internvl/model"),
                 description="InternVL3-8B model with multi-GPU optimization and highlight detection",
             )
         except ImportError as e:
             print(f"⚠️  Failed to register InternVL model: {e}")
+    
+    def _load_model_paths_from_config(self) -> Dict[str, str]:
+        """Load model paths from YAML configuration file.
+        
+        Returns:
+            Dictionary mapping model names to their paths
+        """
+        try:
+            config_path = Path(self._config_path)
+            
+            if not config_path.exists():
+                raise ConfigurationError(
+                    "Model configuration file not found",
+                    config_path=config_path
+                )
+                
+            with config_path.open('r') as f:
+                config = yaml.safe_load(f)
+                model_paths = config.get('model_paths', {})
+                
+                if not model_paths:
+                    print("⚠️  No model paths found in configuration")
+                    
+                return model_paths
+                
+        except yaml.YAMLError as e:
+            raise ConfigurationError(
+                "Failed to parse YAML configuration",
+                config_path=config_path,
+                parse_error=str(e)
+            ) from e
+        except IOError as e:
+            raise ConfigurationError(
+                "Failed to read configuration file",
+                config_path=config_path,
+                io_error=str(e)
+            ) from e
 
     def register_model(
         self,
@@ -421,7 +477,7 @@ class ModelRegistry:
 
 
 # Global registry instance
-GLOBAL_MODEL_REGISTRY = ModelRegistry()
+GLOBAL_MODEL_REGISTRY = ModelRegistry("model_comparison.yaml")
 
 
 def get_model_registry() -> ModelRegistry:

@@ -1,11 +1,11 @@
 """Simplified Vision Document Processing System
 
 A streamlined system for processing documents using InternVL3 and Llama-3.2-Vision models.
-Single-step processing with .env configuration and YAML-driven key extraction.
+Single-step processing with YAML configuration and dynamic key extraction.
 
 Key Features:
 - Single-step processing pipeline
-- .env configuration management
+- YAML configuration management
 - Universal KEY-VALUE extraction
 - Model-agnostic interface (InternVL3, Llama-3.2-Vision)
 - YAML-driven key schema

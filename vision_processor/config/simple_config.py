@@ -4,6 +4,8 @@ from pathlib import Path
 
 import yaml
 
+from ..exceptions import ConfigurationError, ValidationError
+
 
 class SimpleConfig:
     """Simplified configuration loader from YAML only."""
@@ -13,12 +15,35 @@ class SimpleConfig:
 
         Args:
             yaml_file: Path to YAML config file (default: model_comparison.yaml).
+            
+        Raises:
+            ConfigurationError: If YAML file cannot be loaded or parsed
         """
         # Load YAML configuration
         self.yaml_config = {}
-        if yaml_file and Path(yaml_file).exists():
-            with Path(yaml_file).open("r") as f:
+        yaml_path = Path(yaml_file)
+        
+        if not yaml_path.exists():
+            raise ConfigurationError(
+                f"Configuration file not found: {yaml_file}",
+                config_path=yaml_path
+            )
+            
+        try:
+            with yaml_path.open("r") as f:
                 self.yaml_config = yaml.safe_load(f) or {}
+        except yaml.YAMLError as e:
+            raise ConfigurationError(
+                f"Failed to parse YAML configuration: {e}",
+                config_path=yaml_path,
+                parse_error=str(e)
+            ) from e
+        except IOError as e:
+            raise ConfigurationError(
+                f"Failed to read configuration file: {e}",
+                config_path=yaml_path,
+                io_error=str(e)
+            ) from e
 
         # Get defaults from YAML
         defaults = self.yaml_config.get("defaults", {})
@@ -188,29 +213,36 @@ class SimpleConfig:
                     fields.append(field_name)
         return fields
 
-    def validate(self) -> bool:
+    def validate(self) -> None:
         """Validate configuration settings.
-
-        Returns:
-            True if configuration is valid, False otherwise.
+        
+        Raises:
+            ValidationError: If any configuration setting is invalid
         """
         # Check model type
         if self.model_type not in ["internvl", "llama"]:
-            print(f"❌ Invalid model type: {self.model_type}")
-            return False
+            raise ValidationError(
+                field="model_type",
+                value=self.model_type,
+                reason="Must be 'internvl' or 'llama'"
+            )
 
         # Check model path exists
         model_path = Path(self.model_path)
         if not model_path.exists():
+            # This is a warning, not an error - model might be downloaded later
             print(f"⚠️  Model path does not exist: {self.model_path}")
-            print("  Please update VISION_MODEL_PATH in .env file")
+            print("  Please update model_paths in model_comparison.yaml")
 
         # Check device config
         valid_devices = ["auto", "cpu", "cuda", "cuda:0", "cuda:1", "mps"]
         device_str = self.device_config.original_device_config
         if device_str not in valid_devices and not device_str.startswith("cuda:"):
-            print(f"❌ Invalid device config: {device_str}")
-            return False
+            raise ValidationError(
+                field="device_config",
+                value=device_str,
+                reason=f"Must be one of {valid_devices} or cuda:N"
+            )
 
         # Check memory settings
         if self.memory_limit_mb < 1024:
@@ -218,15 +250,19 @@ class SimpleConfig:
 
         # Check GPU memory fraction
         if not 0.1 <= self.gpu_memory_fraction <= 1.0:
-            print(f"❌ Invalid GPU memory fraction: {self.gpu_memory_fraction}")
-            return False
+            raise ValidationError(
+                field="gpu_memory_fraction",
+                value=self.gpu_memory_fraction,
+                reason="Must be between 0.1 and 1.0"
+            )
 
         # Check output format
         if self.output_format not in ["table", "json", "yaml"]:
-            print(f"❌ Invalid output format: {self.output_format}")
-            return False
-
-        return True
+            raise ValidationError(
+                field="output_format", 
+                value=self.output_format,
+                reason="Must be 'table', 'json', or 'yaml'"
+            )
 
     def get_model_config(self) -> dict:
         """Get model-specific configuration as a dictionary.
