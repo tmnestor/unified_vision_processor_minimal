@@ -306,6 +306,13 @@ class ConfigManager:
                     fields.append(field_name)
         return fields
     
+    def get_prompts(self) -> Dict[str, str]:
+        """Get prompts for all models (shared extraction prompt)."""
+        return {
+            "llama": self.extraction_prompt,
+            "internvl": self.extraction_prompt,
+        }
+    
     def set_model_type(self, model_type: str) -> None:
         """Set current model type with validation."""
         if model_type not in ["llama", "internvl"]:
