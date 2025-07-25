@@ -74,22 +74,22 @@ class SimpleExtractionManager:
 
         # Print memory settings
         print("🧠 Memory Configuration:")
-        print(f"  - Memory Limit: {self.config.processing.memory_limit_mb}MB")
+        print(f"  - Memory Limit: {self.config.memory_config.memory_limit_mb}MB")
         print("  - GPU Memory Fraction: 0.9")  # Legacy value
         print(
-            f"  - Quantization: {'Enabled' if self.config.processing.quantization else 'Disabled'}"
+            f"  - Quantization: {'Enabled' if self.config.memory_config.quantization else 'Disabled'}"
         )
         print(
-            f"  - Multi-GPU: {'Enabled' if self.config.is_multi_gpu_enabled() else 'Disabled'}"
+            f"  - Multi-GPU: {'Enabled' if hasattr(self.config, 'is_multi_gpu_enabled') and self.config.is_multi_gpu_enabled() else 'Disabled'}"
         )
 
         # Print processing optimizations
         print("⚡ Processing Optimizations:")
         print(
-            f"  - Gradient Checkpointing: {'Enabled' if self.config.processing.enable_gradient_checkpointing else 'Disabled'}"
+            f"  - Gradient Checkpointing: {'Enabled' if self.config.memory_config.enable_gradient_checkpointing else 'Disabled'}"
         )
         print(
-            f"  - Flash Attention: {'Enabled' if self.config.processing.use_flash_attention else 'Disabled'}"
+            f"  - Flash Attention: {'Enabled' if self.config.memory_config.use_flash_attention else 'Disabled'}"
         )
 
         # Load the model
