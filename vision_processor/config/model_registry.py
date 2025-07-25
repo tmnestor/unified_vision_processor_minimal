@@ -8,14 +8,9 @@ BaseVisionModel interface.
 
 import importlib
 from dataclasses import dataclass
-
-# Note: Using simple dataclass instead of complex ProcessingConfig
-from dataclasses import dataclass as ProcessingConfig
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
-
-import yaml
 
 from ..exceptions import ConfigurationError, ModelLoadError
 from ..models.base_model import (
@@ -24,6 +19,7 @@ from ..models.base_model import (
     ModelCapabilities,
     ModelType,
 )
+from .config_manager import ConfigManager
 
 
 class ModelStatus(Enum):
@@ -60,13 +56,13 @@ class ModelRegistration:
 class ModelFactory:
     """Factory for creating model instances with standardized configuration."""
 
-    def __init__(self, processing_config: ProcessingConfig):
-        """Initialize factory with processing configuration.
+    def __init__(self, config_manager: ConfigManager):
+        """Initialize factory with configuration manager.
 
         Args:
-            processing_config: Processing configuration for model instantiation
+            config_manager: Unified configuration manager
         """
-        self.processing_config = processing_config
+        self.config_manager = config_manager
 
     def create_model(
         self,
@@ -89,18 +85,15 @@ class ModelFactory:
         effective_path = model_path or registration.default_path
         effective_device = device_config or DeviceConfig.AUTO
 
-        # Merge processing config with any overrides
+        # Merge configuration with any overrides
         model_kwargs = {
             "model_path": effective_path,
             "device_config": effective_device,
-            "enable_quantization": self.processing_config.quantization,
-            "memory_limit_mb": self.processing_config.memory_limit_mb,
+            "enable_quantization": self.config_manager.processing.quantization,
+            "memory_limit_mb": self.config_manager.processing.memory_limit_mb,
+            "config": self.config_manager,  # Pass the entire config manager
             **kwargs,
         }
-
-        # Add model-specific configurations
-        if hasattr(self.processing_config, "trust_remote_code"):
-            model_kwargs["trust_remote_code"] = self.processing_config.trust_remote_code
 
         try:
             return registration.model_class(**model_kwargs)
@@ -121,22 +114,19 @@ class ModelFactory:
 class ModelRegistry:
     """Registry for managing available vision models."""
 
-    def __init__(self, config_path: str = "model_comparison.yaml"):
-        """Initialize empty registry.
+    def __init__(self, config_manager: Optional[ConfigManager] = None):
+        """Initialize registry with configuration manager.
         
         Args:
-            config_path: Path to YAML configuration file with model paths
+            config_manager: Unified configuration manager (creates default if None)
         """
         self._models: Dict[str, ModelRegistration] = {}
         self._factory: Optional[ModelFactory] = None
-        self._config_path = config_path
+        self.config_manager = config_manager or ConfigManager()
         self._register_builtin_models()
 
     def _register_builtin_models(self):
-        """Register built-in model implementations."""
-        # Load model paths from YAML configuration
-        model_paths = self._load_model_paths_from_config()
-        
+        """Register built-in model implementations."""        
         try:
             # Import and register Llama model
             from ..models.llama_model import LlamaVisionModel
@@ -145,7 +135,7 @@ class ModelRegistry:
                 name="llama",
                 model_type=ModelType.LLAMA32_VISION,
                 model_class=LlamaVisionModel,
-                default_path=model_paths.get("llama", "/path/to/llama/model"),
+                default_path=self.config_manager.model_paths.llama,
                 description="Llama-3.2-11B-Vision model with 7-step processing pipeline",
             )
         except ImportError as e:
@@ -159,48 +149,12 @@ class ModelRegistry:
                 name="internvl",
                 model_type=ModelType.INTERNVL3,
                 model_class=InternVLModel,
-                default_path=model_paths.get("internvl", "/path/to/internvl/model"),
+                default_path=self.config_manager.model_paths.internvl,
                 description="InternVL3-8B model with multi-GPU optimization and highlight detection",
             )
         except ImportError as e:
             print(f"⚠️  Failed to register InternVL model: {e}")
     
-    def _load_model_paths_from_config(self) -> Dict[str, str]:
-        """Load model paths from YAML configuration file.
-        
-        Returns:
-            Dictionary mapping model names to their paths
-        """
-        try:
-            config_path = Path(self._config_path)
-            
-            if not config_path.exists():
-                raise ConfigurationError(
-                    "Model configuration file not found",
-                    config_path=config_path
-                )
-                
-            with config_path.open('r') as f:
-                config = yaml.safe_load(f)
-                model_paths = config.get('model_paths', {})
-                
-                if not model_paths:
-                    print("⚠️  No model paths found in configuration")
-                    
-                return model_paths
-                
-        except yaml.YAMLError as e:
-            raise ConfigurationError(
-                "Failed to parse YAML configuration",
-                config_path=config_path,
-                parse_error=str(e)
-            ) from e
-        except IOError as e:
-            raise ConfigurationError(
-                "Failed to read configuration file",
-                config_path=config_path,
-                io_error=str(e)
-            ) from e
 
     def register_model(
         self,
@@ -338,7 +292,6 @@ class ModelRegistry:
     def create_model(
         self,
         name: str,
-        processing_config: ProcessingConfig,
         model_path: Optional[str] = None,
         device_config: Optional[DeviceConfig] = None,
         **kwargs,
@@ -347,7 +300,6 @@ class ModelRegistry:
 
         Args:
             name: Model name
-            processing_config: Processing configuration
             model_path: Override model path
             device_config: Device configuration
             **kwargs: Additional model arguments
@@ -367,8 +319,8 @@ class ModelRegistry:
             raise RuntimeError(f"Model has error: {registration.error_message}")
 
         # Create factory if needed
-        if not self._factory or self._factory.processing_config != processing_config:
-            self._factory = ModelFactory(processing_config)
+        if not self._factory:
+            self._factory = ModelFactory(self.config_manager)
 
         return self._factory.create_model(
             registration, model_path, device_config, **kwargs
@@ -477,11 +429,14 @@ class ModelRegistry:
 
 
 # Global registry instance
-GLOBAL_MODEL_REGISTRY = ModelRegistry("model_comparison.yaml")
+GLOBAL_MODEL_REGISTRY = None
 
 
-def get_model_registry() -> ModelRegistry:
+def get_model_registry(config_manager: Optional[ConfigManager] = None) -> ModelRegistry:
     """Get the global model registry instance."""
+    global GLOBAL_MODEL_REGISTRY
+    if GLOBAL_MODEL_REGISTRY is None:
+        GLOBAL_MODEL_REGISTRY = ModelRegistry(config_manager)
     return GLOBAL_MODEL_REGISTRY
 
 
@@ -493,13 +448,11 @@ def register_model(
     description: str,
 ):
     """Convenience function to register a model globally."""
-    GLOBAL_MODEL_REGISTRY.register_model(
-        name, model_type, model_class, default_path, description
-    )
+    registry = get_model_registry()
+    registry.register_model(name, model_type, model_class, default_path, description)
 
 
-def create_model(
-    name: str, processing_config: ProcessingConfig, **kwargs
-) -> BaseVisionModel:
+def create_model(name: str, **kwargs) -> BaseVisionModel:
     """Convenience function to create a model from global registry."""
-    return GLOBAL_MODEL_REGISTRY.create_model(name, processing_config, **kwargs)
+    registry = get_model_registry()
+    return registry.create_model(name, **kwargs)
