@@ -307,7 +307,6 @@ class ComparisonRunner:
                 model_path = getattr(self.config.model_paths, model_name)
                 model = self.model_registry.create_model(
                     model_name,
-                    self.config.processing,
                     model_path=model_path,
                     config=self.config,  # Pass full config so model can access device_config
                 )

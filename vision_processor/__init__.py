@@ -16,10 +16,10 @@ __version__ = "0.1.0"
 __author__ = "Tod"
 
 # Core imports for easy access
-from .config.simple_config import SimpleConfig
+from .config import ConfigManager
 from .extraction.simple_extraction_manager import SimpleExtractionManager
 
 __all__ = [
-    "SimpleConfig",
+    "ConfigManager",
     "SimpleExtractionManager",
 ]

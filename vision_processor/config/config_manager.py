@@ -359,11 +359,8 @@ class ConfigManager:
             },
         }
     
-    @property
-    def yaml_config(self) -> Dict:
-        """Provide backward compatibility with existing model code."""
-        return self._yaml_config_data
     
+
     def print_configuration(self) -> None:
         """Print current configuration for debugging."""
         print("🔧 Vision Processor Configuration (ConfigManager):")

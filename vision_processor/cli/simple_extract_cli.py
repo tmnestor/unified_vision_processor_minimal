@@ -51,11 +51,11 @@ def extract(
         if verbose:
             console.print("[yellow]Loading dependencies...[/yellow]")
 
-        from ..config.simple_config import SimpleConfig
+        from ..config import ConfigManager
         from ..extraction.simple_extraction_manager import SimpleExtractionManager
 
         # Load configuration from YAML
-        config = SimpleConfig(yaml_file)
+        config = ConfigManager(yaml_file)
 
         # Apply simple CLI overrides
         if model:
@@ -63,19 +63,13 @@ def extract(
         if output_format:
             config.set_output_format(output_format)
 
-        # Validate configuration
-        try:
-            config.validate()
-        except ValidationError as e:
-            console.print(f"[red]❌ Configuration validation failed: {e.message}[/red]")
-            if verbose and e.details:
-                console.print(f"[yellow]Details: {e.details}[/yellow]")
-            raise typer.Exit(1) from None
+        # Configuration is validated during initialization in ConfigManager
+        # No need for explicit validation call
 
         # Process document
         console.print(f"\n🔍 Processing document: {image_file.name}")
 
-        with console.status(f"[bold green]Processing with {config.model_type}..."):
+        with console.status(f"[bold green]Processing with {config.current_model_type}..."):
             manager = SimpleExtractionManager(config)
             result = manager.process_document(image_path)
 

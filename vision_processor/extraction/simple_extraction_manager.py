@@ -55,8 +55,8 @@ class SimpleExtractionManager:
     def _load_model_with_logging(self):
         """Load model with detailed configuration logging."""
 
-        print(f"\n🚀 Loading {self.config.model_type} model...")
-        print(f"📍 Model Path: {self.config.model_path}")
+        print(f"\n🚀 Loading {self.config.current_model_type} model...")
+        print(f"📍 Model Path: {self.config.get_model_path(self.config.current_model_type)}")
 
         # Detect system capabilities
         gpu_count = torch.cuda.device_count()
@@ -74,38 +74,40 @@ class SimpleExtractionManager:
 
         # Print memory settings
         print("🧠 Memory Configuration:")
-        print(f"  - Memory Limit: {self.config.memory_limit_mb}MB")
-        print(f"  - GPU Memory Fraction: {self.config.gpu_memory_fraction}")
+        print(f"  - Memory Limit: {self.config.processing.memory_limit_mb}MB")
+        print("  - GPU Memory Fraction: 0.9")  # Legacy value
         print(
-            f"  - Quantization: {'Enabled' if self.config.enable_quantization else 'Disabled'}"
+            f"  - Quantization: {'Enabled' if self.config.processing.quantization else 'Disabled'}"
         )
         print(
-            f"  - Multi-GPU: {'Enabled' if self.config.enable_multi_gpu else 'Disabled'}"
+            f"  - Multi-GPU: {'Enabled' if self.config.is_multi_gpu_enabled() else 'Disabled'}"
         )
 
         # Print processing optimizations
         print("⚡ Processing Optimizations:")
         print(
-            f"  - Gradient Checkpointing: {'Enabled' if self.config.enable_gradient_checkpointing else 'Disabled'}"
+            f"  - Gradient Checkpointing: {'Enabled' if self.config.processing.enable_gradient_checkpointing else 'Disabled'}"
         )
         print(
-            f"  - Flash Attention: {'Enabled' if self.config.use_flash_attention else 'Disabled'}"
+            f"  - Flash Attention: {'Enabled' if self.config.processing.use_flash_attention else 'Disabled'}"
         )
 
         # Load the model
         start_time = time.time()
         try:
             # Use same model creation pattern as ComparisonRunner
+            # Create model registry with our config manager if it's a ConfigManager
+            from ..config import ConfigManager
             from ..config.model_registry import get_model_registry
+            config_manager = self.config if isinstance(self.config, ConfigManager) else None
+            model_registry = get_model_registry(config_manager)
 
-            model_registry = get_model_registry()
-
-            # Get model path from YAML model_paths
-            model_path = getattr(self.config.model_paths, self.config.model_type)
+            # Get model path from ConfigManager
+            model_type = self.config.current_model_type
+            model_path = self.config.get_model_path(model_type)
 
             model = model_registry.create_model(
-                self.config.model_type,
-                self.config.processing,
+                model_type,
                 model_path=model_path,
                 config=self.config,
             )
@@ -130,13 +132,13 @@ class SimpleExtractionManager:
 
         except ImportError as e:
             raise ModelLoadError(
-                model_name=self.config.model_type,
+                model_name=self.config.current_model_type,
                 original_error=e,
                 suggestion="Check if all model dependencies are installed"
             ) from e
         except Exception as e:
             raise ModelLoadError(
-                model_name=self.config.model_type,
+                model_name=self.config.current_model_type,
                 original_error=e,
                 model_path=str(model_path)
             ) from e
@@ -161,7 +163,7 @@ class SimpleExtractionManager:
         prompt = self._get_model_prompt()
 
         # Step 2: Process with model
-        print(f"📸 Sending to {self.config.model_type} model...")
+        print(f"📸 Sending to {self.config.current_model_type} model...")
         response = self.model.process_image(str(image_path), prompt)
 
         # Step 3: Parse KEY-VALUE response
@@ -231,7 +233,7 @@ class SimpleExtractionManager:
     def _get_model_prompt(self) -> str:
         """Get model-specific prompt from model_comparison.yaml."""
         prompts = self.config.get_prompts()
-        model_prompt = prompts.get(self.config.model_type, "")
+        model_prompt = prompts.get(self.config.current_model_type, "")
 
         # Generate field list from expected fields
         expected_fields = self.config.get_expected_fields()

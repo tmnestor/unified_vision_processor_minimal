@@ -81,7 +81,6 @@ class ModelValidator:
 
             model = self.model_registry.create_model(
                 model_name,
-                processing_config,
                 model_path=model_path,
                 device_config=DeviceConfig.AUTO,
             )

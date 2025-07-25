@@ -46,25 +46,27 @@ class LlamaVisionModel(BaseVisionModel):
         # Extract config from kwargs and store as direct attribute
         self.config = kwargs.get("config")
 
-        # Extract repetition control configuration
-        yaml_repetition_config = getattr(self.config, "yaml_config", {}).get(
-            "repetition_control", {}
-        )
-        repetition_config = kwargs.get("repetition_control", yaml_repetition_config)
+        # Extract repetition control configuration from ConfigManager
+        repetition_config = kwargs.get("repetition_control", {})
+        if hasattr(self.config, 'repetition_control'):
+            # Use ConfigManager's structured config
+            repetition_config = {
+                "enabled": self.config.repetition_control.enabled,
+                "word_threshold": self.config.repetition_control.word_threshold,
+                "phrase_threshold": self.config.repetition_control.phrase_threshold,
+            }
         
         # Store repetition control settings
         self.repetition_enabled = repetition_config.get("enabled", True)
 
-        # Read max_new_tokens_limit from YAML config
-        yaml_limit = None
-        if hasattr(self, "config") and self.config:
-            model_config = getattr(self.config, "yaml_config", {}).get(
-                "model_config", {}
-            )
-            yaml_limit = model_config.get("llama", {}).get("max_new_tokens_limit")
-
-        # Use YAML config as single source of truth
-        self.max_new_tokens_limit = yaml_limit or 1024
+        # Read max_new_tokens_limit from ConfigManager
+        if hasattr(self.config, 'get_model_config'):
+            # Use ConfigManager's structured config
+            model_config = self.config.get_model_config("llama")
+            self.max_new_tokens_limit = model_config.max_new_tokens_limit
+        else:
+            # Fallback for legacy config
+            self.max_new_tokens_limit = 1024
 
         # Special tokens to clean from responses
         self.cleanup_tokens = [
@@ -211,10 +213,14 @@ class LlamaVisionModel(BaseVisionModel):
 
     def _validate_v100_compliance(self, estimated_memory_gb: float) -> None:
         """Validate that estimated memory usage complies with V100 limits."""
-        # Get memory config from YAML (single source of truth)
-        memory_config = getattr(self.config, "yaml_config", {}).get("memory_config", {})
-        v100_limit_gb = memory_config.get("v100_limit_gb", 16.0)
-        safety_margin = memory_config.get("safety_margin", 0.85)
+        # Get memory config from ConfigManager
+        if hasattr(self.config, 'memory_config'):
+            v100_limit_gb = self.config.memory_config.v100_limit_gb
+            safety_margin = self.config.memory_config.safety_margin
+        else:
+            # Fallback for legacy config
+            v100_limit_gb = 16.0
+            safety_margin = 0.85
         effective_limit = v100_limit_gb * safety_margin
 
         if estimated_memory_gb > effective_limit:
@@ -507,11 +513,12 @@ class LlamaVisionModel(BaseVisionModel):
         if image.mode != "RGB":
             image = image.convert("RGB")
 
-        # Resize if too large using YAML config
-        image_config = getattr(self.config, "yaml_config", {}).get(
-            "image_processing", {}
-        )
-        max_size = image_config.get("max_image_size", 1024)
+        # Resize if too large using ConfigManager
+        if hasattr(self.config, 'image_processing'):
+            max_size = self.config.image_processing.max_image_size
+        else:
+            # Fallback for legacy config
+            max_size = 1024
 
         if max(image.size) > max_size:
             image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
@@ -524,11 +531,12 @@ class LlamaVisionModel(BaseVisionModel):
         # Clean prompt of any existing image tokens - chat template will handle this
         clean_prompt = prompt.replace("<|image|>", "").strip()
 
-        # Get system prompt from YAML configuration
-        system_prompts = getattr(self.config, "yaml_config", {}).get(
-            "system_prompts", {}
-        )
-        system_prompt = system_prompts.get("llama", "You are a helpful assistant.")
+        # Get system prompt from ConfigManager
+        if hasattr(self.config, 'get_system_prompt'):
+            system_prompt = self.config.get_system_prompt("llama")
+        else:
+            # Fallback for legacy config
+            system_prompt = "You are a helpful assistant."
 
         # Use official HuggingFace chat template format with configurable system prompt
         messages = [
@@ -687,13 +695,13 @@ class LlamaVisionModel(BaseVisionModel):
             processing_time = time.time() - start_time
             logger.info(f"Inference completed in {processing_time:.2f}s")
 
-            # Get confidence score from YAML config
-            model_config = getattr(self.config, "yaml_config", {}).get(
-                "model_config", {}
-            )
-            confidence_score = model_config.get("llama", {}).get(
-                "confidence_score", 0.85
-            )
+            # Get confidence score from ConfigManager
+            if hasattr(self.config, 'get_model_config'):
+                model_config = self.config.get_model_config("llama")
+                confidence_score = model_config.confidence_score
+            else:
+                # Fallback for legacy config
+                confidence_score = 0.85
 
             return ModelResponse(
                 raw_text=response.strip(),
