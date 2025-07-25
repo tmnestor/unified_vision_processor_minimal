@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-import yaml
 from rich.console import Console
 from rich.table import Table
 
@@ -79,7 +78,11 @@ def extract(
         elif config.output_format == "json":
             print(json.dumps(result.extracted_fields, indent=2))
         elif config.output_format == "yaml":
-            print(yaml.dump(result.extracted_fields, default_flow_style=False))
+            # Use clean aligned format for YAML (default)
+            display_clean_format(result.extracted_fields)
+        else:
+            # Default to clean format
+            display_clean_format(result.extracted_fields)
 
         # Show processing info
         console.print(f"\n⏱️  Processing Time: {result.processing_time:.2f}s")
@@ -324,6 +327,24 @@ def display_table(extracted_fields: dict) -> None:
         table.add_row(key, value_str)
 
     console.print(table)
+
+
+def display_clean_format(extracted_fields: dict) -> None:
+    """Display extracted fields in clean aligned format (like comparison output)."""
+    console.print("\n📋 Extracted Fields:")
+
+    # Sort fields alphabetically for consistent display
+    sorted_pairs = sorted(extracted_fields.items())
+
+    for key, value in sorted_pairs:
+        # Clean up values - remove trailing asterisks and whitespace
+        if isinstance(value, str):
+            value = value.rstrip("*").strip()
+        else:
+            value = str(value)
+
+        # Display with aligned formatting (20 char padding for field names)
+        console.print(f"   {key:20}: {value}", style="dim green")
 
 
 def display_comparison(results: dict) -> None:
