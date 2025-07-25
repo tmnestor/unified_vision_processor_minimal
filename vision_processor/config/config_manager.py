@@ -362,6 +362,10 @@ class ConfigManager:
         """Get list of models for comparison."""
         return [m.strip() for m in self.defaults.models.split(",")]
 
+    def get_available_models(self) -> List[str]:
+        """Get list of available models."""
+        return self.models_list
+
     def is_multi_gpu_enabled(self, model_type: Optional[str] = None) -> bool:
         """Check if multi-GPU is enabled for specified model."""
         if model_type is None:
