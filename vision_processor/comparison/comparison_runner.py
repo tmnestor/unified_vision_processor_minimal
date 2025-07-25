@@ -19,6 +19,7 @@ from rich.progress import track
 
 from ..config.model_registry import get_model_registry
 from ..config.simple_config import SimpleConfig
+from ..exceptions import ValidationError
 from ..utils.memory_monitor import MemoryMonitor
 from .model_validator import ModelValidator
 
@@ -169,10 +170,14 @@ class ComparisonRunner:
         self.console.print("\n🔍 ENVIRONMENT VALIDATION", style="bold yellow")
 
         # Validate configuration
-        if not self.config.validate():
-            raise RuntimeError("Configuration validation failed")
-
-        self.console.print("✅ Configuration validated")
+        try:
+            self.config.validate()
+            self.console.print("✅ Configuration validated")
+        except ValidationError as e:
+            self.console.print(f"❌ Configuration validation failed: {e.message}")
+            if e.details:
+                self.console.print(f"   Details: {e.details}")
+            raise RuntimeError(f"Configuration validation failed: {e.message}") from e
 
         # Print GPU information
         try:

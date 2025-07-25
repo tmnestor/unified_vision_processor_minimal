@@ -166,14 +166,18 @@ def compare(
             console.print(f"{'=' * 50}")
 
             # Create config with model override
-            config = SimpleConfig("model_comparison.yaml")
+            config = SimpleConfig(yaml_file)
             config.set_model_type(model_name)
 
             # Validate configuration
-            if not config.validate():
+            try:
+                config.validate()
+            except ValidationError as e:
                 console.print(
-                    f"[red]❌ Configuration validation failed for {model_name}[/red]"
+                    f"[red]❌ Configuration validation failed for {model_name}: {e.message}[/red]"
                 )
+                if verbose and e.details:
+                    console.print(f"[yellow]Details: {e.details}[/yellow]")
                 continue
 
             # Process document
