@@ -91,8 +91,8 @@ dependencies:
 # Step 6: Install package in development mode (OPTIONAL)
 # ------------------------------------------------------
 # pip install -e .
-# Note: This is only needed for console scripts (unified-vision command)
-# You can skip this step and use: python -m vision_processor.cli.unified_cli
+# Note: This is only needed if you want to use the package from other locations
+# You can skip this step and use: python -m vision_processor.cli.simple_extract_cli
 #
 # Step 7: Verify the installation
 # -------------------------------
