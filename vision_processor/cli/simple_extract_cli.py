@@ -33,7 +33,9 @@ def extract(
     output_format: Optional[str] = typer.Option(
         None, help="Override output format (table, json, yaml)"
     ),
-    yaml_file: str = typer.Option("model_comparison.yaml", help="Path to YAML configuration file"),
+    yaml_file: str = typer.Option(
+        "model_comparison.yaml", help="Path to YAML configuration file"
+    ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
@@ -69,7 +71,9 @@ def extract(
         # Process document
         console.print(f"\n🔍 Processing document: {image_file.name}")
 
-        with console.status(f"[bold green]Processing with {config.current_model_type}..."):
+        with console.status(
+            f"[bold green]Processing with {config.current_model_type}..."
+        ):
             manager = SimpleExtractionManager(config)
             result = manager.process_document(image_path)
 
@@ -118,6 +122,7 @@ def extract(
         console.print(f"[red]❌ Unexpected error: {e}[/red]")
         if verbose:
             import traceback
+
             console.print(traceback.format_exc())
         raise typer.Exit(1) from None
 
@@ -128,7 +133,9 @@ def compare(
     models: str = typer.Option(
         "internvl,llama", help="Models to compare (comma-separated)"
     ),
-    yaml_file: str = typer.Option("model_comparison.yaml", help="Path to YAML configuration file"),
+    yaml_file: str = typer.Option(
+        "model_comparison.yaml", help="Path to YAML configuration file"
+    ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
@@ -161,6 +168,7 @@ def compare(
 
             # Create config with model override
             from ..config import ConfigManager
+
             config = ConfigManager(yaml_file)
             config.set_model_type(model_name)
 
@@ -205,7 +213,9 @@ def compare(
 
 @app.command()
 def config_info(
-    yaml_file: str = typer.Option("model_comparison.yaml", help="Path to YAML configuration file"),
+    yaml_file: str = typer.Option(
+        "model_comparison.yaml", help="Path to YAML configuration file"
+    ),
 ) -> None:
     """Display current configuration from YAML file."""
 
@@ -214,6 +224,7 @@ def config_info(
 
         # Legacy SimpleConfig import removed - now using ConfigManager
         from ..config import ConfigManager
+
         config = ConfigManager(yaml_file)
         # Display configuration info
         console.print("\n📋 Configuration Summary:")
@@ -229,7 +240,9 @@ def config_info(
 
             # ConfigManager validates during initialization
             console.print("\n🔍 Configuration validation...")
-            console.print("[green]✅ Configuration is valid (validated during load)[/green]")
+            console.print(
+                "[green]✅ Configuration is valid (validated during load)[/green]"
+            )
         else:
             console.print(f"\n⚠️  Configuration file not found: {yaml_path}")
             console.print("💡 Check that model_comparison.yaml exists")
@@ -247,7 +260,9 @@ def batch(
     input_dir: str = typer.Argument(..., help="Directory containing images to process"),
     output_dir: str = typer.Option("output", help="Directory to save results"),
     model: Optional[str] = typer.Option(None, help="Override model type"),
-    yaml_file: str = typer.Option("model_comparison.yaml", help="Path to YAML configuration file"),
+    yaml_file: str = typer.Option(
+        "model_comparison.yaml", help="Path to YAML configuration file"
+    ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
@@ -269,6 +284,7 @@ def batch(
         # Load configuration
         from ..config import ConfigManager
         from ..extraction.extraction_manager import SimpleExtractionManager
+
         config = ConfigManager(yaml_file)
 
         if model:
@@ -294,7 +310,9 @@ def batch(
 
         # Process batch
         manager = SimpleExtractionManager(config)
-        results = manager.process_batch(image_files)
+        # Convert to list[str | Path] for type compatibility
+        image_paths: list[str | Path] = list(image_files)
+        results = manager.process_batch(image_paths)
 
         # Save results
         batch_results = []

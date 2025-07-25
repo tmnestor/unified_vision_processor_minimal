@@ -56,7 +56,9 @@ class SimpleExtractionManager:
         """Load model with detailed configuration logging."""
 
         print(f"\n🚀 Loading {self.config.current_model_type} model...")
-        print(f"📍 Model Path: {self.config.get_model_path(self.config.current_model_type)}")
+        print(
+            f"📍 Model Path: {self.config.get_model_path(self.config.current_model_type)}"
+        )
 
         # Detect system capabilities
         gpu_count = torch.cuda.device_count()
@@ -99,7 +101,10 @@ class SimpleExtractionManager:
             # Create model registry with our config manager if it's a ConfigManager
             from ..config import ConfigManager
             from ..config.model_registry import get_model_registry
-            config_manager = self.config if isinstance(self.config, ConfigManager) else None
+
+            config_manager = (
+                self.config if isinstance(self.config, ConfigManager) else None
+            )
             model_registry = get_model_registry(config_manager)
 
             # Get model path from ConfigManager
@@ -134,13 +139,13 @@ class SimpleExtractionManager:
             raise ModelLoadError(
                 model_name=self.config.current_model_type,
                 original_error=e,
-                suggestion="Check if all model dependencies are installed"
+                suggestion="Check if all model dependencies are installed",
             ) from e
         except Exception as e:
             raise ModelLoadError(
                 model_name=self.config.current_model_type,
                 original_error=e,
-                model_path=str(model_path)
+                model_path=str(model_path),
             ) from e
 
     def process_document(self, image_path: Union[str, Path]) -> ExtractionResult:
@@ -295,7 +300,10 @@ class SimpleExtractionManager:
                 # Create error result with specific error info
                 results.append(
                     ExtractionResult(
-                        extracted_fields={"error": e.message, "error_type": type(e).__name__},
+                        extracted_fields={
+                            "error": e.message,
+                            "error_type": type(e).__name__,
+                        },
                         processing_time=0.0,
                         model_confidence=0.0,
                         extraction_method="error",
@@ -306,7 +314,10 @@ class SimpleExtractionManager:
                 # Create error result for unexpected errors
                 results.append(
                     ExtractionResult(
-                        extracted_fields={"error": str(e), "error_type": "UnexpectedError"},
+                        extracted_fields={
+                            "error": str(e),
+                            "error_type": "UnexpectedError",
+                        },
                         processing_time=0.0,
                         model_confidence=0.0,
                         extraction_method="error",

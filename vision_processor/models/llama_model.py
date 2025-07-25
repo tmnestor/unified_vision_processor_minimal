@@ -48,19 +48,25 @@ class LlamaVisionModel(BaseVisionModel):
 
         # Extract repetition control configuration from ConfigManager
         repetition_config = kwargs.get("repetition_control", {})
-        if hasattr(self.config, 'repetition_control'):
+        if hasattr(self.config, "repetition_control") and self.config:
             # Use ConfigManager's structured config
             repetition_config = {
-                "enabled": self.config.repetition_control.enabled,
-                "word_threshold": self.config.repetition_control.word_threshold,
-                "phrase_threshold": self.config.repetition_control.phrase_threshold,
+                "enabled": self.config.repetition_control.enabled
+                if self.config.repetition_control
+                else True,
+                "word_threshold": self.config.repetition_control.word_threshold
+                if self.config.repetition_control
+                else 3,
+                "phrase_threshold": self.config.repetition_control.phrase_threshold
+                if self.config.repetition_control
+                else 2,
             }
-        
+
         # Store repetition control settings
         self.repetition_enabled = repetition_config.get("enabled", True)
 
         # Read max_new_tokens_limit from ConfigManager
-        if hasattr(self.config, 'get_model_config'):
+        if hasattr(self.config, "get_model_config") and self.config:
             # Use ConfigManager's structured config
             model_config = self.config.get_model_config("llama")
             self.max_new_tokens_limit = model_config.max_new_tokens_limit
@@ -85,7 +91,7 @@ class LlamaVisionModel(BaseVisionModel):
         )
 
     # === CORE CAPABILITIES ===
-    
+
     def _get_capabilities(self) -> ModelCapabilities:
         """Return Llama-3.2-Vision capabilities."""
         return ModelCapabilities(
@@ -104,7 +110,7 @@ class LlamaVisionModel(BaseVisionModel):
         return self.capabilities.cross_platform
 
     # === DEVICE & MEMORY MANAGEMENT ===
-    
+
     def _setup_device(self) -> torch.device:
         """Setup device configuration for Llama-3.2-Vision."""
         device_manager = DeviceManager(self.memory_limit_mb)
@@ -147,7 +153,7 @@ class LlamaVisionModel(BaseVisionModel):
         gc.collect()
 
     # === QUANTIZATION HELPERS ===
-    
+
     def _get_quantization_config(self) -> BitsAndBytesConfig | None:
         """Get quantization configuration if enabled."""
         if not self.enable_quantization:
@@ -214,7 +220,7 @@ class LlamaVisionModel(BaseVisionModel):
     def _validate_v100_compliance(self, estimated_memory_gb: float) -> None:
         """Validate that estimated memory usage complies with V100 limits."""
         # Get memory config from ConfigManager
-        if hasattr(self.config, 'memory_config'):
+        if hasattr(self.config, "memory_config"):
             v100_limit_gb = self.config.memory_config.v100_limit_gb
             safety_margin = self.config.memory_config.safety_margin
         else:
@@ -258,7 +264,7 @@ class LlamaVisionModel(BaseVisionModel):
             )
 
     # === DEVICE MAPPING HELPERS ===
-    
+
     def _get_device_map_from_config(self):
         """Get device map configuration from production config.
 
@@ -316,7 +322,7 @@ class LlamaVisionModel(BaseVisionModel):
         return "cpu"
 
     # === MODEL LOADING & LIFECYCLE ===
-    
+
     def load_model(self) -> None:
         """Load Llama-3.2-Vision model with auto-configuration."""
         if self.is_loaded:
@@ -497,7 +503,7 @@ class LlamaVisionModel(BaseVisionModel):
             logger.warning(f"Model functionality test failed: {e}")
 
     # === IMAGE PROCESSING HELPERS ===
-    
+
     def _preprocess_image(
         self,
         image_path: str | Path | Image.Image,
@@ -514,7 +520,7 @@ class LlamaVisionModel(BaseVisionModel):
             image = image.convert("RGB")
 
         # Resize if too large using ConfigManager
-        if hasattr(self.config, 'image_processing'):
+        if hasattr(self.config, "image_processing"):
             max_size = self.config.image_processing.max_image_size
         else:
             # Fallback for legacy config
@@ -532,7 +538,7 @@ class LlamaVisionModel(BaseVisionModel):
         clean_prompt = prompt.replace("<|image|>", "").strip()
 
         # Get system prompt from ConfigManager
-        if hasattr(self.config, 'get_system_prompt'):
+        if hasattr(self.config, "get_system_prompt"):
             system_prompt = self.config.get_system_prompt("llama")
         else:
             # Fallback for legacy config
@@ -594,43 +600,43 @@ class LlamaVisionModel(BaseVisionModel):
         """Clean response by removing repetition and special tokens."""
         if not response:
             return ""
-            
+
         cleaned = response
-        
+
         # Remove special tokens
         if self.repetition_enabled:
             for token in self.cleanup_tokens:
                 cleaned = cleaned.replace(token, "")
-        
+
             # Remove consecutive duplicate lines
             lines = cleaned.split("\n")
             unique_lines = []
             prev_line = None
-            
+
             for line in lines:
                 line_cleaned = line.strip()
                 if line_cleaned and line_cleaned != prev_line:
                     unique_lines.append(line)
                     prev_line = line_cleaned
-                    
+
             cleaned = "\n".join(unique_lines)
-            
+
             # Remove excessive whitespace
             cleaned = re.sub(r"\s+", " ", cleaned)
-            
+
             # Truncate if too long
             if len(cleaned) > self.max_new_tokens_limit * 5:  # Rough char estimate
-                cleaned = cleaned[:self.max_new_tokens_limit * 5] + "..."
+                cleaned = cleaned[: self.max_new_tokens_limit * 5] + "..."
         else:
             # Basic cleaning only
             cleaned = re.sub(r"\s+", " ", cleaned)
             if len(cleaned) > 1000:
                 cleaned = cleaned[:1000] + "..."
-                
+
         return cleaned.strip()
 
     # === MAIN INFERENCE METHODS ===
-    
+
     def process_image(
         self,
         image_path: str | Path | Image.Image,
@@ -696,7 +702,7 @@ class LlamaVisionModel(BaseVisionModel):
             logger.info(f"Inference completed in {processing_time:.2f}s")
 
             # Get confidence score from ConfigManager
-            if hasattr(self.config, 'get_model_config'):
+            if hasattr(self.config, "get_model_config"):
                 model_config = self.config.get_model_config("llama")
                 confidence_score = model_config.confidence_score
             else:
@@ -817,7 +823,7 @@ class LlamaVisionModel(BaseVisionModel):
             return f"Error: {str(e)}"
 
     # === DOCUMENT CLASSIFICATION ===
-    
+
     def classify_document(
         self,
         image_path: str | Path | Image.Image,

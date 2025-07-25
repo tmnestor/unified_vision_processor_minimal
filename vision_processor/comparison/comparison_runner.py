@@ -11,7 +11,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from PIL import Image
 from rich.console import Console
@@ -29,11 +29,11 @@ class DatasetInfo:
 
     dataset_path: Path
     total_images: int
-    image_files: List[Path]
-    verified_images: List[Path]
-    missing_images: List[Path]
+    image_files: list[Path]
+    verified_images: list[Path]
+    missing_images: list[Path]
 
-    def get_validation_summary(self) -> Dict[str, Any]:
+    def get_validation_summary(self) -> dict[str, Any]:
         """Get dataset validation summary."""
         return {
             "total_expected": self.total_images,
@@ -52,23 +52,23 @@ class ComparisonResults:
     # Configuration
     config: ConfigManager
     dataset_info: DatasetInfo
-    models_tested: List[str]
+    models_tested: list[str]
 
     # Extraction results
-    extraction_results: Dict[str, List[Dict[str, Any]]]
+    extraction_results: dict[str, list[dict[str, Any]]]
 
     # Analysis results
-    performance_analysis: Optional[Any] = None
-    field_analysis: Optional[Any] = None
-    comparison_metrics: Optional[Any] = None
+    performance_analysis: Any | None = None
+    field_analysis: Any | None = None
+    comparison_metrics: Any | None = None
 
     # Timing information
     total_execution_time: float = 0.0
-    model_execution_times: Dict[str, float] = None
+    model_execution_times: dict[str, float] | None = None
 
     # Success metrics
     overall_success_rate: float = 0.0
-    model_success_rates: Dict[str, float] = None
+    model_success_rates: dict[str, float] | None = None
 
     def __post_init__(self):
         if self.model_execution_times is None:
@@ -98,7 +98,7 @@ class ComparisonRunner:
         # Pure model comparison - no complex extraction components needed
 
         # Results storage
-        self.results: Optional[ComparisonResults] = None
+        self.results: ComparisonResults | None = None
 
     def run_comparison(self) -> ComparisonResults:
         """Run complete model comparison pipeline.
@@ -235,7 +235,7 @@ class ComparisonRunner:
 
         return dataset_info
 
-    def _validate_models(self) -> List[str]:
+    def _validate_models(self) -> list[str]:
         """Validate that requested models can be loaded."""
         self.console.print("\n🤖 MODEL VALIDATION", style="bold yellow")
 
@@ -277,8 +277,8 @@ class ComparisonRunner:
         return valid_models
 
     def _run_extractions(
-        self, model_names: List[str], image_paths: List[Path]
-    ) -> Dict[str, List[Dict[str, Any]]]:
+        self, model_names: list[str], image_paths: list[Path]
+    ) -> dict[str, list[dict[str, Any]]]:
         """Run extractions for all models on all images."""
         self.console.print("\n🔥 EXTRACTION PIPELINE", style="bold yellow")
 
@@ -380,12 +380,18 @@ class ComparisonRunner:
 
                         # Check post-processing configuration with debug
                         try:
-                            post_processing_config = self.config.get_legacy_config_dict().get(
-                                "post_processing", {}
+                            post_processing_config = (
+                                self.config.get_legacy_config_dict().get(
+                                    "post_processing", {}
+                                )
                             )
                         except Exception as e:
-                            self.console.print(f"❌ DEBUG: Error accessing post_processing config: {e}")
-                            self.console.print(f"❌ DEBUG: ConfigManager methods: {[m for m in dir(self.config) if not m.startswith('_')]}")
+                            self.console.print(
+                                f"❌ DEBUG: Error accessing post_processing config: {e}"
+                            )
+                            self.console.print(
+                                f"❌ DEBUG: ConfigManager methods: {[m for m in dir(self.config) if not m.startswith('_')]}"
+                            )
                             post_processing_config = {}
                         post_processing_enabled = post_processing_config.get(
                             "enabled", True
@@ -674,7 +680,7 @@ class ComparisonRunner:
                 successful_extractions / len(model_results) if model_results else 0
             )
             avg_fields = (
-                sum(r.get("extraction_score", 0) for r in model_results)
+                sum(float(r.get("extraction_score", 0) or 0) for r in model_results)
                 / len(model_results)
                 if model_results
                 else 0
@@ -692,8 +698,8 @@ class ComparisonRunner:
         return extraction_results
 
     def _run_analysis(
-        self, extraction_results: Dict[str, List[Dict[str, Any]]]
-    ) -> Dict[str, Any]:
+        self, extraction_results: dict[str, list[dict[str, Any]]]
+    ) -> dict[str, Any]:
         """Run analysis comparing extracted fields between models."""
         self.console.print("\n📊 MODEL FIELD EXTRACTION COMPARISON", style="bold green")
 
@@ -733,7 +739,7 @@ class ComparisonRunner:
             ]
 
         # Analyze field extraction by model
-        model_field_stats = {}
+        model_field_stats: dict[str, dict[str, Any]] = {}
 
         for model_name, results in extraction_results.items():
             total_fields_extracted = 0
@@ -943,8 +949,8 @@ class ComparisonRunner:
         return analysis_results
 
     def _calculate_success_metrics(
-        self, extraction_results: Dict[str, List[Dict[str, Any]]]
-    ) -> Dict[str, Any]:
+        self, extraction_results: dict[str, list[dict[str, Any]]]
+    ) -> dict[str, Any]:
         """Calculate overall success metrics."""
         model_success_rates = {}
         model_execution_times = {}
@@ -995,8 +1001,16 @@ class ComparisonRunner:
         # Model-specific summaries
         self.console.print("\n📋 Model Performance Summary:")
         for model_name in self.results.models_tested:
-            success_rate = self.results.model_success_rates.get(model_name, 0)
-            exec_time = self.results.model_execution_times.get(model_name, 0)
+            success_rate = (
+                self.results.model_success_rates.get(model_name, 0)
+                if self.results.model_success_rates
+                else 0
+            )
+            exec_time = (
+                self.results.model_execution_times.get(model_name, 0)
+                if self.results.model_execution_times
+                else 0
+            )
             num_images = len(self.results.dataset_info.verified_images)
             avg_time_per_image = exec_time / num_images if num_images > 0 else 0
 
@@ -1035,7 +1049,11 @@ class ComparisonRunner:
             # Processing time comparison
             self.console.print("\n⏱️  Processing Speed Comparison:")
             for model_name in self.results.models_tested:
-                exec_time = self.results.model_execution_times.get(model_name, 0)
+                exec_time = (
+                    self.results.model_execution_times.get(model_name, 0)
+                    if self.results.model_execution_times
+                    else 0
+                )
                 num_images = len(self.results.dataset_info.verified_images)
                 avg_time_per_image = exec_time / num_images if num_images > 0 else 0
                 self.console.print(
@@ -1089,7 +1107,7 @@ class ComparisonRunner:
                 f"   📸 Total Snapshots: {summary.get('total_snapshots', 0)}"
             )
 
-    def get_results(self) -> Optional[ComparisonResults]:
+    def get_results(self) -> ComparisonResults | None:
         """Get comparison results.
 
         Returns:
@@ -1292,7 +1310,7 @@ class ComparisonRunner:
         except ImportError:
             pass
 
-    def export_dataframe(self) -> Optional[Any]:
+    def export_dataframe(self) -> Any | None:
         """Export results as pandas DataFrame for downstream processing.
 
         Returns:

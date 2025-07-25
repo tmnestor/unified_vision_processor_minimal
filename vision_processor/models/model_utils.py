@@ -9,7 +9,7 @@ Provides shared utilities for both InternVL and Llama models including:
 
 import logging
 import platform
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Callable, Union
 
 import torch
 
@@ -29,11 +29,11 @@ class DeviceManager:
         self.memory_limit_mb = memory_limit_mb
         self.system_info = self._get_system_info()
 
-    def _get_system_info(self) -> dict[str, any]:
+    def _get_system_info(self) -> dict[str, Any]:
         """Get comprehensive system information."""
         import torch
 
-        info = {
+        info: dict[str, Any] = {
             "platform": platform.system(),
             "architecture": platform.machine(),
             "python_version": platform.python_version(),
@@ -112,11 +112,11 @@ class DeviceManager:
 
         # Priority 1: Multiple high-memory GPUs (H200 development)
         if torch.cuda.device_count() > 1:
-            gpu_memory = [
+            gpu_memories = [
                 torch.cuda.get_device_properties(i).total_memory
                 for i in range(torch.cuda.device_count())
             ]
-            if all(mem >= 70 * 1024**3 for mem in gpu_memory):  # 70GB+ for H200
+            if all(mem >= 70 * 1024**3 for mem in gpu_memories):  # 70GB+ for H200
                 logger.info(
                     "Multiple high-memory GPUs detected, using multi-GPU configuration",
                 )
@@ -124,10 +124,10 @@ class DeviceManager:
 
         # Priority 2: Single GPU with sufficient memory (V100 production)
         if torch.cuda.is_available():
-            gpu_memory = torch.cuda.get_device_properties(0).total_memory
-            if gpu_memory >= 15 * 1024**3:  # 15GB+ for V100
+            single_gpu_memory = torch.cuda.get_device_properties(0).total_memory
+            if single_gpu_memory >= 15 * 1024**3:  # 15GB+ for V100
                 logger.info(
-                    f"Single GPU with {gpu_memory // 1024**3}GB memory detected",
+                    f"Single GPU with {single_gpu_memory // 1024**3}GB memory detected",
                 )
                 return torch.device("cuda:0")
 
@@ -282,10 +282,10 @@ class ModelProfiler:
 
     def profile_inference(
         self,
-        model_fn: callable,
+        model_fn: Callable,
         *args,
         **kwargs,
-    ) -> tuple[any, dict[str, float]]:
+    ) -> tuple[Any, dict[str, float]]:
         """Profile a model inference call.
 
         Args:

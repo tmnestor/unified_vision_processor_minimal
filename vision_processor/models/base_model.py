@@ -207,8 +207,10 @@ class BaseVisionModel(ABC):
 
         except Exception as e:
             raise InvalidImageError(
-                image_path=Path(str(image_path)) if isinstance(image_path, (str, Path)) else Path("unknown"),
-                reason=f"Failed to validate image: {str(e)}"
+                image_path=Path(str(image_path))
+                if isinstance(image_path, (str, Path))
+                else Path("unknown"),
+                reason=f"Failed to validate image: {str(e)}",
             ) from e
 
     def get_device_info(self) -> dict[str, Any]:

@@ -227,6 +227,7 @@ class ExtractionEvaluator:
 
         # Setup extraction manager using ConfigManager
         from ..config import ConfigManager
+
         config = ConfigManager()
         config.set_model_type(model_type)
         manager = SimpleExtractionManager(config)

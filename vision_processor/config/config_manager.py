@@ -300,7 +300,8 @@ class ConfigManager:
 
     def get_system_prompt(self, model_type: str) -> str:
         """Get system prompt for specified model."""
-        return self.system_prompts.get(model_type, "You are a helpful assistant.")
+        prompt = self.system_prompts.get(model_type, "You are a helpful assistant.")
+        return str(prompt)
 
     def get_expected_fields(self) -> List[str]:
         """Parse expected fields from extraction prompt."""

@@ -104,6 +104,7 @@ def benchmark(
 
         # Setup model
         from ..config import ConfigManager
+
         config = ConfigManager()
         config.set_model_type(model)
         manager = SimpleExtractionManager(config)
@@ -170,11 +171,13 @@ def benchmark(
                     "results": benchmark_results,
                     "summary": {
                         "avg_processing_time": sum(
-                            r["avg_processing_time"] for r in benchmark_results
+                            float(r.get("avg_processing_time", 0) or 0)
+                            for r in benchmark_results
                         )
                         / len(benchmark_results),
                         "total_processing_time": sum(
-                            r["avg_processing_time"] for r in benchmark_results
+                            float(r.get("avg_processing_time", 0) or 0)
+                            for r in benchmark_results
                         )
                         * iterations,
                     },
@@ -213,7 +216,7 @@ def validate_ground_truth(
             ground_truth_data = list(reader)
 
         # Find available images
-        image_files = set()
+        image_files: set[Path] = set()
         for ext in ["*.png", "*.jpg", "*.jpeg"]:
             image_files.update(Path(images_dir).glob(ext))
         image_names = {img.name for img in image_files}

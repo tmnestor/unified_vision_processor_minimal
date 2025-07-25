@@ -198,12 +198,13 @@ class InternVLModel(BaseVisionModel):
         num_layers = num_layers_mapping[model_size]
 
         # Since the first GPU will be used for ViT, treat it as half a GPU
-        num_layers_per_gpu = math.ceil(num_layers / (world_size - 0.5))
-        num_layers_per_gpu = [num_layers_per_gpu] * world_size
+        base_layers_per_gpu = math.ceil(num_layers / (world_size - 0.5))
+        num_layers_per_gpu = [base_layers_per_gpu] * world_size
         num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.5)
 
         layer_cnt = 0
         for i, num_layer in enumerate(num_layers_per_gpu):
+            num_layer: int  # Type annotation for mypy
             for _j in range(num_layer):
                 device_map[f"language_model.model.layers.{layer_cnt}"] = i
                 layer_cnt += 1
@@ -287,7 +288,7 @@ class InternVLModel(BaseVisionModel):
         if hasattr(self, "kwargs") and self.kwargs.get("use_flash_attention", False):
             try:
                 # Only enable if flash_attn is available
-                import flash_attn  # noqa: F401
+                import flash_attn  # type: ignore[import-untyped]  # noqa: F401
 
                 model_loading_args["use_flash_attn"] = True
                 logger.info("🔧 Flash Attention enabled")
@@ -379,14 +380,14 @@ class InternVLModel(BaseVisionModel):
         aspect_ratio = orig_width / orig_height
 
         # Calculate target ratios
-        target_ratios = {
+        target_ratios_set = {
             (i, j)
             for n in range(min_num, max_num + 1)
             for i in range(1, n + 1)
             for j in range(1, n + 1)
             if i * j <= max_num and i * j >= min_num
         }
-        target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
+        target_ratios = sorted(target_ratios_set, key=lambda x: x[0] * x[1])
 
         # Find best aspect ratio
         best_ratio = self._find_closest_aspect_ratio(

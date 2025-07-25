@@ -251,8 +251,8 @@ class MemoryMonitor:
 
         if any(s.gpu_memory_used_gb for s in self.snapshots):
             peak_gpu = max(
-                (s for s in self.snapshots if s.gpu_memory_used_gb),
-                key=lambda s: s.gpu_memory_used_gb,
+                (s for s in self.snapshots if s.gpu_memory_used_gb is not None),
+                key=lambda s: s.gpu_memory_used_gb or 0.0,
             )
         else:
             peak_gpu = None
@@ -347,7 +347,7 @@ class MemoryMonitor:
                 {
                     "peak_gpu_memory_gb": max(gpu_memories),
                     "avg_gpu_memory_gb": sum(gpu_memories) / len(gpu_memories),
-                    "gpu_total_memory_gb": self.snapshots[0].gpu_memory_total_gb,
+                    "gpu_total_memory_gb": self.snapshots[0].gpu_memory_total_gb or 0.0,
                 }
             )
 

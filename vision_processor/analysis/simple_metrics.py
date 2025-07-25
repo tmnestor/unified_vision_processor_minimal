@@ -9,7 +9,7 @@ Advanced metrics focusing on Information Extraction Capability:
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 # All fields equally weighted for extraction capability
 FIELD_WEIGHTS = {
@@ -254,7 +254,7 @@ class InformationExtractionCalculator:
 
     def get_detailed_analysis(self) -> Dict:
         """Get detailed analysis of Information Extraction Capability."""
-        analysis = {
+        analysis: dict[str, Any] = {
             "models_tested": list(self.results.keys()),
             "total_images": sum(len(r) for r in self.results.values()),
             "field_weights_used": FIELD_WEIGHTS,
@@ -308,7 +308,7 @@ class InformationExtractionCalculator:
             return {}
 
         best = all_metrics[best_model]
-        superiority = {"strengths": [], "comparison_with_others": {}}
+        superiority: dict[str, Any] = {"strengths": [], "comparison_with_others": {}}
 
         # Identify strengths
         if best.critical_field_coverage >= 0.8:
