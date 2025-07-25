@@ -19,7 +19,6 @@ from rich.progress import track
 
 from ..config import ConfigManager
 from ..config.model_registry import get_model_registry
-from ..exceptions import ValidationError
 from ..utils.memory_monitor import MemoryMonitor
 from .model_validator import ModelValidator
 
