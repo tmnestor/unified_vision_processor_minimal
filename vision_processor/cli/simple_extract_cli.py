@@ -52,7 +52,7 @@ def extract(
             console.print("[yellow]Loading dependencies...[/yellow]")
 
         from ..config import ConfigManager
-        from ..extraction.simple_extraction_manager import SimpleExtractionManager
+        from ..extraction.extraction_manager import SimpleExtractionManager
 
         # Load configuration from YAML
         config = ConfigManager(yaml_file)
@@ -149,7 +149,7 @@ def compare(
             console.print("[yellow]Loading dependencies...[/yellow]")
 
         # Legacy SimpleConfig import removed - now using ConfigManager
-        from ..extraction.simple_extraction_manager import SimpleExtractionManager
+        from ..extraction.extraction_manager import SimpleExtractionManager
 
         results = {}
         model_list = [m.strip() for m in models.split(",")]
@@ -268,7 +268,7 @@ def batch(
         # Legacy SimpleConfig import removed - now using ConfigManager
         # Load configuration
         from ..config import ConfigManager
-        from ..extraction.simple_extraction_manager import SimpleExtractionManager
+        from ..extraction.extraction_manager import SimpleExtractionManager
         config = ConfigManager(yaml_file)
 
         if model:

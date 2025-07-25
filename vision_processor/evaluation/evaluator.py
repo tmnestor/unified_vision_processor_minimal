@@ -16,7 +16,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 # Legacy SimpleConfig import removed - now using ConfigManager
-from ..extraction.simple_extraction_manager import SimpleExtractionManager
+from ..extraction.extraction_manager import SimpleExtractionManager
 
 
 class ExtractionEvaluator:

@@ -31,7 +31,7 @@ vision_processor/
 │   ├── model_utils.py        # Shared utilities
 │   └── __init__.py
 ├── extraction/                # Field extraction logic
-│   ├── simple_extraction_manager.py  # Main extraction pipeline
+│   ├── extraction_manager.py  # Main extraction pipeline
 │   └── __init__.py
 ├── comparison/                # Model comparison tools
 │   ├── comparison_runner.py  # Cross-model evaluation

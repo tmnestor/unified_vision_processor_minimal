@@ -17,7 +17,7 @@ __author__ = "Tod"
 
 # Core imports for easy access
 from .config import ConfigManager
-from .extraction.simple_extraction_manager import SimpleExtractionManager
+from .extraction.extraction_manager import SimpleExtractionManager
 
 __all__ = [
     "ConfigManager",

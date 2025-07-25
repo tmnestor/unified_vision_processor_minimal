@@ -96,7 +96,7 @@ def benchmark(
 
     try:
         # Legacy SimpleConfig import removed - now using ConfigManager
-        from ..extraction.simple_extraction_manager import SimpleExtractionManager
+        from ..extraction.extraction_manager import SimpleExtractionManager
 
         console.print(f"⚡ Benchmarking {model} performance")
         console.print(f"📁 Images: {images_dir}")
