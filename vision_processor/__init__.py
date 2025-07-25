@@ -13,7 +13,7 @@ Key Features:
 """
 
 __version__ = "0.1.0"
-__author__ = "Developer"
+__author__ = "Tod"
 
 # Core imports for easy access
 from .config.simple_config import SimpleConfig
