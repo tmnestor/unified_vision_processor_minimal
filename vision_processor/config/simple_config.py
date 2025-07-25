@@ -1,10 +1,17 @@
 """Simple configuration loader from YAML config only."""
 
 from pathlib import Path
+from typing import Dict
 
 import yaml
 
 from ..exceptions import ConfigurationError, ValidationError
+from .config_models import (
+    DeviceConfig,
+    DeviceMapConfig,
+    ModelPaths,
+    ProcessingConfig,
+)
 
 
 class SimpleConfig:
@@ -104,41 +111,41 @@ class SimpleConfig:
 
         # Load model paths from YAML
         yaml_model_paths = self.yaml_config.get("model_paths", {})
-        self.model_paths = type("ModelPaths", (), yaml_model_paths)()
+        self.model_paths = ModelPaths(**yaml_model_paths)
 
         # Create processing object with all required attributes for model loading
         yaml_max_tokens = defaults.get("max_tokens", 800)
 
-        self.processing = type(
-            "Processing",
-            (),
-            {
-                "memory_limit_mb": self.memory_limit_mb,
-                "enable_gradient_checkpointing": self.enable_gradient_checkpointing,
-                "use_flash_attention": self.use_flash_attention,
-                "quantization": self.enable_quantization,
-                "batch_size": 1,
-                "max_tokens": yaml_max_tokens,
-            },
-        )()
+        self.processing = ProcessingConfig(
+            memory_limit_mb=self.memory_limit_mb,
+            enable_gradient_checkpointing=self.enable_gradient_checkpointing,
+            use_flash_attention=self.use_flash_attention,
+            quantization=self.enable_quantization,
+            batch_size=1,
+            max_tokens=yaml_max_tokens
+        )
 
         # Create device config object with device map method
         yaml_device_config = self.yaml_config.get("device_config", {})
-        device_maps = yaml_device_config.get("device_maps", {})
-
-        class SimpleDeviceConfig:
-            def __init__(self, device_maps_dict):
-                self.device_maps = device_maps_dict
-                self.original_device_config = "auto"  # Simplified - no env vars
-
-            def get_device_map_for_model(self, model_name: str):
-                # Check if we have specific device map for this model in YAML
-                if model_name in self.device_maps:
-                    return self.device_maps[model_name].get("device_map", {"": 0})
-                # Default to single GPU
-                return {"": 0}
-
-        self.device_config = SimpleDeviceConfig(device_maps)
+        device_maps_data = yaml_device_config.get("device_maps", {})
+        
+        # Convert device_maps to DeviceMapConfig instances
+        device_maps: Dict[str, DeviceMapConfig] = {}
+        for model_name, map_config in device_maps_data.items():
+            device_maps[model_name] = DeviceMapConfig(
+                strategy=map_config.get("strategy", "single_gpu"),
+                device_map=map_config.get("device_map", {"": 0}),
+                quantization_compatible=map_config.get("quantization_compatible", True)
+            )
+        
+        self.device_config = DeviceConfig(
+            gpu_strategy=yaml_device_config.get("gpu_strategy", "single_gpu"),
+            target_gpu=yaml_device_config.get("target_gpu", 0),
+            v100_mode=yaml_device_config.get("v100_mode", True),
+            memory_limit_gb=yaml_device_config.get("memory_limit_gb", 16),
+            device_maps=device_maps,
+            original_device_config="auto"  # For backward compatibility
+        )
 
     def print_configuration(self):
         """Print current configuration for debugging."""
