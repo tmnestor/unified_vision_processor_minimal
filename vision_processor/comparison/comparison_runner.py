@@ -19,6 +19,7 @@ from rich.progress import track
 
 from ..config import ConfigManager
 from ..config.model_registry import get_model_registry
+from ..exceptions import ImageProcessingError, ModelInferenceError, ModelLoadError
 from ..utils.memory_monitor import MemoryMonitor
 from .model_validator import ModelValidator
 
@@ -327,8 +328,8 @@ class ComparisonRunner:
                             max_new_tokens=self.config.processing.max_tokens,
                         )
 
-                        # Only show debug output if VISION_DEBUG environment variable is set
-                        debug_mode = True  # Force DEBUG on to diagnose parsing issues
+                        # Show debug output based on YAML configuration
+                        debug_mode = self.config.defaults.debug_mode
 
                         if debug_mode:
                             # DEBUG: Print actual response length and content
@@ -630,9 +631,13 @@ class ComparisonRunner:
                                     f"{model_name} - Image {i + 1}"
                                 )
 
+                    except (ImageProcessingError, ModelInferenceError) as e:
+                        self.console.print(
+                            f"   {i + 1:2d}. {image_path.name:<15} ❌ {type(e).__name__}: {str(e)[:30]}..."
+                        )
                     except Exception as e:
                         self.console.print(
-                            f"   {i + 1:2d}. {image_path.name:<15} ❌ Error: {str(e)[:30]}..."
+                            f"   {i + 1:2d}. {image_path.name:<15} ❌ Unexpected error: {str(e)[:30]}..."
                         )
                         # Create error result in original dictionary format
                         error_result = {
@@ -651,8 +656,11 @@ class ComparisonRunner:
                         }
                         model_results.append(error_result)
 
+            except ModelLoadError as e:
+                self.console.print(f"❌ Failed to load {model_name}: {e.message}")
+                continue
             except Exception as e:
-                self.console.print(f"❌ Failed to load {model_name}: {e}")
+                self.console.print(f"❌ Unexpected error loading {model_name}: {e}")
                 continue
 
             finally:

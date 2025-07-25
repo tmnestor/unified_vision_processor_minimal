@@ -41,6 +41,7 @@ defaults:
   output_dir: "results"  # Default output directory
   models: "llama,internvl"  # Default models to compare
   trust_remote_code: true  # Enable custom model architectures (InternVL requires this)
+  debug_mode: false  # Control debug output in comparison runner
   
 # Model-specific configurations
 model_config:

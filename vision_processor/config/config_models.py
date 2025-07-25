@@ -42,6 +42,7 @@ class DefaultsConfig:
     output_dir: str = "results"
     models: str = "llama,internvl"
     trust_remote_code: bool = True
+    debug_mode: bool = False
 
 
 @dataclass
