@@ -64,7 +64,6 @@ unified_vision_processor_minimal/
 │   ├── config/                   # Configuration management
 │   │   ├── model_factory.py     # Model instantiation
 │   │   ├── model_registry.py    # Model registration
-│   │   ├── prompts.yaml         # Extraction prompts and schemas
 │   │   └── simple_config.py     # Configuration classes
 │   │
 │   ├── models/                   # Model implementations
@@ -237,8 +236,8 @@ model_config:
     confidence_score: 0.95      # Default confidence
 ```
 
-### prompts.yaml
-Field extraction schemas and unified prompts for both models:
+### model_comparison.yaml
+All field extraction configuration and prompts are defined in `model_comparison.yaml`:
 ```yaml
 key_schema:
   required_keys:
@@ -290,7 +289,7 @@ python -m vision_processor.cli.evaluation_cli benchmark datasets --model internv
 
 ## 🔑 Field Extraction
 
-The system dynamically extracts fields based on the schema defined in `prompts.yaml`. Fields are categorized as:
+The system dynamically extracts fields based on the `expected_fields` list defined in `model_comparison.yaml`:
 
 **Required Fields**: Must be present for successful extraction
 - DATE, STORE, TOTAL, GST, ABN
@@ -298,7 +297,7 @@ The system dynamically extracts fields based on the schema defined in `prompts.y
 **Optional Fields**: Extracted when present in the document
 - ITEMS, QUANTITIES, PRICES, RECEIPT_NUMBER, PAYMENT_METHOD, etc.
 
-Fields can be added or modified by editing `prompts.yaml` without changing any code.
+Fields can be added or modified by editing the `expected_fields` list in `model_comparison.yaml` without changing any code.
 
 ## 🧪 Testing & Evaluation
 
@@ -497,8 +496,7 @@ prompts:
 
 - **README.md**: This file
 - **CLAUDE.md**: Development guidelines and project notes
-- **model_comparison.yaml**: Configuration reference
-- **prompts.yaml**: Field schema documentation
+- **model_comparison.yaml**: Configuration reference and field definitions
 
 ## 🤝 Contributing
 

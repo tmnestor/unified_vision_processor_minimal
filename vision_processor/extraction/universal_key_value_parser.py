@@ -5,18 +5,16 @@ from typing import Any, Dict, List
 
 
 class UniversalKeyValueParser:
-    """Parse KEY-VALUE responses using YAML-defined schema."""
+    """Parse KEY-VALUE responses using expected fields."""
 
-    def __init__(self, key_schema: dict):
-        """Initialize parser with key schema.
+    def __init__(self, expected_fields: list):
+        """Initialize parser with expected fields.
 
         Args:
-            key_schema: Dictionary containing required_keys, optional_keys, and key_patterns.
+            expected_fields: List of expected field names from model_comparison.yaml.
         """
-        self.required_keys = key_schema.get("required_keys", [])
-        self.optional_keys = key_schema.get("optional_keys", [])
-        self.key_patterns = key_schema.get("key_patterns", {})
-        self.all_keys = self.required_keys + self.optional_keys
+        self.expected_fields = expected_fields
+        self.all_keys = expected_fields
 
     def parse(self, response_text: str) -> Dict[str, Any]:
         """Parse response using schema-defined keys.
@@ -236,23 +234,19 @@ class UniversalKeyValueParser:
         missing_required = []
         invalid_patterns = []
 
-        # Check required keys
-        for key in self.required_keys:
+        # Check expected fields
+        for key in self.expected_fields:
             if key not in extracted_data:
                 missing_required.append(key)
 
-        # Check patterns
-        for key, value in extracted_data.items():
-            if key in self.key_patterns:
-                if not self._matches_pattern(value, self.key_patterns[key]):
-                    invalid_patterns.append(f"{key}: {value}")
+        # Pattern validation removed since we don't use key_patterns anymore
 
         return {
             "is_valid": len(missing_required) == 0 and len(invalid_patterns) == 0,
             "missing_required": missing_required,
             "invalid_patterns": invalid_patterns,
             "extracted_count": len(extracted_data),
-            "required_count": len(self.required_keys),
+            "required_count": len(self.expected_fields),
         }
 
     def _matches_pattern(self, value: Any, pattern: str) -> bool:

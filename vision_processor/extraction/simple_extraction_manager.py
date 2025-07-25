@@ -5,11 +5,9 @@ from pathlib import Path
 from typing import Any, Dict, Union
 
 import torch
-import yaml
 from rich.console import Console
 
 from ..config.simple_config import SimpleConfig
-from .universal_key_value_parser import UniversalKeyValueParser
 
 console = Console()
 
@@ -46,9 +44,8 @@ class SimpleExtractionManager:
 
         # Initialize model with detailed logging
         self.model = self._load_model_with_logging()
-        self.key_schema = self._load_key_schema()
-        self.universal_prompt = self._load_universal_prompt()
-        self.parser = UniversalKeyValueParser(self.key_schema)
+        # Use expected_fields from model_comparison.yaml only
+        self.expected_fields = self.config.get_expected_fields()
 
     def _load_model_with_logging(self):
         """Load model with detailed configuration logging."""
@@ -130,28 +127,6 @@ class SimpleExtractionManager:
             print(f"❌ Error loading model: {str(e)}")
             raise
 
-    def _load_key_schema(self) -> dict:
-        """Load key schema from prompts.yaml."""
-        prompts_path = Path(__file__).parent.parent / "config" / "prompts.yaml"
-        with prompts_path.open("r") as f:
-            prompts_data = yaml.safe_load(f)
-
-        return prompts_data.get("key_schema", {})
-
-    def _load_universal_prompt(self) -> str:
-        """Load universal prompt from prompts.yaml."""
-        prompts_path = Path(__file__).parent.parent / "config" / "prompts.yaml"
-        with prompts_path.open("r") as f:
-            prompts_data = yaml.safe_load(f)
-
-        # Check for model-specific prompt first
-        model_prompts = prompts_data.get("model_prompts", {})
-        if self.config.model_type in model_prompts:
-            return model_prompts[self.config.model_type]["prompt"]
-
-        # Fall back to universal prompt
-        return prompts_data.get("universal_extraction_prompt", "")
-
     def process_document(self, image_path: Union[str, Path]) -> ExtractionResult:
         """Single-step document processing.
 
@@ -179,7 +154,9 @@ class SimpleExtractionManager:
         print("📝 Parsing response...")
         print("🔍 DEBUG - Raw model response (first 500 chars):")
         print(f"'{response.raw_text[:500]}...'")
-        extracted_data = self.parser.parse(response.raw_text)
+
+        # Use the same parsing logic as comparison runner
+        extracted_data = self._parse_clean_response(response.raw_text)
 
         # Step 4: Validate against schema
         print("✓ Validating extracted data...")
@@ -197,12 +174,69 @@ class SimpleExtractionManager:
             extraction_method="single_step",
         )
 
+    def _parse_clean_response(self, raw_text: str) -> dict:
+        """Parse clean KEY: value format response (same logic as comparison runner).
+
+        Args:
+            raw_text: Raw response text from model
+
+        Returns:
+            Dictionary of extracted key-value pairs
+        """
+        extracted_fields = {}
+        raw_text = raw_text.strip()
+
+        # Get expected fields for validation
+        expected_fields = self.config.get_expected_fields()
+
+        # Split on spaces and look for KEY: value patterns
+        parts = raw_text.split()
+        i = 0
+        while i < len(parts) - 1:
+            part = parts[i]
+            if part.endswith(":"):
+                key = part[:-1]  # Remove the colon
+                # Only process if it's an expected field
+                if key in expected_fields:
+                    # Collect value(s) until next key or end
+                    value_parts = []
+                    j = i + 1
+                    while j < len(parts) and not parts[j].endswith(":"):
+                        value_parts.append(parts[j])
+                        j += 1
+                    value = " ".join(value_parts) if value_parts else "N/A"
+                    extracted_fields[key] = value
+                    i = j
+                else:
+                    i += 1
+            else:
+                i += 1
+
+        return extracted_fields
+
     def _get_model_prompt(self) -> str:
-        """Get model-specific prompt."""
-        return self.universal_prompt
+        """Get model-specific prompt from model_comparison.yaml."""
+        prompts = self.config.get_prompts()
+        model_prompt = prompts.get(self.config.model_type, "")
+
+        # Generate field list from expected fields
+        expected_fields = self.config.get_expected_fields()
+        if expected_fields and model_prompt:
+            # Add the field list to the prompt
+            field_list = "\n".join(
+                [f"{field}: [value or N/A]" for field in expected_fields]
+            )
+            # Replace any placeholder or append field list
+            if "[FIELD_LIST]" in model_prompt:
+                model_prompt = model_prompt.replace("[FIELD_LIST]", field_list)
+            elif not any(field in model_prompt for field in expected_fields):
+                # If prompt doesn't contain fields, append them
+                model_prompt = model_prompt.rstrip() + "\n\n" + field_list
+
+        return model_prompt
 
     def _validate_against_schema(self, extracted_data: dict) -> dict:
-        """Validate extracted data against schema.
+        """Validate extracted data against expected fields.
 
         Args:
             extracted_data: Raw extracted data.
@@ -212,24 +246,10 @@ class SimpleExtractionManager:
         """
         validated = {}
 
-        # Check required keys
-        missing_required = []
-        for key in self.key_schema.get("required_keys", []):
+        # Only include fields that are in expected_fields
+        for key in self.expected_fields:
             if key in extracted_data:
                 validated[key] = extracted_data[key]
-            else:
-                missing_required.append(key)
-
-        # Add optional keys if present
-        for key in self.key_schema.get("optional_keys", []):
-            if key in extracted_data:
-                validated[key] = extracted_data[key]
-
-        # Warn about missing required keys
-        if missing_required:
-            console.print(
-                f"[yellow]⚠️  Missing required keys: {', '.join(missing_required)}[/yellow]"
-            )
 
         return validated
 

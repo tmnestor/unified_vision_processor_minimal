@@ -33,7 +33,6 @@ import torch
 import typer
 import yaml
 from rich.console import Console
-
 from vision_processor.comparison.comparison_runner import ComparisonRunner
 from vision_processor.config.model_registry import get_model_registry
 

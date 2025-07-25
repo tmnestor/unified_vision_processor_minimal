@@ -305,7 +305,7 @@ class ExtractionEvaluator:
         if models is None:
             models = ["internvl3", "llama32_vision"]
         self.console.print("🏁 Starting Model Comparison Evaluation")
-        self.console.print("📝 Using model-specific prompts from prompts.yaml")
+        self.console.print("📝 Using model-specific prompts from model_comparison.yaml")
 
         comparison_results = {}
 
