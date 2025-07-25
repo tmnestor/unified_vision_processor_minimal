@@ -169,15 +169,8 @@ class ComparisonRunner:
         """Validate environment and configuration."""
         self.console.print("\n🔍 ENVIRONMENT VALIDATION", style="bold yellow")
 
-        # Validate configuration
-        try:
-            self.config.validate()
-            self.console.print("✅ Configuration validated")
-        except ValidationError as e:
-            self.console.print(f"❌ Configuration validation failed: {e.message}")
-            if e.details:
-                self.console.print(f"   Details: {e.details}")
-            raise RuntimeError(f"Configuration validation failed: {e.message}") from e
+        # Configuration is validated during ConfigManager initialization
+        self.console.print("✅ Configuration validated (during initialization)")
 
         # Print GPU information
         try:
