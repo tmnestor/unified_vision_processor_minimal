@@ -12,7 +12,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 
-from ..exceptions import ConfigurationError, ModelLoadError
+from ..exceptions import ModelLoadError
 from ..models.base_model import (
     BaseVisionModel,
     DeviceConfig,
