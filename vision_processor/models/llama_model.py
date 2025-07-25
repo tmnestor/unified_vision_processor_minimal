@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Union
 import torch
 from PIL import Image
 
-from .base_model import ModelResponse
+from .base_model import DeviceConfig, ModelResponse
 from .llama_base import LlamaVisionModelBase
 from .llama_classification import LlamaDocumentClassifier
 from .llama_inference import LlamaInferenceManager
@@ -36,12 +36,20 @@ class LlamaVisionModel(LlamaVisionModelBase):
 
     def __init__(self, *args, **kwargs):
         """Initialize LlamaVisionModel with modular components."""
-        super().__init__(*args, **kwargs)
+        # Initialize model attributes from BaseVisionModel but delay device setup
+        self.model_path = Path(args[0]) if args else Path(kwargs.get('model_path', ''))
+        self.device_config = kwargs.get('device_config', DeviceConfig.AUTO)
+        self.enable_quantization = kwargs.get('enable_quantization', True)
+        self.memory_limit_mb = kwargs.get('memory_limit_mb', None)
+        self.kwargs = kwargs
+        
+        # Extract and store config
+        self.config = kwargs.get("config")
         
         # Validate configuration before proceeding
         self._validate_config()
         
-        # Initialize specialized managers
+        # Initialize specialized managers first
         self.quantization_manager = LlamaQuantizationManager(
             self.config, 
             self.enable_quantization, 
@@ -64,12 +72,23 @@ class LlamaVisionModel(LlamaVisionModelBase):
             self.inference_manager
         )
         
-        # Setup device through memory manager
-        self.device = self.memory_manager.setup_device()
+        # Now call super().__init__ but override _setup_device to use our managers
+        self._managers_initialized = True
+        
+        # Call parent init (but _setup_device will now work)
+        super().__init__(*args, **kwargs)
 
     def _setup_device(self) -> torch.device:
         """Setup device configuration - delegated to memory manager."""
-        return self.memory_manager.setup_device()
+        if hasattr(self, '_managers_initialized') and hasattr(self, 'memory_manager'):
+            return self.memory_manager.setup_device()
+        else:
+            # Fallback for initialization phase - just return a basic device
+            import torch
+            if torch.cuda.is_available():
+                return torch.device("cuda:0")
+            else:
+                return torch.device("cpu")
 
     def load_model(self) -> None:
         """Load Llama-3.2-Vision model - delegated to inference manager."""
