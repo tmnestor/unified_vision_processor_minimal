@@ -73,24 +73,34 @@ class UniversalKeyValueParser:
 
         # Use pattern matching for key type handling
         match key:
-            case "TOTAL" | "GST" | "SUBTOTAL" | "OPENING_BALANCE" | "CLOSING_BALANCE" | "NIGHTLY_RATE" | "AMOUNT" | "UNIT_PRICE" | "PRICE_PER_LITRE":
+            case (
+                "TOTAL"
+                | "GST"
+                | "SUBTOTAL"
+                | "OPENING_BALANCE"
+                | "CLOSING_BALANCE"
+                | "NIGHTLY_RATE"
+                | "AMOUNT"
+                | "UNIT_PRICE"
+                | "PRICE_PER_LITRE"
+            ):
                 return self._extract_numeric(value)
-            
+
             case "ITEMS" | "QUANTITIES" | "PRICES":
                 return self._extract_list(value)
-            
+
             case "LITRES" | "QUANTITY" | "ATTENDEES":
                 return self._extract_integer(value)
-            
+
             case "STATEMENT_PERIOD":
                 return self._clean_date_range(value)
-            
+
             case "ABN":
                 return self._clean_abn(value)
-            
+
             case "BSB":
                 return self._clean_bsb(value)
-            
+
             case _:
                 # Default: return as string
                 return value.strip()
@@ -260,25 +270,25 @@ class UniversalKeyValueParser:
                 if isinstance(value, str):
                     return bool(re.match(r"^\d{1,2}/\d{1,2}/\d{4}$", value))
                 return False
-            
+
             case "numeric with 2 decimals":
                 return isinstance(value, (int, float))
-            
+
             case "XX XXX XXX XXX format":
                 if isinstance(value, str):
                     return bool(re.match(r"^\d{2} \d{3} \d{3} \d{3}$", value))
                 return False
-            
+
             case "XXX-XXX format":
                 if isinstance(value, str):
                     return bool(re.match(r"^\d{3}-\d{3}$", value))
                 return False
-            
+
             case "numeric string":
                 if isinstance(value, str):
                     return bool(re.match(r"^\d+$", value))
                 return False
-            
+
             case _:
                 # Default: assume valid
                 return True

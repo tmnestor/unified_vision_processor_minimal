@@ -48,7 +48,9 @@ class LlamaVisionModel(BaseVisionModel):
 
         # Initialize ultra-aggressive repetition controller
         # Extract configuration from YAML config first, then kwargs
-        yaml_repetition_config = getattr(self.config, "yaml_config", {}).get("repetition_control", {})
+        yaml_repetition_config = getattr(self.config, "yaml_config", {}).get(
+            "repetition_control", {}
+        )
         repetition_config = kwargs.get("repetition_control", yaml_repetition_config)
         word_threshold = repetition_config.get("word_threshold", 0.15)
         phrase_threshold = repetition_config.get("phrase_threshold", 2)
@@ -499,9 +501,11 @@ class LlamaVisionModel(BaseVisionModel):
             image = image.convert("RGB")
 
         # Resize if too large using YAML config
-        image_config = getattr(self.config, "yaml_config", {}).get("image_processing", {})
+        image_config = getattr(self.config, "yaml_config", {}).get(
+            "image_processing", {}
+        )
         max_size = image_config.get("max_image_size", 1024)
-        
+
         if max(image.size) > max_size:
             image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
             logger.info(f"Image resized to {image.size} (max: {max_size})")
@@ -520,44 +524,37 @@ class LlamaVisionModel(BaseVisionModel):
         """
         # Clean prompt of any existing image tokens - chat template will handle this
         clean_prompt = prompt.replace("<|image|>", "").strip()
-        
+
         # Get system prompt from YAML configuration
-        system_prompts = getattr(self.config, "yaml_config", {}).get("system_prompts", {})
+        system_prompts = getattr(self.config, "yaml_config", {}).get(
+            "system_prompts", {}
+        )
         system_prompt = system_prompts.get("llama", "You are a helpful assistant.")
-        
+
         # Use official HuggingFace chat template format with configurable system prompt
         messages = [
-            {
-                "role": "system",
-                "content": system_prompt
-            },
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
-                "content": [
-                    {"type": "image"},
-                    {"type": "text", "text": clean_prompt}
-                ]
-            }
+                "content": [{"type": "image"}, {"type": "text", "text": clean_prompt}],
+            },
         ]
-        
+
         # Apply chat template with generation prompt
         try:
             input_text = self.processor.apply_chat_template(
-                messages, 
-                add_generation_prompt=True
+                messages, add_generation_prompt=True
             )
-            
+
             # Process inputs using the formatted text
-            inputs = self.processor(
-                text=input_text, 
-                images=image, 
-                return_tensors="pt"
-            )
-            
+            inputs = self.processor(text=input_text, images=image, return_tensors="pt")
+
             logger.info("✅ Chat template applied successfully - using official format")
-            
+
         except Exception as e:
-            logger.warning(f"⚠️ Chat template failed, falling back to manual format: {e}")
+            logger.warning(
+                f"⚠️ Chat template failed, falling back to manual format: {e}"
+            )
             # Fallback to original manual approach if chat template fails
             if not prompt.startswith("<|image|>"):
                 prompt_with_image = f"<|image|>{prompt}"
@@ -675,9 +672,13 @@ class LlamaVisionModel(BaseVisionModel):
             logger.info(f"Inference completed in {processing_time:.2f}s")
 
             # Get confidence score from YAML config
-            model_config = getattr(self.config, "yaml_config", {}).get("model_config", {})
-            confidence_score = model_config.get("llama", {}).get("confidence_score", 0.85)
-            
+            model_config = getattr(self.config, "yaml_config", {}).get(
+                "model_config", {}
+            )
+            confidence_score = model_config.get("llama", {}).get(
+                "confidence_score", 0.85
+            )
+
             return ModelResponse(
                 raw_text=response.strip(),
                 confidence=confidence_score,

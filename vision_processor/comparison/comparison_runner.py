@@ -333,7 +333,7 @@ class ComparisonRunner:
 
                         # Only show debug output if VISION_DEBUG environment variable is set
                         debug_mode = True  # Force DEBUG on to diagnose parsing issues
-                        
+
                         if debug_mode:
                             # DEBUG: Print actual response length and content
                             self.console.print(
@@ -354,9 +354,14 @@ class ComparisonRunner:
                                 )
                                 # Show first 2000 chars if longer
                                 if len(response.raw_text) > 2000:
-                                    self.console.print(response.raw_text[:2000] + "...[TRUNCATED]", style="dim yellow")
+                                    self.console.print(
+                                        response.raw_text[:2000] + "...[TRUNCATED]",
+                                        style="dim yellow",
+                                    )
                                 else:
-                                    self.console.print(response.raw_text, style="dim yellow")
+                                    self.console.print(
+                                        response.raw_text, style="dim yellow"
+                                    )
 
                         # Pure model comparison: minimal processing to preserve raw outputs
                         analysis_dict = {
@@ -378,57 +383,77 @@ class ComparisonRunner:
                         )
 
                         # Check post-processing configuration
-                        post_processing_config = self.config.yaml_config.get("post_processing", {})
-                        post_processing_enabled = post_processing_config.get("enabled", True)
+                        post_processing_config = self.config.yaml_config.get(
+                            "post_processing", {}
+                        )
+                        post_processing_enabled = post_processing_config.get(
+                            "enabled", True
+                        )
                         smart_mode = post_processing_config.get("smart_mode", False)
-                        
+
                         # Smart detection: check if response needs cleaning
-                        needs_processing = ("**" in response.raw_text or 
-                                          "```" in response.raw_text or 
-                                          "Answer:" in response.raw_text or
-                                          len(response.raw_text) > 2000)  # Very long responses usually need cleaning
-                        
-                        if not post_processing_enabled or (smart_mode and not needs_processing):
+                        needs_processing = (
+                            "**" in response.raw_text
+                            or "```" in response.raw_text
+                            or "Answer:" in response.raw_text
+                            or len(response.raw_text) > 2000
+                        )  # Very long responses usually need cleaning
+
+                        if not post_processing_enabled or (
+                            smart_mode and not needs_processing
+                        ):
                             # 🚀 SMART BYPASS: Response is clean, use simple parsing
-                            processing_type = "disabled" if not post_processing_enabled else "clean (smart mode)"
-                            self.console.print(f"📋 Clean model output ({processing_type}):")
-                            
+                            processing_type = (
+                                "disabled"
+                                if not post_processing_enabled
+                                else "clean (smart mode)"
+                            )
+                            self.console.print(
+                                f"📋 Clean model output ({processing_type}):"
+                            )
+
                             # Simple parsing for clean KEY: value format (no complex cleaning needed)
                             extracted_fields = {}
                             raw_text = response.raw_text.strip()
-                            
+
                             # Split on spaces and look for KEY: value patterns
                             parts = raw_text.split()
                             i = 0
                             while i < len(parts) - 1:
                                 part = parts[i]
-                                if part.endswith(':'):
+                                if part.endswith(":"):
                                     key = part[:-1]  # Remove the colon
                                     # Collect value(s) until next key or end
                                     value_parts = []
                                     j = i + 1
-                                    while j < len(parts) and not parts[j].endswith(':'):
+                                    while j < len(parts) and not parts[j].endswith(":"):
                                         value_parts.append(parts[j])
                                         j += 1
-                                    value = ' '.join(value_parts) if value_parts else 'N/A'
+                                    value = (
+                                        " ".join(value_parts) if value_parts else "N/A"
+                                    )
                                     extracted_fields[key] = value
                                     i = j
                                 else:
                                     i += 1
-                            
+
                             # Store parsed fields
                             analysis_dict["extracted_fields"] = extracted_fields
-                            
+
                             # Display parsed fields (matching full post-processing format)
                             if extracted_fields:
                                 sorted_pairs = sorted(extracted_fields.items())
                                 for key, value in sorted_pairs:
                                     # Clean up values - remove trailing asterisks and whitespace
                                     value = value.rstrip("*").strip()
-                                    self.console.print(f"   {key:20}: {value}", style="dim green")
+                                    self.console.print(
+                                        f"   {key:20}: {value}", style="dim green"
+                                    )
                             else:
-                                self.console.print("   No key-value pairs found", style="dim red")
-                            
+                                self.console.print(
+                                    "   No key-value pairs found", style="dim red"
+                                )
+
                             # Simple status display with key count
                             status = "✅"
                             key_count = len(extracted_fields)
@@ -439,14 +464,20 @@ class ComparisonRunner:
                                 f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {keys_str} | {response_str}"
                             )
                             continue  # Skip all the post-processing below
-                        
+
                         # 🔧 FULL POST-PROCESSING: Handle messy responses (markdown, explanations, etc.)
-                        processing_type = "full (messy response detected)" if smart_mode else "full (always enabled)"
-                        self.console.print(f"🔧 Processing response ({processing_type}):")
-                        
+                        processing_type = (
+                            "full (messy response detected)"
+                            if smart_mode
+                            else "full (always enabled)"
+                        )
+                        self.console.print(
+                            f"🔧 Processing response ({processing_type}):"
+                        )
+
                         # Clean response to remove markdown artifacts and repetition
                         clean_text = response.raw_text
-                        
+
                         # Apply cleaning based on content patterns
                         match (("```" in clean_text), ("**Answer:**" in clean_text)):
                             case (True, _):
@@ -459,54 +490,89 @@ class ComparisonRunner:
                                     clean_text = parts[1].strip()
                                     # Remove subsequent Answer: sections (repetition)
                                     if "**Answer:**" in clean_text:
-                                        clean_text = clean_text.split("**Answer:**")[0].strip()
+                                        clean_text = clean_text.split("**Answer:**")[
+                                            0
+                                        ].strip()
                             case _:
                                 pass
 
                         # Remove markdown formatting
                         clean_text = clean_text.replace("**", "")  # Remove bold markers
-                        clean_text = re.sub(r"\*\s*", "", clean_text)  # Remove bullet points
+                        clean_text = re.sub(
+                            r"\*\s*", "", clean_text
+                        )  # Remove bullet points
 
                         # Stop at repetition markers and explanation sections
                         end_markers = [
-                            "**END OF", "END OF DOCUMENT", "END OF OUTPUT", "END OF FILE",
-                            "Note:", "NOTE:", "Answer:", "Final Answer:", "The output is exactly",
-                            "The above output", "Please ensure", "I apologize", "I hope it is correct"
+                            "**END OF",
+                            "END OF DOCUMENT",
+                            "END OF OUTPUT",
+                            "END OF FILE",
+                            "Note:",
+                            "NOTE:",
+                            "Answer:",
+                            "Final Answer:",
+                            "The output is exactly",
+                            "The above output",
+                            "Please ensure",
+                            "I apologize",
+                            "I hope it is correct",
                         ]
                         for marker in end_markers:
                             if marker in clean_text:
                                 clean_text = clean_text.split(marker)[0].strip()
                                 break
-                        
+
                         # Remove repetitive N/A values (Llama bug where it repeats N/A hundreds of times)
                         # Look for pattern like "... N/A N/A N/A N/A N/A ..." and truncate
-                        na_repetition_pattern = r'(\b(N/A\s*){10,})'  # 10+ consecutive N/A values
+                        na_repetition_pattern = (
+                            r"(\b(N/A\s*){10,})"  # 10+ consecutive N/A values
+                        )
                         if re.search(na_repetition_pattern, clean_text):
                             # Find where the repetition starts and truncate there
                             match = re.search(na_repetition_pattern, clean_text)
                             if match:
-                                clean_text = clean_text[:match.start()].strip()
+                                clean_text = clean_text[: match.start()].strip()
 
                         # Parse key-value pairs - handle generic format
                         lines = clean_text.strip().split("\n")
-                        
+
                         # DEBUG: Show parsing info (only if debug mode enabled)
                         if debug_mode:
-                            self.console.print(f"DEBUG: Parsing {len(lines)} lines", style="yellow")
+                            self.console.print(
+                                f"DEBUG: Parsing {len(lines)} lines", style="yellow"
+                            )
                             if len(lines) > 0:
-                                self.console.print(f"DEBUG: First line: '{lines[0][:100]}...'", style="yellow")
-                            
+                                self.console.print(
+                                    f"DEBUG: First line: '{lines[0][:100]}...'",
+                                    style="yellow",
+                                )
+
                             # Show what clean_text looks like before parsing
-                            self.console.print("DEBUG: Clean text being passed to parser:", style="cyan")
-                            self.console.print(f"'{clean_text[:200]}{'...' if len(clean_text) > 200 else ''}'", style="dim cyan")
+                            self.console.print(
+                                "DEBUG: Clean text being passed to parser:",
+                                style="cyan",
+                            )
+                            self.console.print(
+                                f"'{clean_text[:200]}{'...' if len(clean_text) > 200 else ''}'",
+                                style="dim cyan",
+                            )
 
                         # Extract key-value pairs using robust AWK-style parsing
-                        extracted_pairs = self._extract_keyvalue_pairs_robust(clean_text)
-                        
+                        extracted_pairs = self._extract_keyvalue_pairs_robust(
+                            clean_text
+                        )
+
                         if debug_mode:
-                            self.console.print(f"DEBUG: Extracted {len(extracted_pairs)} pairs using robust parser", style="yellow")
+                            self.console.print(
+                                f"DEBUG: Extracted {len(extracted_pairs)} pairs using robust parser",
+                                style="yellow",
+                            )
                             if len(extracted_pairs) == 0:
-                                self.console.print("DEBUG: No pairs extracted. First 500 chars of clean_text:", style="red")
+                                self.console.print(
+                                    "DEBUG: No pairs extracted. First 500 chars of clean_text:",
+                                    style="red",
+                                )
                                 self.console.print(clean_text[:500], style="dim red")
 
                         # Display all extracted fields
@@ -516,7 +582,7 @@ class ComparisonRunner:
                             for key, value in sorted_pairs:
                                 # Clean up values - remove trailing asterisks and whitespace
                                 value = value.rstrip("*").strip()
-                                
+
                                 # Handle OCR fallback in TRANSACTIONS field
                                 if key == "TRANSACTIONS" and "<OCR/>" in value:
                                     # Extract just the marker for display
@@ -529,7 +595,7 @@ class ComparisonRunner:
                                     self.console.print(
                                         f"   {key:20}: {value}", style="dim cyan"
                                     )
-                            
+
                             # Store the extracted fields in the analysis_dict
                             analysis_dict["extracted_fields"] = extracted_pairs
                         else:
@@ -628,45 +694,63 @@ class ComparisonRunner:
         self, extraction_results: Dict[str, List[Dict[str, Any]]]
     ) -> Dict[str, Any]:
         """Run analysis comparing extracted fields between models."""
-        self.console.print(
-            "\n📊 MODEL FIELD EXTRACTION COMPARISON", style="bold green"
-        )
+        self.console.print("\n📊 MODEL FIELD EXTRACTION COMPARISON", style="bold green")
 
         analysis_results = {}
-        
+
         # Get expected fields from config (parses from prompt if not explicitly defined)
         expected_fields = self.config.get_expected_fields()
         if not expected_fields:
             # Fallback to hardcoded list if parsing fails
             expected_fields = [
-                "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS",
-                "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST",
-                "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "ITEMS", "QUANTITIES",
-                "PRICES", "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME",
-                "BSB_NUMBER", "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER",
-                "STATEMENT_PERIOD", "OPENING_BALANCE", "CLOSING_BALANCE", "TRANSACTIONS"
+                "DOCUMENT_TYPE",
+                "SUPPLIER",
+                "ABN",
+                "PAYER_NAME",
+                "PAYER_ADDRESS",
+                "PAYER_PHONE",
+                "PAYER_EMAIL",
+                "INVOICE_DATE",
+                "DUE_DATE",
+                "GST",
+                "TOTAL",
+                "SUBTOTAL",
+                "SUPPLIER_WEBSITE",
+                "ITEMS",
+                "QUANTITIES",
+                "PRICES",
+                "BUSINESS_ADDRESS",
+                "BUSINESS_PHONE",
+                "BANK_NAME",
+                "BSB_NUMBER",
+                "BANK_ACCOUNT_NUMBER",
+                "ACCOUNT_HOLDER",
+                "STATEMENT_PERIOD",
+                "OPENING_BALANCE",
+                "CLOSING_BALANCE",
+                "TRANSACTIONS",
             ]
 
         # Analyze field extraction by model
         model_field_stats = {}
-        
+
         for model_name, results in extraction_results.items():
             total_fields_extracted = 0
             field_extraction_counts = {field: 0 for field in expected_fields}
             fields_with_values = {field: 0 for field in expected_fields}
-            
+
             for result in results:
                 extracted = result.get("extracted_fields", {})
                 total_fields_extracted += len(extracted)
-                
+
                 for field in expected_fields:
                     if field in extracted:
                         field_extraction_counts[field] += 1
                         if extracted[field] not in ["N/A", "n/a", ""]:
                             fields_with_values[field] += 1
-            
+
             avg_fields_per_doc = total_fields_extracted / len(results) if results else 0
-            
+
             model_field_stats[model_name] = {
                 "total_docs": len(results),
                 "avg_fields_extracted": avg_fields_per_doc,
@@ -677,20 +761,21 @@ class ComparisonRunner:
                 "field_value_rates": {
                     field: count / len(results) if results else 0
                     for field, count in fields_with_values.items()
-                }
+                },
             }
-            
+
             # Print summary with emphasis on the crucial metric
             self.console.print(f"\n📝 {model_name.upper()} Field Extraction:")
             self.console.print(
-                f"   [bold cyan]Average fields extracted: {avg_fields_per_doc:.1f}/26 ({(avg_fields_per_doc/26)*100:.1f}%)[/bold cyan]"
+                f"   [bold cyan]Average fields extracted: {avg_fields_per_doc:.1f}/26 ({(avg_fields_per_doc / 26) * 100:.1f}%)[/bold cyan]"
             )
-            
+
             # Show completion quality using YAML config thresholds
-            quality_thresholds = self.config.yaml_config.get("quality_thresholds", {
-                "excellent": 24, "good": 20, "fair": 15, "poor": 0
-            })
-            
+            quality_thresholds = self.config.yaml_config.get(
+                "quality_thresholds",
+                {"excellent": 24, "good": 20, "fair": 15, "poor": 0},
+            )
+
             if avg_fields_per_doc >= quality_thresholds["excellent"]:
                 quality = "Excellent - Near complete extraction"
                 style = "bold green"
@@ -704,12 +789,10 @@ class ComparisonRunner:
                 quality = "Poor - Many fields missing"
                 style = "red"
             self.console.print(f"   Quality: [{style}]{quality}[/{style}]")
-            
+
             # Show top extracted fields
             top_fields = sorted(
-                fields_with_values.items(), 
-                key=lambda x: x[1], 
-                reverse=True
+                fields_with_values.items(), key=lambda x: x[1], reverse=True
             )[:5]
             self.console.print("   Top extracted fields with values:")
             for field, count in top_fields:
@@ -718,26 +801,32 @@ class ComparisonRunner:
 
         # Compare models on ALL expected fields (why limit to just 5?)
         self.console.print("\n🔍 Complete Field-by-Field Comparison:")
-        self.console.print("   (Showing all fields with >0% extraction by at least one model)")
-        
+        self.console.print(
+            "   (Showing all fields with >0% extraction by at least one model)"
+        )
+
         # Find fields that at least one model extracted with some success
         active_fields = []
         for field in expected_fields:
             has_extractions = any(
-                stats["field_value_rates"][field] > 0 
+                stats["field_value_rates"][field] > 0
                 for stats in model_field_stats.values()
             )
             if has_extractions:
                 active_fields.append(field)
-        
+
         for field in active_fields:
             self.console.print(f"\n   {field}:")
             for model_name, stats in model_field_stats.items():
                 rate = stats["field_value_rates"][field] * 100
                 if rate > 0:
-                    self.console.print(f"     {model_name}: {rate:.1f}% extraction rate")
+                    self.console.print(
+                        f"     {model_name}: {rate:.1f}% extraction rate"
+                    )
                 else:
-                    self.console.print(f"     {model_name}: [dim]0% extraction rate[/dim]")
+                    self.console.print(
+                        f"     {model_name}: [dim]0% extraction rate[/dim]"
+                    )
 
         # Calculate and display performance metrics
         self.console.print("\n⏱️  Processing Speed Comparison:")
@@ -750,12 +839,12 @@ class ComparisonRunner:
                 else 0
             )
             processing_times[model_name] = avg_processing_time
-            
+
             # Determine speed rating using YAML config thresholds
-            speed_thresholds = self.config.yaml_config.get("speed_thresholds", {
-                "very_fast": 2.0, "fast": 5.0, "moderate": 10.0
-            })
-            
+            speed_thresholds = self.config.yaml_config.get(
+                "speed_thresholds", {"very_fast": 2.0, "fast": 5.0, "moderate": 10.0}
+            )
+
             if avg_processing_time < speed_thresholds["very_fast"]:
                 speed_rating = "Very Fast"
                 speed_style = "bold green"
@@ -768,11 +857,11 @@ class ComparisonRunner:
             else:
                 speed_rating = "Slow"
                 speed_style = "red"
-            
+
             self.console.print(
                 f"   {model_name.upper()}: [{speed_style}]{avg_processing_time:.1f}s per document ({speed_rating})[/{speed_style}]"
             )
-        
+
         # Show speed advantage
         if len(processing_times) == 2:
             models = list(processing_times.items())
@@ -793,7 +882,7 @@ class ComparisonRunner:
         analysis_results["field"] = {
             "summary": "Detailed field extraction analysis",
             "model_stats": model_field_stats,
-            "expected_fields": expected_fields
+            "expected_fields": expected_fields,
         }
 
         analysis_results["metrics"] = {
@@ -805,16 +894,16 @@ class ComparisonRunner:
 
         # Determine the winner based on both crucial metrics
         self.console.print("\n🏆 OVERALL COMPARISON RESULTS:")
-        
+
         # Field extraction winner
         model_scores = {
-            model: stats["avg_fields_extracted"] 
+            model: stats["avg_fields_extracted"]
             for model, stats in model_field_stats.items()
         }
-        
+
         field_winner = max(model_scores.items(), key=lambda x: x[1])
         field_loser = min(model_scores.items(), key=lambda x: x[1])
-        
+
         self.console.print("\n   📊 Field Extraction Quality:")
         if field_winner[1] - field_loser[1] < 1.0:  # Less than 1 field difference
             self.console.print(
@@ -827,11 +916,15 @@ class ComparisonRunner:
             self.console.print(
                 f"      [dim]{field_loser[0].upper()} extracted {field_loser[1]:.1f}/26 fields[/dim]"
             )
-            advantage = ((field_winner[1] - field_loser[1]) / field_loser[1]) * 100 if field_loser[1] > 0 else 0
+            advantage = (
+                ((field_winner[1] - field_loser[1]) / field_loser[1]) * 100
+                if field_loser[1] > 0
+                else 0
+            )
             self.console.print(
                 f"      [cyan]Advantage: {advantage:.1f}% more fields extracted[/cyan]"
             )
-        
+
         # Speed winner
         self.console.print("\n   ⚡ Processing Speed:")
         speed_winner = None
@@ -844,7 +937,6 @@ class ComparisonRunner:
             self.console.print(
                 f"      [dim]{speed_loser[0].upper()} takes {speed_loser[1]:.1f}s per document[/dim]"
             )
-            
 
         self.console.print("\n✅ Field extraction comparison complete")
         return analysis_results
@@ -1006,68 +1098,112 @@ class ComparisonRunner:
 
     def _extract_keyvalue_pairs_robust(self, text: str) -> dict[str, str]:
         """Extract key-value pairs using robust AWK-style parsing from backup."""
-        
+
         if not text or not text.strip():
             return {}
 
         extracted_pairs = {}
-        
+
         # First, try to split on newlines (multi-line format)
         lines = text.strip().split("\n")
-        
+
         # Debug: show what we're parsing
         print(f"DEBUG _extract_keyvalue_pairs_robust: Processing {len(lines)} lines")
         if len(lines) > 0:
             print(f"DEBUG: First 3 lines: {lines[:3]}")
 
-        # If we have only 1 line and it contains multiple field patterns, 
+        # If we have only 1 line and it contains multiple field patterns,
         # it's likely a single-line response that needs field-boundary splitting
         if len(lines) == 1 and len(lines[0]) > 200:  # Likely single-line response
             single_line = lines[0]
-            print(f"DEBUG: Detected single-line response ({len(single_line)} chars), splitting on field boundaries")
-            
+            print(
+                f"DEBUG: Detected single-line response ({len(single_line)} chars), splitting on field boundaries"
+            )
+
             # Get expected fields from the prompt/config
             expected_fields = [
-                "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS",
-                "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST",
-                "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "ITEMS", "QUANTITIES",
-                "PRICES", "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME",
-                "BSB_NUMBER", "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER",
-                "STATEMENT_PERIOD", "OPENING_BALANCE", "CLOSING_BALANCE", "TRANSACTIONS"
+                "DOCUMENT_TYPE",
+                "SUPPLIER",
+                "ABN",
+                "PAYER_NAME",
+                "PAYER_ADDRESS",
+                "PAYER_PHONE",
+                "PAYER_EMAIL",
+                "INVOICE_DATE",
+                "DUE_DATE",
+                "GST",
+                "TOTAL",
+                "SUBTOTAL",
+                "SUPPLIER_WEBSITE",
+                "ITEMS",
+                "QUANTITIES",
+                "PRICES",
+                "BUSINESS_ADDRESS",
+                "BUSINESS_PHONE",
+                "BANK_NAME",
+                "BSB_NUMBER",
+                "BANK_ACCOUNT_NUMBER",
+                "ACCOUNT_HOLDER",
+                "STATEMENT_PERIOD",
+                "OPENING_BALANCE",
+                "CLOSING_BALANCE",
+                "TRANSACTIONS",
             ]
-            
+
             # Much simpler approach: just insert newlines before each field
             reconstructed_text = single_line
-            
+
             # Insert newline before each field (except the first one)
             for field in expected_fields:
                 # Look for " FIELD:" pattern and replace with "\nFIELD:"
-                pattern = f' {field}:'
-                reconstructed_text = reconstructed_text.replace(pattern, f'\n{field}:')
-            
+                pattern = f" {field}:"
+                reconstructed_text = reconstructed_text.replace(pattern, f"\n{field}:")
+
             # Split into lines
-            lines = [line.strip() for line in reconstructed_text.split('\n') if line.strip()]
-            
-            print(f"DEBUG: Reconstructed {len(lines)} field lines from single-line response")
-            print(f"DEBUG: First few reconstructed lines: {lines[:3] if lines else 'None'}")
+            lines = [
+                line.strip() for line in reconstructed_text.split("\n") if line.strip()
+            ]
+
+            print(
+                f"DEBUG: Reconstructed {len(lines)} field lines from single-line response"
+            )
+            print(
+                f"DEBUG: First few reconstructed lines: {lines[:3] if lines else 'None'}"
+            )
 
         # Now process lines normally (whether original multi-line or reconstructed)
         for line in lines:
             line = line.strip()
-            
+
             # Skip empty lines, comments, and instruction lines
-            if not line or line.startswith("#") or line.startswith("NOTE:") or line.startswith("Note:"):
+            if (
+                not line
+                or line.startswith("#")
+                or line.startswith("NOTE:")
+                or line.startswith("Note:")
+            ):
                 continue
 
             # Skip instruction/format lines and answer sections
-            if any(skip in line.lower() for skip in ["example:", "format:", "output:", "instruction:", "required output format", "answer:", "final answer:"]):
+            if any(
+                skip in line.lower()
+                for skip in [
+                    "example:",
+                    "format:",
+                    "output:",
+                    "instruction:",
+                    "required output format",
+                    "answer:",
+                    "final answer:",
+                ]
+            ):
                 continue
 
             # Look for KEY: VALUE pattern
             if ":" in line and len(line.split(":", 1)) == 2:
                 # Remove numbered list prefixes
                 line = re.sub(r"^\d+\.\s*", "", line)
-                
+
                 try:
                     key, value = line.split(":", 1)
                     key = key.strip().upper()
@@ -1075,25 +1211,27 @@ class ComparisonRunner:
 
                     # Remove markdown formatting from key
                     key = key.replace("**", "").replace("*", "")
-                    
+
                     # Simple value cleaning (no complex truncation needed after line reconstruction)
-                    
+
                     # Clean value
                     value = value.replace("**", "").replace("*", "").strip()
                     value = value.strip('"').strip("'").strip()
 
                     # Validate key format - must be alphabetic (with underscores/spaces)
-                    if (key and value and 
-                        key.replace("_", "").replace(" ", "").isalpha() and 
-                        not key.isdigit() and
-                        len(key) > 1):  # At least 2 characters
-                        
+                    if (
+                        key
+                        and value
+                        and key.replace("_", "").replace(" ", "").isalpha()
+                        and not key.isdigit()
+                        and len(key) > 1
+                    ):  # At least 2 characters
                         # Normalize key format
                         key = key.replace(" ", "_")
-                        
+
                         # Keep ALL values, including N/A (for fair comparison)
                         extracted_pairs[key] = value
-                        
+
                         # Debug
                         if len(extracted_pairs) <= 5:  # Show first few extractions
                             print(f"DEBUG: Extracted {key}: {value[:50]}...")
@@ -1170,53 +1308,60 @@ class ComparisonRunner:
 
         # Flatten extraction results into DataFrame format
         rows = []
-        
+
         for model_name, model_results in self.results.extraction_results.items():
             for result in model_results:
                 # Base row data
                 row = {
-                    'model_name': model_name,
-                    'image_name': result.get('img_name', ''),
-                    'processing_time': result.get('processing_time', 0.0),
-                    'response_length': result.get('response_length', 0),
-                    'successful': result.get('successful', False),
-                    'timestamp': result.get('timestamp', ''),
-                    'field_count': len(result.get('extracted_fields', {}))
+                    "model_name": model_name,
+                    "image_name": result.get("img_name", ""),
+                    "processing_time": result.get("processing_time", 0.0),
+                    "response_length": result.get("response_length", 0),
+                    "successful": result.get("successful", False),
+                    "timestamp": result.get("timestamp", ""),
+                    "field_count": len(result.get("extracted_fields", {})),
                 }
-                
+
                 # Add extracted fields as columns
-                extracted_fields = result.get('extracted_fields', {})
+                extracted_fields = result.get("extracted_fields", {})
                 expected_fields = self.config.get_expected_fields()
                 for field_name in expected_fields:
-                    row[f'field_{field_name}'] = extracted_fields.get(field_name, 'N/A')
-                
+                    row[f"field_{field_name}"] = extracted_fields.get(field_name, "N/A")
+
                 rows.append(row)
-        
+
         results_dataframe = pd.DataFrame(rows)
-        
+
         # Add summary columns
         if not results_dataframe.empty:
             # Calculate fields with actual values (not N/A)
-            field_columns = [col for col in results_dataframe.columns if col.startswith('field_')]
-            results_dataframe['fields_with_values'] = results_dataframe[field_columns].apply(
-                lambda row: sum(1 for val in row if val not in ['N/A', 'n/a', '']), axis=1
+            field_columns = [
+                col for col in results_dataframe.columns if col.startswith("field_")
+            ]
+            results_dataframe["fields_with_values"] = results_dataframe[
+                field_columns
+            ].apply(
+                lambda row: sum(1 for val in row if val not in ["N/A", "n/a", ""]),
+                axis=1,
             )
-            
+
             # Add performance rating based on field extraction
-            quality_thresholds = self.config.yaml_config.get('quality_thresholds', {
-                'excellent': 12, 'good': 8, 'fair': 5, 'poor': 0
-            })
-            
+            quality_thresholds = self.config.yaml_config.get(
+                "quality_thresholds", {"excellent": 12, "good": 8, "fair": 5, "poor": 0}
+            )
+
             def get_quality_rating(field_count):
-                if field_count >= quality_thresholds['excellent']:
-                    return 'excellent'
-                elif field_count >= quality_thresholds['good']:
-                    return 'good'
-                elif field_count >= quality_thresholds['fair']:
-                    return 'fair'
+                if field_count >= quality_thresholds["excellent"]:
+                    return "excellent"
+                elif field_count >= quality_thresholds["good"]:
+                    return "good"
+                elif field_count >= quality_thresholds["fair"]:
+                    return "fair"
                 else:
-                    return 'poor'
-            
-            results_dataframe['quality_rating'] = results_dataframe['fields_with_values'].apply(get_quality_rating)
-        
+                    return "poor"
+
+            results_dataframe["quality_rating"] = results_dataframe[
+                "fields_with_values"
+            ].apply(get_quality_rating)
+
         return results_dataframe

@@ -22,14 +22,18 @@ class SimpleConfig:
 
         # Get defaults from YAML
         defaults = self.yaml_config.get("defaults", {})
-        
+
         # Model settings from YAML
         self.model_type = "internvl"  # Default, can be overridden by CLI
-        
+
         # GPU and memory settings from YAML
         memory_config = self.yaml_config.get("memory_config", {})
         self.gpu_memory_fraction = 0.9
-        self.memory_limit_mb = int(memory_config.get("v100_limit_gb", 16) * 1024 * memory_config.get("safety_margin", 0.85))
+        self.memory_limit_mb = int(
+            memory_config.get("v100_limit_gb", 16)
+            * 1024
+            * memory_config.get("safety_margin", 0.85)
+        )
         self.enable_quantization = defaults.get("quantization", True)
 
         # Processing settings from YAML
@@ -45,9 +49,13 @@ class SimpleConfig:
         # Repetition control settings from YAML only
         yaml_repetition = self.yaml_config.get("repetition_control", {})
         self.repetition_control_enabled = yaml_repetition.get("enabled", True)
-        self.repetition_word_threshold = float(yaml_repetition.get("word_threshold", 0.15))
-        self.repetition_phrase_threshold = int(yaml_repetition.get("phrase_threshold", 2))
-        
+        self.repetition_word_threshold = float(
+            yaml_repetition.get("word_threshold", 0.15)
+        )
+        self.repetition_phrase_threshold = int(
+            yaml_repetition.get("phrase_threshold", 2)
+        )
+
         # Max tokens from YAML model config
         yaml_token_limit = (
             self.yaml_config.get("model_config", {})
@@ -59,6 +67,7 @@ class SimpleConfig:
         # Set offline mode for transformers
         if self.offline_mode:
             import os
+
             os.environ["TRANSFORMERS_OFFLINE"] = "1"
             os.environ["HF_DATASETS_OFFLINE"] = "1"
 
@@ -211,7 +220,7 @@ class SimpleConfig:
 
     def get_expected_fields(self) -> list[str]:
         """Get expected fields by parsing from llama prompt or using YAML configuration.
-        
+
         Priority:
         1. If expected_fields is defined in YAML, use that
         2. Otherwise, parse fields from the llama prompt
@@ -220,22 +229,23 @@ class SimpleConfig:
         expected_fields = self.yaml_config.get("expected_fields", [])
         if expected_fields:
             return expected_fields
-            
+
         # Otherwise, parse from llama prompt
         prompts = self.yaml_config.get("prompts", {})
         llama_prompt = prompts.get("llama", "")
-        
+
         if not llama_prompt:
             return []
-            
+
         # Parse field names from lines that match "FIELD_NAME: [value or N/A]"
         import re
+
         fields = []
-        for line in llama_prompt.split('\n'):
-            match = re.match(r'^\s*([A-Z_]+):\s*\[.*\]', line.strip())
+        for line in llama_prompt.split("\n"):
+            match = re.match(r"^\s*([A-Z_]+):\s*\[.*\]", line.strip())
             if match:
                 fields.append(match.group(1))
-                
+
         return fields
 
     def get_prompts(self) -> dict[str, str]:
@@ -247,3 +257,24 @@ class SimpleConfig:
                 "internvl": "Extract data from this image in KEY-VALUE format.",
             },
         )
+
+    @property
+    def model_path(self) -> str:
+        """Get the model path for the current model type."""
+        paths = self.yaml_config.get("model_paths", {})
+        return paths.get(self.model_type, "")
+
+    @property
+    def enable_multi_gpu(self) -> bool:
+        """Check if multi-GPU is enabled based on device configuration."""
+        # Check device_config in YAML
+        device_config = self.yaml_config.get("device_config", {})
+        gpu_strategy = device_config.get("gpu_strategy", "single_gpu")
+
+        # Also check model-specific device maps
+        device_maps = device_config.get("device_maps", {})
+        if self.model_type in device_maps:
+            model_strategy = device_maps[self.model_type].get("strategy", "single_gpu")
+            return model_strategy == "multi_gpu"
+
+        return gpu_strategy == "multi_gpu"

@@ -95,11 +95,12 @@ class SimpleExtractionManager:
         try:
             # Use same model creation pattern as ComparisonRunner
             from ..config.model_registry import get_model_registry
+
             model_registry = get_model_registry()
-            
+
             # Get model path from YAML model_paths
             model_path = getattr(self.config.model_paths, self.config.model_type)
-                
+
             model = model_registry.create_model(
                 self.config.model_type,
                 self.config.processing,
