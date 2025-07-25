@@ -333,6 +333,11 @@ class ConfigManager:
             )
         self.current_output_format = output_format
     
+    @property
+    def output_format(self) -> str:
+        """Get current output format for compatibility."""
+        return self.current_output_format
+    
     def is_multi_gpu_enabled(self, model_type: Optional[str] = None) -> bool:
         """Check if multi-GPU is enabled for specified model."""
         if model_type is None:
