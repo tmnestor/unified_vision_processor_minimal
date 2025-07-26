@@ -5,7 +5,7 @@ and configurable verbosity levels to replace raw print statements.
 """
 
 import logging
-from typing import Optional
+
 from rich.console import Console
 from rich.logging import RichHandler
 
