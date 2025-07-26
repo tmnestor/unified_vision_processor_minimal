@@ -41,13 +41,20 @@ class VisionProcessorLogger:
             logger.addHandler(rich_handler)
 
         # Add file handler for production
-        file_handler = logging.FileHandler("vision_processor.log")
-        file_handler.setLevel(logging.WARNING)  # Only warnings/errors to file
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+        if self._should_enable_file_logging():
+            log_file_path = self._get_log_file_path()
+            # Ensure log directory exists
+            from pathlib import Path
+            log_dir = Path(log_file_path).parent
+            log_dir.mkdir(parents=True, exist_ok=True)
+            
+            file_handler = logging.FileHandler(log_file_path)
+            file_handler.setLevel(logging.WARNING)  # Only warnings/errors to file
+            formatter = logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
 
         return logger
 
@@ -106,3 +113,29 @@ class VisionProcessorLogger:
     def _should_use_console(self) -> bool:
         """Check if console output should be used."""
         return self.config and getattr(self.config.defaults, "console_output", True)
+
+    def _should_enable_file_logging(self) -> bool:
+        """Check if file logging should be enabled."""
+        if not self.config:
+            return True  # Default to enabled
+        
+        # Check if we have logging config
+        logging_config = getattr(self.config, '_yaml_config_data', {}).get('logging', {})
+        return logging_config.get('file_logging', True)
+
+    def _get_log_file_path(self) -> str:
+        """Get log file path from configuration."""
+        if not self.config:
+            from ..exceptions import ConfigurationError
+            raise ConfigurationError("No configuration available for log file path")
+        
+        # Check if we have logging config
+        logging_config = getattr(self.config, '_yaml_config_data', {}).get('logging', {})
+        log_file = logging_config.get('log_file')
+        if not log_file:
+            from ..exceptions import ConfigurationError
+            raise ConfigurationError(
+                "❌ FATAL: log_file not configured in YAML\n"
+                "💡 Fix: Add logging.log_file to model_comparison.yaml"
+            )
+        return log_file

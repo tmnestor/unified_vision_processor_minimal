@@ -25,8 +25,8 @@ class ExtractionEvaluator:
     def __init__(
         self,
         ground_truth_csv: str,
-        images_dir: str = "datasets",
-        output_dir: str = "evaluation_results",
+        images_dir: str,
+        output_dir: str,
     ):
         """Initialize evaluator.
 

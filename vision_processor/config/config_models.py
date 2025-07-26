@@ -36,10 +36,10 @@ class ImageProcessingConfig:
 class DefaultsConfig:
     """CLI default settings."""
 
-    datasets_path: str = "datasets"
+    datasets_path: str = ""  # Will be set from YAML, no hardcoded default
     max_tokens: int = 700
     quantization: bool = True
-    output_dir: str = "results"
+    output_dir: str = ""  # Will be set from YAML, no hardcoded default
     models: str = "llama,internvl"
     trust_remote_code: bool = True
     debug_mode: bool = False

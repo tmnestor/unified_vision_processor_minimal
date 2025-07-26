@@ -231,8 +231,8 @@ def compare(
         defaults = {}
 
     # Apply effective values (CLI overrides config defaults)
-    effective_datasets_path = datasets_path or defaults.get("datasets_path", "datasets")
-    effective_output_dir = output_dir or defaults.get("output_dir", "results")
+    effective_datasets_path = datasets_path or defaults.get("datasets_path")
+    effective_output_dir = output_dir or defaults.get("output_dir")
     effective_models = models or defaults.get("models", "llama,internvl")
     effective_max_tokens = max_tokens or defaults.get("max_tokens", 256)
     effective_quantization = (
@@ -295,7 +295,7 @@ def compare(
 @app.command()
 def check_environment(
     datasets_path: str = typer.Option(
-        "datasets", help="Path to datasets directory to check"
+        None, help="Path to datasets directory to check (default from config)"
     ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
@@ -324,7 +324,12 @@ def check_environment(
     # Run production environment validation
     is_valid = validate_production_environment()
 
-    # Check datasets
+    # Check datasets - get path from config if not provided
+    if not datasets_path:
+        # Load config to get default datasets path
+        config = ConfigManager()
+        datasets_path = config.defaults.datasets_path
+    
     console.print("\n📁 DATASET VALIDATION", style="bold blue")
     datasets_dir = Path(datasets_path)
     if datasets_dir.exists():

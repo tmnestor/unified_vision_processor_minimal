@@ -304,7 +304,7 @@ def config_info(
 @app.command()
 def batch(
     input_dir: str = typer.Argument(..., help="Directory containing images to process"),
-    output_dir: str = typer.Option("output", help="Directory to save results"),
+    output_dir: str = typer.Option(None, help="Directory to save results (default from config)"),
     model: Optional[str] = typer.Option(None, help="Override model type"),
     yaml_file: str = typer.Option(
         "model_comparison.yaml", help="Path to YAML configuration file"
@@ -349,6 +349,10 @@ def batch(
 
         if model:
             config.set_model_type(model)
+        
+        # Use config output_dir if not provided via CLI
+        if not output_dir:
+            output_dir = config.defaults.output_dir
 
         # Find image files
         image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
