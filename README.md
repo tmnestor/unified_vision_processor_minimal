@@ -98,6 +98,24 @@ python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png -
 python -m vision_processor.cli.simple_extract_cli batch ./datasets/ --output-dir ./results/
 ```
 
+### Verbosity Control
+
+All CLI commands support runtime verbosity control:
+
+```bash
+# Quiet mode (minimal output, errors/warnings only)
+python model_comparison.py compare --quiet
+python -m vision_processor.cli.simple_extract_cli extract image.jpg --quiet
+
+# Verbose mode (detailed status messages)
+python model_comparison.py compare --verbose
+python -m vision_processor.cli.evaluation_cli compare ground_truth.csv --verbose
+
+# Debug mode (full diagnostic output)
+python model_comparison.py compare --debug
+python -m vision_processor.cli.simple_extract_cli extract image.jpg --debug
+```
+
 ## ⚙️ Configuration
 
 The system uses a unified YAML configuration system with fail-fast validation:
@@ -116,6 +134,10 @@ defaults:
   quantization: true
   output_dir: "results"
   models: "llama,internvl"
+  verbose_mode: false      # Enable detailed status messages
+  debug_mode: false        # Enable debug-level output
+  console_output: true     # Enable Rich console formatting
+  log_level: "INFO"        # ERROR, WARNING, INFO, DEBUG
 
 # Memory configuration
 memory_config:
@@ -159,6 +181,7 @@ extraction_prompt: |
 - **Dynamic Prompts**: Automatically generated from `expected_fields`
 - **Model-Agnostic**: Same configuration works for both models
 - **Production Optimized**: V100 GPU constraints built-in
+- **Unified Logging**: Configurable verbosity with CLI override support
 
 ## 🔑 Field Extraction
 
@@ -184,6 +207,61 @@ expected_fields:
 ```
 
 No code changes required - prompts are generated dynamically.
+
+## 📋 Logging & Verbosity Control
+
+The system provides a unified logging system with configurable verbosity levels:
+
+### Logging Levels
+- **ERROR**: Critical failures and exceptions (always shown)
+- **WARNING**: Non-fatal issues, missing paths, fallbacks (always shown)
+- **INFO**: Important status updates, completion messages (verbose mode)
+- **DEBUG**: Detailed processing info, internal state (debug mode)
+
+### CLI Verbosity Flags
+
+All CLI commands support these verbosity flags:
+
+| Flag | Short | Description | Output Level |
+|------|-------|-------------|--------------|
+| `--quiet` | `-q` | Minimal output, disable Rich formatting | ERROR, WARNING only |
+| (default) | | Standard output with Rich formatting | ERROR, WARNING only |
+| `--verbose` | `-v` | Detailed status messages | ERROR, WARNING, INFO |
+| `--debug` | | Full diagnostic output | All levels |
+
+### Configuration Options
+
+Control logging behavior via `model_comparison.yaml`:
+
+```yaml
+defaults:
+  verbose_mode: false      # Show INFO-level messages
+  debug_mode: false        # Show DEBUG-level messages  
+  console_output: true     # Enable Rich console formatting
+  log_level: "INFO"        # Minimum log level
+
+logging:
+  file_logging: true       # Enable file logging
+  log_file: "vision_processor.log"
+  max_log_size: "10MB"     # Log rotation size
+  backup_count: 3          # Number of backup logs
+```
+
+### Usage Examples
+
+```bash
+# Quiet processing (automation-friendly)
+python model_comparison.py compare --quiet
+
+# Standard processing with Rich output (default)
+python -m vision_processor.cli.simple_extract_cli extract image.jpg
+
+# Verbose processing with detailed status
+python -m vision_processor.cli.evaluation_cli compare data.csv --verbose
+
+# Debug processing with full diagnostics
+python model_comparison.py compare --debug
+```
 
 ## 🧪 Model Support
 
@@ -333,6 +411,13 @@ python model_comparison.py
 - ✅ **Fail-Fast Validation**: Configuration errors caught at startup with clear messages
 - ✅ **Legacy Cleanup**: Old configuration files moved to `backup/` directories
 - ✅ **Type Safety**: Structured configuration objects replace dynamic dict access
+
+### Logging System Implementation
+- ✅ **Unified Logging**: Replaced 84+ raw print statements with structured logging system
+- ✅ **CLI Verbosity Control**: Added `--verbose`, `--debug`, `--quiet` flags to all commands
+- ✅ **Rich Console Output**: Color-coded messages with emojis for better UX
+- ✅ **File Logging**: Production-ready logging with rotation and configurable levels
+- ✅ **Runtime Configuration**: CLI flags override YAML defaults for flexible control
 
 ### Code Organization
 - ✅ **Conservative Refactoring**: llama_model.py organized with clear sections
