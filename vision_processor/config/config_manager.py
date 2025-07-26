@@ -11,6 +11,7 @@ from typing import Dict, List, Optional
 import yaml
 
 from ..exceptions import ConfigurationError, ValidationError
+from ..utils.logging_config import VisionProcessorLogger
 from .config_models import (
     DefaultsConfig,
     DeviceConfig,
@@ -91,6 +92,9 @@ class ConfigManager:
 
         # Parse configuration sections into structured objects
         self._parse_configuration()
+
+        # Initialize logger after configuration is parsed
+        self.logger = VisionProcessorLogger(self)
 
         # Set up device mapping manager
         self.device_manager = DeviceMapManager(self.device_config)
@@ -232,9 +236,9 @@ class ConfigManager:
             ("internvl", self.model_paths.internvl),
         ]:
             if path and not Path(path).exists():
-                print(f"⚠️  Warning: Model path does not exist: {path}")
-                print(f"   Model: {model_name}")
-                print(f"   Fix: Update model_paths.{model_name} in {self.yaml_file}")
+                self.logger.warning(f"Model path does not exist: {path}")
+                self.logger.warning(f"Model: {model_name}")
+                self.logger.warning(f"Fix: Update model_paths.{model_name} in {self.yaml_file}")
 
         # Validate device configuration
         self.device_manager.validate_device_configuration()
@@ -404,18 +408,20 @@ class ConfigManager:
 
     def print_configuration(self) -> None:
         """Print current configuration for debugging."""
-        print("🔧 Vision Processor Configuration (ConfigManager):")
-        print(f"  Model Type: {self.current_model_type}")
-        print(f"  Model Path: {self.get_model_path(self.current_model_type)}")
-        print(f"  Device Strategy: {self.device_config.gpu_strategy}")
-        print(f"  Multi-GPU: {self.is_multi_gpu_enabled()}")
-        print(f"  Memory Limit: {self.processing.memory_limit_mb}MB")
-        print(f"  Quantization: {self.processing.quantization}")
-        print(f"  V100 Mode: {self.device_config.v100_mode}")
-        print(f"  Output Format: {self.current_output_format}")
-        print("🧹 Repetition Control:")
-        print(f"  Enabled: {self.repetition_control.enabled}")
-        print(f"  Word Threshold: {self.repetition_control.word_threshold}")
-        print(f"  Phrase Threshold: {self.repetition_control.phrase_threshold}")
-        model_config = self.get_model_config(self.current_model_type)
-        print(f"  Max Tokens Limit: {model_config.max_new_tokens_limit}")
+        # Only print detailed config in verbose mode
+        if self.defaults.verbose_mode:
+            self.logger.info("Vision Processor Configuration:")
+            self.logger.info(f"Model Type: {self.current_model_type}")
+            self.logger.info(f"Model Path: {self.get_model_path(self.current_model_type)}")
+            self.logger.info(f"Device Strategy: {self.device_config.gpu_strategy}")
+            self.logger.info(f"Multi-GPU: {self.is_multi_gpu_enabled()}")
+            self.logger.info(f"Memory Limit: {self.processing.memory_limit_mb}MB")
+            self.logger.info(f"Quantization: {self.processing.quantization}")
+            self.logger.info(f"V100 Mode: {self.device_config.v100_mode}")
+            self.logger.info(f"Output Format: {self.current_output_format}")
+            self.logger.status("Repetition Control:")
+            self.logger.info(f"Enabled: {self.repetition_control.enabled}")
+            self.logger.info(f"Word Threshold: {self.repetition_control.word_threshold}")
+            self.logger.info(f"Phrase Threshold: {self.repetition_control.phrase_threshold}")
+            model_config = self.get_model_config(self.current_model_type)
+            self.logger.info(f"Max Tokens Limit: {model_config.max_new_tokens_limit}")

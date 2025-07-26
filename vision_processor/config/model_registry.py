@@ -19,6 +19,7 @@ from ..models.base_model import (
     ModelCapabilities,
     ModelType,
 )
+from ..utils.logging_config import VisionProcessorLogger
 from .config_manager import ConfigManager
 
 
@@ -123,6 +124,7 @@ class ModelRegistry:
         self._models: Dict[str, ModelRegistration] = {}
         self._factory: Optional[ModelFactory] = None
         self.config_manager = config_manager or ConfigManager()
+        self.logger = VisionProcessorLogger(self.config_manager)
         self._register_builtin_models()
 
     def _register_builtin_models(self):
@@ -139,7 +141,7 @@ class ModelRegistry:
                 description="Llama-3.2-11B-Vision model with 7-step processing pipeline",
             )
         except ImportError as e:
-            print(f"⚠️  Failed to register Llama model: {e}")
+            self.logger.warning(f"Failed to register Llama model: {e}")
 
         try:
             # Import and register InternVL model
@@ -153,7 +155,7 @@ class ModelRegistry:
                 description="InternVL3-8B model with multi-GPU optimization and highlight detection",
             )
         except ImportError as e:
-            print(f"⚠️  Failed to register InternVL model: {e}")
+            self.logger.warning(f"Failed to register InternVL model: {e}")
 
     def register_model(
         self,
@@ -181,7 +183,7 @@ class ModelRegistry:
         )
 
         self._models[name] = registration
-        print(f"✅ Registered model: {name} ({model_type.value})")
+        self.logger.status(f"Registered model: {name} ({model_type.value})")
 
     def register_external_model(
         self,
@@ -212,7 +214,7 @@ class ModelRegistry:
 
         except (ImportError, AttributeError) as e:
             error_msg = f"Failed to import external model {name}: {e}"
-            print(f"❌ {error_msg}")
+            self.logger.error(error_msg)
 
             # Register with error status for debugging
             registration = ModelRegistration(
@@ -254,17 +256,17 @@ class ModelRegistry:
         """
         registration = self.get_model(name)
         if not registration:
-            print(f"❌ Model not found: {name}")
+            self.logger.error(f"Model not found: {name}")
             return False
 
         if registration.status == ModelStatus.ERROR:
-            print(f"❌ Model has registration error: {registration.error_message}")
+            self.logger.error(f"Model has registration error: {registration.error_message}")
             return False
 
         # Validate model path
         effective_path = model_path or registration.default_path
         if not Path(effective_path).exists():
-            print(f"❌ Model path does not exist: {effective_path}")
+            self.logger.error(f"Model path does not exist: {effective_path}")
             registration.status = ModelStatus.NOT_FOUND
             return False
 
@@ -278,12 +280,12 @@ class ModelRegistry:
             registration.capabilities = temp_model.capabilities
             registration.status = ModelStatus.VALIDATED
             del temp_model  # Clean up
-            print(f"✅ Model validation passed: {name}")
+            self.logger.success(f"Model validation passed: {name}")
             return True
 
         except Exception as e:
             error_msg = f"Model validation failed: {e}"
-            print(f"❌ {name}: {error_msg}")
+            self.logger.error(f"{name}: {error_msg}")
             registration.status = ModelStatus.ERROR
             registration.error_message = error_msg
             return False
@@ -365,39 +367,46 @@ class ModelRegistry:
 
     def print_registry_status(self):
         """Print comprehensive registry status."""
-        print("🏭 Model Registry Status:")
-        print(f"   Total registered: {len(self._models)}")
+        # Only print if console output enabled
+        if self.logger._should_use_console():
+            self.logger.info("Model Registry Status:")
+            self.logger.info(f"Total registered: {len(self._models)}")
 
-        available_count = len(self.list_available_models())
-        print(f"   Available: {available_count}")
+            available_count = len(self.list_available_models())
+            self.logger.info(f"Available: {available_count}")
 
-        print("\n📋 Registered Models:")
-        for name, registration in self._models.items():
-            status_emoji = {
-                ModelStatus.REGISTERED: "📝",
-                ModelStatus.VALIDATED: "✅",
-                ModelStatus.LOADED: "🚀",
-                ModelStatus.ERROR: "❌",
-                ModelStatus.NOT_FOUND: "🔍",
-            }.get(registration.status, "❓")
+            # Detailed results only in verbose mode
+            if self.logger._is_verbose():
+                self.logger.status("Registered Models:")
+                for name, registration in self._models.items():
+                    status_emoji = {
+                        ModelStatus.REGISTERED: "📝",
+                        ModelStatus.VALIDATED: "✅",
+                        ModelStatus.LOADED: "🚀",
+                        ModelStatus.ERROR: "❌",
+                        ModelStatus.NOT_FOUND: "🔍",
+                    }.get(registration.status, "❓")
 
-            path_status = "✅" if Path(registration.default_path).exists() else "❌"
+                    path_status = "✅" if Path(registration.default_path).exists() else "❌"
 
-            print(f"   {status_emoji} {name}: {registration.model_type.value}")
-            print(f"      Description: {registration.description}")
-            print(f"      Path: {path_status} {registration.default_path}")
+                    if registration.status == ModelStatus.ERROR:
+                        self.logger.error(f"{status_emoji} {name}: {registration.model_type.value}")
+                    else:
+                        self.logger.info(f"{status_emoji} {name}: {registration.model_type.value}")
+                    
+                    self.logger.debug(f"   Description: {registration.description}")
+                    self.logger.debug(f"   Path: {path_status} {registration.default_path}")
 
-            if registration.error_message:
-                print(f"      Error: {registration.error_message}")
+                    if registration.error_message:
+                        self.logger.error(f"   Error: {registration.error_message}")
 
-            if registration.capabilities:
-                caps = registration.capabilities
-                print(
-                    f"      Capabilities: Multi-GPU:{caps.supports_multi_gpu}, "
-                    f"Quantization:{caps.supports_quantization}, "
-                    f"Highlights:{caps.supports_highlight_detection}"
-                )
-            print()
+                    if registration.capabilities:
+                        caps = registration.capabilities
+                        self.logger.debug(
+                            f"   Capabilities: Multi-GPU:{caps.supports_multi_gpu}, "
+                            f"Quantization:{caps.supports_quantization}, "
+                            f"Highlights:{caps.supports_highlight_detection}"
+                        )
 
     def validate_all_models(
         self, model_paths: Optional[Dict[str, str]] = None
@@ -413,15 +422,15 @@ class ModelRegistry:
         model_paths = model_paths or {}
         results = {}
 
-        print("🔍 Validating all registered models...")
+        self.logger.info("Validating all registered models...")
         for name in self.list_models():
             override_path = model_paths.get(name)
             results[name] = self.validate_model(name, override_path)
 
         successful = sum(results.values())
         total = len(results)
-        print(
-            f"\n📊 Validation Summary: {successful}/{total} models validated successfully"
+        self.logger.info(
+            f"Validation Summary: {successful}/{total} models validated successfully"
         )
 
         return results

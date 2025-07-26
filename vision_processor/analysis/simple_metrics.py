@@ -11,6 +11,8 @@ Advanced metrics focusing on Information Extraction Capability:
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from ..utils.logging_config import VisionProcessorLogger
+
 # All fields equally weighted for extraction capability
 FIELD_WEIGHTS = {
     "DATE": 1.0,
@@ -383,7 +385,8 @@ class InformationExtractionCalculator:
         try:
             import pandas as pd
         except ImportError:
-            print("⚠️  pandas not available, cannot create DataFrame")
+            logger = VisionProcessorLogger()
+            logger.warning("pandas not available, cannot create DataFrame")
             return None
 
         rows = []

@@ -13,6 +13,7 @@ from ..exceptions import (
     ModelInferenceError,
     ModelLoadError,
 )
+from ..utils.logging_config import VisionProcessorLogger
 
 console = Console()
 
@@ -43,6 +44,7 @@ class SimpleExtractionManager:
             config: ConfigManager instance with settings.
         """
         self.config = config
+        self.logger = VisionProcessorLogger(config)
 
         # Configuration info is displayed elsewhere, model loading is what matters
         console.print(f"🔧 Using model: {config.current_model_type}")
@@ -55,9 +57,9 @@ class SimpleExtractionManager:
     def _load_model_with_logging(self):
         """Load model with detailed configuration logging."""
 
-        print(f"\n🚀 Loading {self.config.current_model_type} model...")
-        print(
-            f"📍 Model Path: {self.config.get_model_path(self.config.current_model_type)}"
+        self.logger.info(f"Loading {self.config.current_model_type} model...")
+        self.logger.debug(
+            f"Model Path: {self.config.get_model_path(self.config.current_model_type)}"
         )
 
         # Detect system capabilities
@@ -66,32 +68,32 @@ class SimpleExtractionManager:
             for i in range(gpu_count):
                 gpu_name = torch.cuda.get_device_name(i)
                 gpu_memory = torch.cuda.get_device_properties(i).total_memory / 1024**3
-                print(f"🔌 GPU {i}: {gpu_name} ({gpu_memory:.1f}GB)")
+                self.logger.debug(f"GPU {i}: {gpu_name} ({gpu_memory:.1f}GB)")
         else:
             # Check for MPS (Mac M1/M2)
             if torch.backends.mps.is_available():
-                print("💻 Using MPS (Apple Silicon GPU)")
+                self.logger.debug("Using MPS (Apple Silicon GPU)")
             else:
-                print("💻 Using CPU (no CUDA GPUs detected)")
+                self.logger.debug("Using CPU (no CUDA GPUs detected)")
 
         # Print memory settings
-        print("🧠 Memory Configuration:")
-        print(f"  - Memory Limit: {self.config.device_config.memory_limit_gb * 1024}MB")
-        print("  - GPU Memory Fraction: 0.9")  # Legacy value
-        print(
-            f"  - Quantization: {'Enabled' if self.config.defaults.quantization else 'Disabled'}"
+        self.logger.status("Memory Configuration:")
+        self.logger.debug(f"Memory Limit: {self.config.device_config.memory_limit_gb * 1024}MB")
+        self.logger.debug("GPU Memory Fraction: 0.9")  # Legacy value
+        self.logger.debug(
+            f"Quantization: {'Enabled' if self.config.defaults.quantization else 'Disabled'}"
         )
-        print(
-            f"  - Multi-GPU: {'Enabled' if hasattr(self.config, 'is_multi_gpu_enabled') and self.config.is_multi_gpu_enabled() else 'Disabled'}"
+        self.logger.debug(
+            f"Multi-GPU: {'Enabled' if hasattr(self.config, 'is_multi_gpu_enabled') and self.config.is_multi_gpu_enabled() else 'Disabled'}"
         )
 
         # Print processing optimizations
-        print("⚡ Processing Optimizations:")
-        print(
-            f"  - Gradient Checkpointing: {'Enabled' if hasattr(self.config, 'processing_config') and self.config.processing_config.enable_gradient_checkpointing else 'Disabled'}"
+        self.logger.status("Processing Optimizations:")
+        self.logger.debug(
+            f"Gradient Checkpointing: {'Enabled' if hasattr(self.config, 'processing_config') and self.config.processing_config.enable_gradient_checkpointing else 'Disabled'}"
         )
-        print(
-            f"  - Flash Attention: {'Enabled' if hasattr(self.config, 'processing_config') and self.config.processing_config.use_flash_attention else 'Disabled'}"
+        self.logger.debug(
+            f"Flash Attention: {'Enabled' if hasattr(self.config, 'processing_config') and self.config.processing_config.use_flash_attention else 'Disabled'}"
         )
 
         # Load the model
@@ -119,18 +121,18 @@ class SimpleExtractionManager:
             load_time = time.time() - start_time
 
             # Print successful loading
-            print(f"✅ Model loaded successfully in {load_time:.2f} seconds")
+            self.logger.success(f"Model loaded successfully in {load_time:.2f} seconds")
 
             # Print actual device usage
             if hasattr(model, "device"):
-                print(f"🎯 Model running on: {model.device}")
+                self.logger.status(f"Model running on: {model.device}")
 
             # Print memory usage after loading
             if torch.cuda.is_available():
                 allocated = torch.cuda.memory_allocated() / 1024**3
                 cached = torch.cuda.memory_reserved() / 1024**3
-                print(
-                    f"📊 GPU Memory Usage: {allocated:.2f}GB allocated, {cached:.2f}GB cached"
+                self.logger.debug(
+                    f"GPU Memory Usage: {allocated:.2f}GB allocated, {cached:.2f}GB cached"
                 )
 
             return model
@@ -162,29 +164,29 @@ class SimpleExtractionManager:
         # Convert to Path if string
         image_path = Path(image_path)
 
-        print(f"\n🔍 Processing document: {image_path.name}")
+        self.logger.status(f"Processing document: {image_path.name}")
 
         # Step 1: Get model-specific prompt
         prompt = self._get_model_prompt()
 
         # Step 2: Process with model
-        print(f"📸 Sending to {self.config.current_model_type} model...")
+        self.logger.status(f"Sending to {self.config.current_model_type} model...")
         response = self.model.process_image(str(image_path), prompt)
 
         # Step 3: Parse KEY-VALUE response
-        print("📝 Parsing response...")
-        print("🔍 DEBUG - Raw model response (first 500 chars):")
-        print(f"'{response.raw_text[:500]}...'")
+        self.logger.status("Parsing response...")
+        self.logger.debug("Raw model response (first 500 chars):")
+        self.logger.debug(f"'{response.raw_text[:500]}...'")
 
         # Use the same parsing logic as comparison runner
         extracted_data = self._parse_clean_response(response.raw_text)
 
         # Step 4: Validate against schema
-        print("✓ Validating extracted data...")
+        self.logger.status("Validating extracted data...")
         validated_data = self._validate_against_schema(extracted_data)
 
         processing_time = time.time() - start_time
-        print(f"⏱️  Processing completed in {processing_time:.2f} seconds")
+        self.logger.success(f"Processing completed in {processing_time:.2f} seconds")
 
         return ExtractionResult(
             extracted_fields=validated_data,
@@ -288,15 +290,15 @@ class SimpleExtractionManager:
         results = []
         total = len(image_paths)
 
-        print(f"\n📦 Processing batch of {total} documents...")
+        self.logger.info(f"Processing batch of {total} documents...")
 
         for idx, image_path in enumerate(image_paths, 1):
-            print(f"\n[{idx}/{total}] Processing {Path(image_path).name}")
+            self.logger.status(f"[{idx}/{total}] Processing {Path(image_path).name}")
             try:
                 result = self.process_document(image_path)
                 results.append(result)
             except (ModelInferenceError, ImageProcessingError) as e:
-                print(f"❌ Error processing {image_path}: {e.message}")
+                self.logger.error(f"Error processing {image_path}: {e.message}")
                 # Create error result with specific error info
                 results.append(
                     ExtractionResult(
@@ -310,7 +312,7 @@ class SimpleExtractionManager:
                     )
                 )
             except Exception as e:
-                print(f"❌ Unexpected error processing {image_path}: {str(e)}")
+                self.logger.error(f"Unexpected error processing {image_path}: {str(e)}")
                 # Create error result for unexpected errors
                 results.append(
                     ExtractionResult(
@@ -324,5 +326,5 @@ class SimpleExtractionManager:
                     )
                 )
 
-        print(f"\n✅ Batch processing complete: {len(results)} documents processed")
+        self.logger.success(f"Batch processing complete: {len(results)} documents processed")
         return results

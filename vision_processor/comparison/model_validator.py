@@ -16,19 +16,22 @@ from PIL import Image
 from ..config import ConfigManager
 from ..config.model_registry import ModelRegistry
 from ..models.base_model import BaseVisionModel, DeviceConfig
+from ..utils.logging_config import VisionProcessorLogger
 
 
 class ModelValidator:
     """Validates models for production comparison pipeline."""
 
-    def __init__(self, model_registry: ModelRegistry):
+    def __init__(self, model_registry: ModelRegistry, config: ConfigManager = None):
         """Initialize model validator.
 
         Args:
             model_registry: Model registry instance
+            config: Configuration manager instance for logging
         """
         self.model_registry = model_registry
         self.validation_results: Dict[str, Dict] = {}
+        self.logger = VisionProcessorLogger(config)
 
     def validate_model_loading(
         self, model_name: str, model_path: str, processing_config: ConfigManager
@@ -346,48 +349,45 @@ class ModelValidator:
 
     def print_validation_report(self):
         """Print detailed validation report."""
-        print("🔍 MODEL VALIDATION REPORT")
-        print("=" * 50)
+        # Always show summary
+        self.logger.info("MODEL VALIDATION REPORT")
+        self.logger.info("=" * 50)
 
         summary = self.get_validation_summary()
 
-        print(f"Total Models Tested: {summary['total_models_tested']}")
-        print(f"Successful Validations: {summary['successful_validations']}")
-        print(f"Success Rate: {summary['validation_success_rate']:.1%}")
-        print()
+        self.logger.info(f"Total Models Tested: {summary['total_models_tested']}")
+        self.logger.info(f"Successful Validations: {summary['successful_validations']}")
+        self.logger.info(f"Success Rate: {summary['validation_success_rate']:.1%}")
 
         if summary["successful_validations"] > 0:
-            print(f"Average Load Time: {summary['average_load_time']:.1f}s")
-            print(f"Average Memory Usage: {summary['average_memory_usage']:.1f}GB")
+            self.logger.info(f"Average Load Time: {summary['average_load_time']:.1f}s")
+            self.logger.info(f"Average Memory Usage: {summary['average_memory_usage']:.1f}GB")
 
             if summary["fastest_model"]:
-                print(f"Fastest Model: {summary['fastest_model']}")
+                self.logger.info(f"Fastest Model: {summary['fastest_model']}")
             if summary["slowest_model"]:
-                print(f"Slowest Model: {summary['slowest_model']}")
-            print()
+                self.logger.info(f"Slowest Model: {summary['slowest_model']}")
 
-        # Failed models
+        # Failed models - always show errors
         if summary["failed_models"]:
-            print("❌ Failed Models:")
+            self.logger.warning("Failed Models:")
             for model, error in summary["failed_models"].items():
-                print(f"   {model}: {error}")
-            print()
+                self.logger.error(f"{model}: {error}")
 
-        # Recommendations
-        print("💡 Recommendations:")
+        # Recommendations - always show
+        self.logger.info("Recommendations:")
         for rec in summary["recommendations"]:
-            print(f"   • {rec}")
-        print()
+            self.logger.info(f"• {rec}")
 
-        # Detailed results
-        print("📋 Detailed Results:")
-        for model_name, result in self.validation_results.items():
-            status = "✅" if result["success"] else "❌"
-            print(f"   {status} {model_name}:")
-            print(f"      Load Time: {result['load_time']:.1f}s")
-            print(f"      Memory Usage: {result['memory_usage']:.1f}GB")
-            print(f"      Inference Test: {'✅' if result['inference_test'] else '❌'}")
+        # Detailed results - only in verbose mode
+        if self.logger._is_verbose():
+            self.logger.status("Detailed Results:")
+            for model_name, result in self.validation_results.items():
+                status = "✅" if result["success"] else "❌"
+                self.logger.info(f"{status} {model_name}:")
+                self.logger.info(f"   Load Time: {result['load_time']:.1f}s")
+                self.logger.info(f"   Memory Usage: {result['memory_usage']:.1f}GB")
+                self.logger.info(f"   Inference Test: {'✅' if result['inference_test'] else '❌'}")
 
-            if not result["success"] and result["error_message"]:
-                print(f"      Error: {result['error_message']}")
-            print()
+                if not result["success"] and result["error_message"]:
+                    self.logger.error(f"   Error: {result['error_message']}")

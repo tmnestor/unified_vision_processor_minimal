@@ -13,6 +13,8 @@ from typing import Dict, List, Optional
 import psutil
 from rich.console import Console
 
+from .logging_config import VisionProcessorLogger
+
 
 @dataclass
 class MemorySnapshot:
@@ -41,13 +43,15 @@ class MemorySnapshot:
 class MemoryMonitor:
     """Monitor and track memory usage throughout model operations."""
 
-    def __init__(self, console: Optional[Console] = None):
+    def __init__(self, console: Optional[Console] = None, config=None):
         """Initialize memory monitor.
 
         Args:
             console: Rich console for output (optional)
+            config: Configuration manager for logging (optional)
         """
         self.console = console or Console()
+        self.logger = VisionProcessorLogger(config)
         self.snapshots: List[MemorySnapshot] = []
         self.start_time = time.time()
 
@@ -92,8 +96,8 @@ class MemoryMonitor:
                 )
                 if total_used_all_gpus != used_bytes:
                     # Memory is spread across multiple GPUs - this is a problem for V100!
-                    print(
-                        f"🚨 WARNING: Memory detected on multiple GPUs! Total across all GPUs: {total_used_all_gpus / (1024**3):.1f}GB"
+                    self.logger.warning(
+                        f"Memory detected on multiple GPUs! Total across all GPUs: {total_used_all_gpus / (1024**3):.1f}GB"
                     )
 
             # Convert to GB
