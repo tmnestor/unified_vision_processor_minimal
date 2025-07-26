@@ -39,6 +39,8 @@ def extract(
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ) -> None:
     """Extract data using single-step processing with YAML configuration."""
 
@@ -58,6 +60,18 @@ def extract(
 
         # Load configuration from YAML
         config = ConfigManager(yaml_file)
+
+        # Apply CLI logging overrides
+        if debug:
+            config.defaults.debug_mode = True
+            config.defaults.verbose_mode = True  # Debug implies verbose
+        elif verbose:
+            config.defaults.verbose_mode = True
+
+        if quiet:
+            config.defaults.console_output = False
+            config.defaults.verbose_mode = False
+            config.defaults.debug_mode = False
 
         # Apply simple CLI overrides
         if model:
@@ -139,6 +153,8 @@ def compare(
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ) -> None:
     """Compare extraction results between models using YAML configuration."""
 
@@ -170,6 +186,19 @@ def compare(
             from ..config import ConfigManager
 
             config = ConfigManager(yaml_file)
+
+            # Apply CLI logging overrides
+            if debug:
+                config.defaults.debug_mode = True
+                config.defaults.verbose_mode = True  # Debug implies verbose
+            elif verbose:
+                config.defaults.verbose_mode = True
+
+            if quiet:
+                config.defaults.console_output = False
+                config.defaults.verbose_mode = False
+                config.defaults.debug_mode = False
+
             config.set_model_type(model_name)
 
             # Validate configuration
@@ -216,6 +245,11 @@ def config_info(
     yaml_file: str = typer.Option(
         "model_comparison.yaml", help="Path to YAML configuration file"
     ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ) -> None:
     """Display current configuration from YAML file."""
 
@@ -226,6 +260,18 @@ def config_info(
         from ..config import ConfigManager
 
         config = ConfigManager(yaml_file)
+
+        # Apply CLI logging overrides
+        if debug:
+            config.defaults.debug_mode = True
+            config.defaults.verbose_mode = True  # Debug implies verbose
+        elif verbose:
+            config.defaults.verbose_mode = True
+
+        if quiet:
+            config.defaults.console_output = False
+            config.defaults.verbose_mode = False
+            config.defaults.debug_mode = False
         # Display configuration info
         console.print("\n📋 Configuration Summary:")
         console.print(f"   Model Type: {config.current_model_type}")
@@ -266,6 +312,8 @@ def batch(
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ) -> None:
     """Process multiple documents in batch mode."""
 
@@ -286,6 +334,18 @@ def batch(
         from ..extraction.extraction_manager import SimpleExtractionManager
 
         config = ConfigManager(yaml_file)
+
+        # Apply CLI logging overrides
+        if debug:
+            config.defaults.debug_mode = True
+            config.defaults.verbose_mode = True  # Debug implies verbose
+        elif verbose:
+            config.defaults.verbose_mode = True
+
+        if quiet:
+            config.defaults.console_output = False
+            config.defaults.verbose_mode = False
+            config.defaults.debug_mode = False
 
         if model:
             config.set_model_type(model)

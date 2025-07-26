@@ -43,9 +43,9 @@ class DefaultsConfig:
     models: str = "llama,internvl"
     trust_remote_code: bool = True
     debug_mode: bool = False
-    verbose_mode: bool = False        # NEW - Controls detailed status messages
-    console_output: bool = True       # NEW - Enable rich console formatting
-    log_level: str = "INFO"          # NEW - ERROR, WARNING, INFO, DEBUG
+    verbose_mode: bool = False  # NEW - Controls detailed status messages
+    console_output: bool = True  # NEW - Enable rich console formatting
+    log_level: str = "INFO"  # NEW - ERROR, WARNING, INFO, DEBUG
 
 
 @dataclass

@@ -361,7 +361,9 @@ class ModelValidator:
 
         if summary["successful_validations"] > 0:
             self.logger.info(f"Average Load Time: {summary['average_load_time']:.1f}s")
-            self.logger.info(f"Average Memory Usage: {summary['average_memory_usage']:.1f}GB")
+            self.logger.info(
+                f"Average Memory Usage: {summary['average_memory_usage']:.1f}GB"
+            )
 
             if summary["fastest_model"]:
                 self.logger.info(f"Fastest Model: {summary['fastest_model']}")
@@ -387,7 +389,9 @@ class ModelValidator:
                 self.logger.info(f"{status} {model_name}:")
                 self.logger.info(f"   Load Time: {result['load_time']:.1f}s")
                 self.logger.info(f"   Memory Usage: {result['memory_usage']:.1f}GB")
-                self.logger.info(f"   Inference Test: {'✅' if result['inference_test'] else '❌'}")
+                self.logger.info(
+                    f"   Inference Test: {'✅' if result['inference_test'] else '❌'}"
+                )
 
                 if not result["success"] and result["error_message"]:
                     self.logger.error(f"   Error: {result['error_message']}")

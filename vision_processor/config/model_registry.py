@@ -260,7 +260,9 @@ class ModelRegistry:
             return False
 
         if registration.status == ModelStatus.ERROR:
-            self.logger.error(f"Model has registration error: {registration.error_message}")
+            self.logger.error(
+                f"Model has registration error: {registration.error_message}"
+            )
             return False
 
         # Validate model path
@@ -387,15 +389,23 @@ class ModelRegistry:
                         ModelStatus.NOT_FOUND: "🔍",
                     }.get(registration.status, "❓")
 
-                    path_status = "✅" if Path(registration.default_path).exists() else "❌"
+                    path_status = (
+                        "✅" if Path(registration.default_path).exists() else "❌"
+                    )
 
                     if registration.status == ModelStatus.ERROR:
-                        self.logger.error(f"{status_emoji} {name}: {registration.model_type.value}")
+                        self.logger.error(
+                            f"{status_emoji} {name}: {registration.model_type.value}"
+                        )
                     else:
-                        self.logger.info(f"{status_emoji} {name}: {registration.model_type.value}")
-                    
+                        self.logger.info(
+                            f"{status_emoji} {name}: {registration.model_type.value}"
+                        )
+
                     self.logger.debug(f"   Description: {registration.description}")
-                    self.logger.debug(f"   Path: {path_status} {registration.default_path}")
+                    self.logger.debug(
+                        f"   Path: {path_status} {registration.default_path}"
+                    )
 
                     if registration.error_message:
                         self.logger.error(f"   Error: {registration.error_message}")

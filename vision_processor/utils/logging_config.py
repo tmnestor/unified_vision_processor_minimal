@@ -15,7 +15,7 @@ class VisionProcessorLogger:
 
     def __init__(self, config_manager=None):
         """Initialize logger with configuration.
-        
+
         Args:
             config_manager: Configuration manager instance for settings
         """
@@ -44,7 +44,7 @@ class VisionProcessorLogger:
         file_handler = logging.FileHandler("vision_processor.log")
         file_handler.setLevel(logging.WARNING)  # Only warnings/errors to file
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
@@ -92,17 +92,17 @@ class VisionProcessorLogger:
         if not self.config:
             return logging.INFO
 
-        level_str = getattr(self.config.defaults, 'log_level', 'INFO')
+        level_str = getattr(self.config.defaults, "log_level", "INFO")
         return getattr(logging, level_str.upper(), logging.INFO)
 
     def _is_debug_mode(self) -> bool:
         """Check if debug mode is enabled."""
-        return self.config and getattr(self.config.defaults, 'debug_mode', False)
+        return self.config and getattr(self.config.defaults, "debug_mode", False)
 
     def _is_verbose(self) -> bool:
         """Check if verbose mode is enabled."""
-        return self.config and getattr(self.config.defaults, 'verbose_mode', True)
+        return self.config and getattr(self.config.defaults, "verbose_mode", True)
 
     def _should_use_console(self) -> bool:
         """Check if console output should be used."""
-        return self.config and getattr(self.config.defaults, 'console_output', True)
+        return self.config and getattr(self.config.defaults, "console_output", True)

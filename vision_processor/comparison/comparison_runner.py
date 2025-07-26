@@ -1136,8 +1136,10 @@ class ComparisonRunner:
 
         # Debug: show what we're parsing (only if debug mode enabled)
         # NOTE: Debug output controlled by YAML config defaults.debug_mode
-        if hasattr(self, 'config') and self.config.defaults.debug_mode:
-            print(f"DEBUG _extract_keyvalue_pairs_robust: Processing {len(lines)} lines")
+        if hasattr(self, "config") and self.config.defaults.debug_mode:
+            print(
+                f"DEBUG _extract_keyvalue_pairs_robust: Processing {len(lines)} lines"
+            )
             if len(lines) > 0:
                 print(f"DEBUG: First 3 lines: {lines[:3]}")
 
@@ -1145,7 +1147,7 @@ class ComparisonRunner:
         # it's likely a single-line response that needs field-boundary splitting
         if len(lines) == 1 and len(lines[0]) > 200:  # Likely single-line response
             single_line = lines[0]
-            if hasattr(self, 'config') and self.config.defaults.debug_mode:
+            if hasattr(self, "config") and self.config.defaults.debug_mode:
                 print(
                     f"DEBUG: Detected single-line response ({len(single_line)} chars), splitting on field boundaries"
                 )
@@ -1194,7 +1196,7 @@ class ComparisonRunner:
                 line.strip() for line in reconstructed_text.split("\n") if line.strip()
             ]
 
-            if hasattr(self, 'config') and self.config.defaults.debug_mode:
+            if hasattr(self, "config") and self.config.defaults.debug_mode:
                 print(
                     f"DEBUG: Reconstructed {len(lines)} field lines from single-line response"
                 )
@@ -1264,14 +1266,14 @@ class ComparisonRunner:
                         extracted_pairs[key] = value
 
                         # Debug
-                        if hasattr(self, 'config') and self.config.defaults.debug_mode:
+                        if hasattr(self, "config") and self.config.defaults.debug_mode:
                             if len(extracted_pairs) <= 5:  # Show first few extractions
                                 print(f"DEBUG: Extracted {key}: {value[:50]}...")
 
                 except ValueError:
                     continue
 
-        if hasattr(self, 'config') and self.config.defaults.debug_mode:
+        if hasattr(self, "config") and self.config.defaults.debug_mode:
             print(f"DEBUG: Final extraction count: {len(extracted_pairs)} pairs")
         return extracted_pairs
 

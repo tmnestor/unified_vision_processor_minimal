@@ -1,0 +1,12 @@
+2025-07-26 10:25:39,463 - vision_processor - WARNING - Model path does not exist: /home/jovyan/nfs_share/models/Llama-3.2-11B-Vision-Instruct
+2025-07-26 10:25:39,464 - vision_processor - WARNING - Model: llama
+2025-07-26 10:25:39,464 - vision_processor - WARNING - Fix: Update model_paths.llama in model_comparison.yaml
+2025-07-26 10:25:39,481 - vision_processor - WARNING - Model path does not exist: /home/jovyan/nfs_share/models/InternVL3-8B
+2025-07-26 10:25:39,482 - vision_processor - WARNING - Model: internvl
+2025-07-26 10:25:39,482 - vision_processor - WARNING - Fix: Update model_paths.internvl in model_comparison.yaml
+2025-07-26 10:25:44,542 - vision_processor - WARNING - Model path does not exist: /home/jovyan/nfs_share/models/Llama-3.2-11B-Vision-Instruct
+2025-07-26 10:25:44,543 - vision_processor - WARNING - Model: llama
+2025-07-26 10:25:44,543 - vision_processor - WARNING - Fix: Update model_paths.llama in model_comparison.yaml
+2025-07-26 10:25:44,560 - vision_processor - WARNING - Model path does not exist: /home/jovyan/nfs_share/models/InternVL3-8B
+2025-07-26 10:25:44,561 - vision_processor - WARNING - Model: internvl
+2025-07-26 10:25:44,561 - vision_processor - WARNING - Fix: Update model_paths.internvl in model_comparison.yaml

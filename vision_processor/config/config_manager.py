@@ -238,7 +238,9 @@ class ConfigManager:
             if path and not Path(path).exists():
                 self.logger.warning(f"Model path does not exist: {path}")
                 self.logger.warning(f"Model: {model_name}")
-                self.logger.warning(f"Fix: Update model_paths.{model_name} in {self.yaml_file}")
+                self.logger.warning(
+                    f"Fix: Update model_paths.{model_name} in {self.yaml_file}"
+                )
 
         # Validate device configuration
         self.device_manager.validate_device_configuration()
@@ -412,7 +414,9 @@ class ConfigManager:
         if self.defaults.verbose_mode:
             self.logger.info("Vision Processor Configuration:")
             self.logger.info(f"Model Type: {self.current_model_type}")
-            self.logger.info(f"Model Path: {self.get_model_path(self.current_model_type)}")
+            self.logger.info(
+                f"Model Path: {self.get_model_path(self.current_model_type)}"
+            )
             self.logger.info(f"Device Strategy: {self.device_config.gpu_strategy}")
             self.logger.info(f"Multi-GPU: {self.is_multi_gpu_enabled()}")
             self.logger.info(f"Memory Limit: {self.processing.memory_limit_mb}MB")
@@ -421,7 +425,11 @@ class ConfigManager:
             self.logger.info(f"Output Format: {self.current_output_format}")
             self.logger.status("Repetition Control:")
             self.logger.info(f"Enabled: {self.repetition_control.enabled}")
-            self.logger.info(f"Word Threshold: {self.repetition_control.word_threshold}")
-            self.logger.info(f"Phrase Threshold: {self.repetition_control.phrase_threshold}")
+            self.logger.info(
+                f"Word Threshold: {self.repetition_control.word_threshold}"
+            )
+            self.logger.info(
+                f"Phrase Threshold: {self.repetition_control.phrase_threshold}"
+            )
             model_config = self.get_model_config(self.current_model_type)
             self.logger.info(f"Max Tokens Limit: {model_config.max_new_tokens_limit}")

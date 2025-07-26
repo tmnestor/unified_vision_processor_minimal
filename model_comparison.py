@@ -208,6 +208,11 @@ def compare(
     config_path: str = typer.Option(
         "model_comparison.yaml", help="Path to model comparison configuration YAML file"
     ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ):
     """Run production model comparison with modular architecture"""
 
@@ -240,6 +245,23 @@ def compare(
     )
 
     models_list = [m.strip() for m in effective_models.split(",")]
+
+    # Apply CLI logging overrides by modifying config file temporarily
+    # Load config first to apply overrides
+    if verbose or debug or quiet:
+        config = ConfigManager(yaml_file=config_path)
+
+        # Apply CLI logging overrides
+        if debug:
+            config.defaults.debug_mode = True
+            config.defaults.verbose_mode = True  # Debug implies verbose
+        elif verbose:
+            config.defaults.verbose_mode = True
+
+        if quiet:
+            config.defaults.console_output = False
+            config.defaults.verbose_mode = False
+            config.defaults.debug_mode = False
 
     # Run production comparison
     result = run_production_comparison(
@@ -275,8 +297,29 @@ def check_environment(
     datasets_path: str = typer.Option(
         "datasets", help="Path to datasets directory to check"
     ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ):
     """Check production environment and dependencies"""
+
+    # Apply CLI logging overrides
+    from vision_processor.config import ConfigManager
+
+    config = ConfigManager()
+
+    if debug:
+        config.defaults.debug_mode = True
+        config.defaults.verbose_mode = True  # Debug implies verbose
+    elif verbose:
+        config.defaults.verbose_mode = True
+
+    if quiet:
+        config.defaults.console_output = False
+        config.defaults.verbose_mode = False
+        config.defaults.debug_mode = False
 
     # Run production environment validation
     is_valid = validate_production_environment()
@@ -340,8 +383,30 @@ def validate_models(
     config_path: str = typer.Option(
         "model_comparison.yaml", help="Path to configuration file"
     ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ):
     """Validate all configured models"""
+
+    # Apply CLI logging overrides
+    from vision_processor.config import ConfigManager
+
+    config = ConfigManager(config_path)
+
+    if debug:
+        config.defaults.debug_mode = True
+        config.defaults.verbose_mode = True  # Debug implies verbose
+    elif verbose:
+        config.defaults.verbose_mode = True
+
+    if quiet:
+        config.defaults.console_output = False
+        config.defaults.verbose_mode = False
+        config.defaults.debug_mode = False
+
     console.print("🔍 MODEL VALIDATION", style="bold blue")
 
     try:

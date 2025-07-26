@@ -78,7 +78,9 @@ class SimpleExtractionManager:
 
         # Print memory settings
         self.logger.status("Memory Configuration:")
-        self.logger.debug(f"Memory Limit: {self.config.device_config.memory_limit_gb * 1024}MB")
+        self.logger.debug(
+            f"Memory Limit: {self.config.device_config.memory_limit_gb * 1024}MB"
+        )
         self.logger.debug("GPU Memory Fraction: 0.9")  # Legacy value
         self.logger.debug(
             f"Quantization: {'Enabled' if self.config.defaults.quantization else 'Disabled'}"
@@ -326,5 +328,7 @@ class SimpleExtractionManager:
                     )
                 )
 
-        self.logger.success(f"Batch processing complete: {len(results)} documents processed")
+        self.logger.success(
+            f"Batch processing complete: {len(results)} documents processed"
+        )
         return results

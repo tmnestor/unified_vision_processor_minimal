@@ -31,6 +31,8 @@ def compare(
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ) -> None:
     """Compare extraction performance between vision models."""
 
@@ -44,6 +46,23 @@ def compare(
         raise typer.Exit(1) from None
 
     try:
+        # Apply logging overrides via ConfigManager (evaluator will inherit these settings)
+        from ..config import ConfigManager
+
+        config = ConfigManager()
+
+        # Apply CLI logging overrides
+        if debug:
+            config.defaults.debug_mode = True
+            config.defaults.verbose_mode = True  # Debug implies verbose
+        elif verbose:
+            config.defaults.verbose_mode = True
+
+        if quiet:
+            config.defaults.console_output = False
+            config.defaults.verbose_mode = False
+            config.defaults.debug_mode = False
+
         # Parse models
         model_list = [m.strip() for m in models.split(",")]
 
@@ -87,6 +106,11 @@ def benchmark(
         "benchmark_results.json", help="Output file for results"
     ),
     iterations: int = typer.Option(3, help="Number of iterations per image"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ) -> None:
     """Benchmark processing speed and consistency for a single model."""
 
@@ -106,6 +130,19 @@ def benchmark(
         from ..config import ConfigManager
 
         config = ConfigManager()
+
+        # Apply CLI logging overrides
+        if debug:
+            config.defaults.debug_mode = True
+            config.defaults.verbose_mode = True  # Debug implies verbose
+        elif verbose:
+            config.defaults.verbose_mode = True
+
+        if quiet:
+            config.defaults.console_output = False
+            config.defaults.verbose_mode = False
+            config.defaults.debug_mode = False
+
         config.set_model_type(model)
         manager = SimpleExtractionManager(config)
 
@@ -198,6 +235,11 @@ def benchmark(
 def validate_ground_truth(
     ground_truth_csv: str = typer.Argument(..., help="Path to ground truth CSV file"),
     images_dir: str = typer.Option("datasets", help="Directory containing test images"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ) -> None:
     """Validate ground truth data against available images."""
 
@@ -210,6 +252,23 @@ def validate_ground_truth(
         raise typer.Exit(1) from None
 
     try:
+        # Apply logging overrides via ConfigManager
+        from ..config import ConfigManager
+
+        config = ConfigManager()
+
+        # Apply CLI logging overrides
+        if debug:
+            config.defaults.debug_mode = True
+            config.defaults.verbose_mode = True  # Debug implies verbose
+        elif verbose:
+            config.defaults.verbose_mode = True
+
+        if quiet:
+            config.defaults.console_output = False
+            config.defaults.verbose_mode = False
+            config.defaults.debug_mode = False
+
         # Load ground truth
         with Path(ground_truth_csv).open("r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
