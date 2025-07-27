@@ -226,7 +226,7 @@ class SimpleExtractionManager:
         has_markdown = any(
             line.strip().startswith(('#', '*', '-', '|')) or
             '**' in line or
-            '_' in line and line.count('_') >= 2
+            ('_' in line and line.count('_') >= 2 and ':' not in line)  # Exclude field names like PAYER_ADDRESS:
             for line in lines
         )
         
