@@ -47,7 +47,11 @@ def convert_to_csv(
         path_resolver = PathResolver(config_manager)
 
         # Resolve batch file path (look in output directory if relative)
-        resolved_batch_path = path_resolver.resolve_output_file_path(batch_file)
+        try:
+            resolved_batch_path = path_resolver.resolve_output_file_path(batch_file)
+        except Exception:
+            # Fallback to treating as absolute path if resolution fails
+            resolved_batch_path = batch_file
 
         console.print(f"📂 Loading batch results from: {resolved_batch_path}")
 
@@ -67,7 +71,11 @@ def convert_to_csv(
             # Resolve output path if provided
             resolved_output_path = None
             if output:
-                resolved_output_path = path_resolver.resolve_output_file_path(output)
+                try:
+                    resolved_output_path = path_resolver.resolve_output_file_path(output)
+                except Exception:
+                    # Fallback to treating as absolute path if resolution fails
+                    resolved_output_path = output
 
             csv_path = save_dataframe_to_csv(
                 batch_results_path=resolved_batch_path,
@@ -108,7 +116,11 @@ def analyze_batch_results(
         path_resolver = PathResolver(config_manager)
 
         # Resolve batch file path (look in output directory if relative)
-        resolved_batch_path = path_resolver.resolve_output_file_path(batch_file)
+        try:
+            resolved_batch_path = path_resolver.resolve_output_file_path(batch_file)
+        except Exception:
+            # Fallback to treating as absolute path if resolution fails
+            resolved_batch_path = batch_file
 
         console.print(f"📊 Analyzing batch results from: {resolved_batch_path}")
 
