@@ -289,13 +289,13 @@ def config_info(
         console.print("\n📁 Path Configuration:")
         console.print(f"   Datasets Path: {config.defaults.datasets_path}")
         console.print(f"   Output Directory: {config.defaults.output_dir}")
-        
+
         # Check if paths exist
         datasets_exists = Path(config.defaults.datasets_path).exists()
         output_exists = Path(config.defaults.output_dir).exists()
         console.print(f"   Datasets Exists: {'✅' if datasets_exists else '❌'}")
         console.print(f"   Output Dir Exists: {'✅' if output_exists else '❌'}")
-        
+
         if datasets_exists:
             png_count = len(list(Path(config.defaults.datasets_path).glob("*.png")))
             console.print(f"   PNG Files Found: {png_count}")
@@ -304,8 +304,12 @@ def config_info(
         logging_config = config._yaml_config_data.get("logging", {})
         if logging_config:
             console.print("\n📝 Logging Configuration:")
-            console.print(f"   Log File: {logging_config.get('log_file', 'Not configured')}")
-            console.print(f"   File Logging: {'✅' if logging_config.get('file_logging', False) else '❌'}")
+            console.print(
+                f"   Log File: {logging_config.get('log_file', 'Not configured')}"
+            )
+            console.print(
+                f"   File Logging: {'✅' if logging_config.get('file_logging', False) else '❌'}"
+            )
             console.print(f"   Log Level: {config.defaults.log_level}")
 
         # Also show YAML file location

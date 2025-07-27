@@ -14,6 +14,7 @@ This system provides model-agnostic document processing with dynamic field detec
 - **Unified Configuration**: Single YAML source of truth for all settings
 - **Robust Parsing**: Handles various model output formats with fallback strategies
 - **Memory Efficient**: Built-in memory monitoring and cleanup
+- **DataFrame Integration**: Convert batch results to pandas DataFrames for analysis
 
 ## 📦 Project Structure
 
@@ -40,6 +41,7 @@ vision_processor/
 ├── cli/                       # Command-line interfaces
 │   ├── extract_cli.py        # Document extraction CLI
 │   ├── evaluation_cli.py     # Evaluation CLI
+│   ├── batch_to_csv_cli.py   # Batch results to DataFrame CLI
 │   └── __init__.py
 ├── evaluation/                # Evaluation framework
 │   ├── evaluator.py          # Model evaluation
@@ -49,6 +51,7 @@ vision_processor/
 │   └── __init__.py
 ├── utils/                     # Utilities
 │   ├── memory_monitor.py     # GPU memory tracking
+│   ├── batch_to_dataframe.py # Batch results to DataFrame converter
 │   └── __init__.py
 ├── exceptions.py              # Custom exceptions
 └── __init__.py
@@ -124,7 +127,46 @@ python -m vision_processor.cli.extract_cli batch ./datasets/ --output-dir ./batc
 python -m vision_processor.cli.extract_cli batch ./datasets/ --model internvl
 ```
 
-#### 4. Configuration Information
+#### 4. Batch Results Analysis
+```bash
+# Convert batch_results.json to CSV DataFrame (one row per image)
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json
+
+# Convert with custom output path
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --output results_dataframe.csv
+
+# Analyze batch results without saving CSV
+python -m vision_processor.cli.batch_to_csv_cli analyze batch_results.json
+
+# Keep "N/A" strings instead of converting to NaN
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --keep-na
+
+# Show info only (no CSV file created)
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --info
+```
+
+**DataFrame Structure:**
+- **Header**: `[image, DOCUMENT_TYPE, SUPPLIER, ABN, ...]` (27 columns: image + 26 fields)
+- **Rows**: One row per image with extracted field values
+- **Missing values**: `None/NaN` (default, better for analysis) or `"N/A"` strings (with `--keep-na`)
+
+**Direct Python usage:**
+```python
+from vision_processor.utils.batch_to_dataframe import batch_results_to_dataframe
+
+# Convert to DataFrame
+df = batch_results_to_dataframe("batch_results.json")
+print(df.shape)  # (n_images, 27)
+
+# Save to CSV
+df.to_csv("extracted_fields.csv", index=False)
+
+# Analyze extraction completeness
+missing_per_field = df.isnull().sum()
+overall_completion = (df.count().sum() / df.size) * 100
+```
+
+#### 5. Configuration Information
 ```bash
 # View current configuration and paths
 python -m vision_processor.cli.extract_cli config-info
@@ -138,7 +180,7 @@ python -m vision_processor.cli.extract_cli config-info --verbose
 
 ### Model Comparison Script
 
-#### 5. Full Model Comparison Pipeline
+#### 6. Full Model Comparison Pipeline
 ```bash
 # Run complete model comparison with default settings
 python model_comparison.py
@@ -158,7 +200,7 @@ python model_comparison.py validate-models
 
 ### Evaluation Commands
 
-#### 6. Model Performance Evaluation
+#### 7. Model Performance Evaluation
 ```bash
 # Compare models against ground truth
 python -m vision_processor.cli.evaluation_cli compare ground_truth.csv
