@@ -71,28 +71,39 @@ def batch_results_to_dataframe(
     columns = ["image"] + expected_fields
     rows = []
 
-    # Process each result
-    results = batch_data.get("results", [])
+    # Handle different JSON structures
+    if isinstance(batch_data, list):
+        # Direct list of results
+        results = batch_data
+    elif isinstance(batch_data, dict) and "results" in batch_data:
+        # Wrapped in "results" key
+        results = batch_data["results"]
+    else:
+        # Fallback: try to extract from top level
+        results = batch_data.get("results", [])
+    
     if not results:
         # Return empty DataFrame with correct structure
         return pd.DataFrame(columns=columns)
 
     for result in results:
-        # Get image name
-        image_name = result.get("image", "unknown")
+        # Handle case where result might not be a dictionary
+        if not isinstance(result, dict):
+            print(f"WARNING: Expected dict but got {type(result)}: {result}")
+            continue
+            
+        # Get image name (could be "filename" or "image")
+        image_name = result.get("filename", result.get("image", "unknown"))
         if isinstance(image_name, str) and "/" in image_name:
             # Extract just filename from path
             image_name = Path(image_name).name
 
-        # Get extracted fields
-        extracted_fields = result.get("extracted_fields", {})
-
         # Build row starting with image name
         row = {"image": image_name}
 
-        # Add each expected field
+        # Add each expected field (fields are directly in result, not nested)
         for field in expected_fields:
-            value = extracted_fields.get(field, "N/A")
+            value = result.get(field, "N/A")
 
             # Convert "N/A" to None/NaN unless user wants to keep strings
             if not use_na_strings and value == "N/A":
