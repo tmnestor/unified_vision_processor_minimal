@@ -38,7 +38,7 @@ vision_processor/
 │   ├── model_validator.py    # Validation logic
 │   └── __init__.py
 ├── cli/                       # Command-line interfaces
-│   ├── simple_extract_cli.py # Single extraction CLI
+│   ├── extract_cli.py        # Document extraction CLI
 │   ├── evaluation_cli.py     # Evaluation CLI
 │   └── __init__.py
 ├── evaluation/                # Evaluation framework
@@ -87,11 +87,11 @@ The system provides comprehensive command-line interfaces for document processin
 
 #### 1. Single Document Extraction
 ```bash
-# Basic extraction (uses default model from config)
-python -m vision_processor.cli.extract_cli extract image14.png
+# Basic extraction (requires explicit model selection)
+python -m vision_processor.cli.extract_cli extract image14.png --model llama
 
 # Extract with specific model
-python -m vision_processor.cli.extract_cli extract image14.png --model llama
+python -m vision_processor.cli.extract_cli extract image14.png --model internvl
 
 # Extract with output format override
 python -m vision_processor.cli.extract_cli extract image14.png --output-format json
@@ -217,6 +217,26 @@ python -m vision_processor.cli.extract_cli extract image14.png --yaml-file model
 
 # Production batch processing
 python -m vision_processor.cli.extract_cli batch datasets/ --output-dir production_results/
+```
+
+### Model Selection Requirement
+
+**IMPORTANT**: All CLI commands now require explicit model selection. No default model is assumed.
+
+```bash
+# ❌ This will fail - no model specified
+python -m vision_processor.cli.extract_cli extract image14.png
+
+# ✅ This works - model explicitly specified  
+python -m vision_processor.cli.extract_cli extract image14.png --model llama
+```
+
+**Error when no model specified:**
+```
+❌ FATAL: No model specified
+💡 Available models: ['llama', 'internvl']
+💡 Fix: Add --model flag to CLI command
+💡 Example: --model llama or --model internvl
 ```
 
 ### Advanced Usage
@@ -438,6 +458,58 @@ python model_comparison.py compare --debug
 - **Strengths**: Reliable output format, good instruction following
 
 Both models use identical prompts and processing pipelines for fair comparison.
+
+## 📊 Repetition Control Analysis
+
+### Current Implementation: Post-Processing Approach
+
+The system currently uses **post-processing repetition control** rather than real-time `repetition_penalty` parameters during generation. This design choice is based on technical research and practical considerations:
+
+### **Research Findings on Repetition Control Efficiency**
+
+#### **Repetition Penalty (Real-time)**
+- **Performance Impact**: Causes 15.4% throughput decrease in vLLM at high request rates¹
+- **Memory Overhead**: Adds computational cost at every token generation step
+- **Minimal Impact**: Negligible overhead at low request rates (memory-bound conditions)²
+
+#### **Post-Processing Approach (Current)**
+- **Batch Efficiency**: Can process multiple documents simultaneously
+- **Sophisticated Detection**: Capable of detecting complex repetition patterns³
+- **Separation of Concerns**: Generation and repetition control are independent processes
+- **Industrial Applications**: Proven to meet real-time performance requirements⁴
+
+### **Llama 3.2 Vision Specific Considerations**
+
+Research reveals several technical challenges with Llama 3.2 Vision models:
+
+1. **Known Compatibility Issues**: Reported errors when adding `repetition_penalty` to `generation_config` with Llama-3.2-11B-Vision-Instruct⁵
+2. **GPU Utilization Problems**: Llama 3.2 Vision models sometimes fail to utilize GPU properly, falling back to CPU-only processing⁶
+3. **Memory Constraints**: Users report CUDA out-of-memory errors specifically with Llama 3.2 Vision models, even with quantization⁷
+
+### **Design Rationale**
+
+The post-processing approach was implemented to:
+- **Avoid GPU Compatibility Issues**: Circumvent known bugs with repetition penalty in Llama 3.2 Vision
+- **Ensure V100 Compatibility**: Minimize GPU memory overhead for 16GB VRAM constraints
+- **Maintain Reliability**: Provide consistent results across different model configurations
+- **Enable Advanced Detection**: Support sophisticated repetition pattern recognition
+
+### **Future Optimization Opportunities**
+
+1. **Hybrid Approach**: Light repetition penalty (1.1-1.3) + simplified post-processing
+2. **Model-Specific Tuning**: Different strategies for InternVL3 vs Llama-3.2-Vision
+3. **Performance Monitoring**: Benchmark generation time vs post-processing overhead
+4. **Memory Optimization**: Test repetition penalty impact on V100 memory usage
+
+### **References**
+
+1. *vLLM vs TensorRT-LLM: Understanding Sampling Methods and Their Performance Impact* - SqueezeBits Blog
+2. *Navigating the Nuances of Text Generation: How to Control LLM Outputs* - Neural Magic
+3. *Code Copycat Conundrum: Demystifying Repetition in LLM-based Code Generation* - arXiv:2504.12608v1
+4. *Customizing LLM Output: Post-Processing Techniques* - Neptune.ai
+5. *Llama 3.2, inference error with "repetition_penalty" in generation_config* - Hugging Face Transformers Issue #34304
+6. *llama3.2-vision doesn't utilize my GPU* - Ollama Issue #8310
+7. *unsloth/Llama-3.2-11B-Vision-Instruct CUDA error: out of memory* - Unsloth Issue #1572
 
 ## 📊 Performance Metrics
 
