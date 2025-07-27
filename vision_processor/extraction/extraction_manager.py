@@ -175,11 +175,14 @@ class SimpleExtractionManager:
         self.logger.status(f"Sending to {self.config.current_model_type} model...")
         response = self.model.process_image(str(image_path), prompt)
 
-        # Step 3: Parse KEY-VALUE response
+        # Step 3: Parse KEY-VALUE response and determine extraction method
         self.logger.status("Parsing response...")
         self.logger.debug("Raw model response (first 500 chars):")
         self.logger.debug(f"'{response.raw_text[:500]}...'")
 
+        # Determine if response needs post-processing
+        extraction_method = self._determine_extraction_method(response.raw_text)
+        
         # Use the same parsing logic as comparison runner
         extracted_data = self._parse_clean_response(response.raw_text)
 
@@ -196,8 +199,64 @@ class SimpleExtractionManager:
             model_confidence=response.confidence
             if hasattr(response, "confidence")
             else 0.9,
-            extraction_method="single_step",
+            extraction_method=extraction_method,
         )
+
+    def _determine_extraction_method(self, raw_text: str) -> str:
+        """Determine extraction method based on response characteristics.
+        
+        Args:
+            raw_text: Raw response from model
+            
+        Returns:
+            String indicating extraction method used
+        """
+        # Check if response looks like clean KEY: value format
+        lines = raw_text.strip().split('\n')
+        clean_lines = 0
+        total_lines = len([line for line in lines if line.strip()])
+        
+        for line in lines:
+            line = line.strip()
+            if ':' in line and not line.startswith('#') and not line.startswith('*'):
+                # Count lines that look like KEY: value format
+                clean_lines += 1
+        
+        # Check for markdown-like content (headers, lists, etc.)
+        has_markdown = any(
+            line.strip().startswith(('#', '*', '-', '|')) or
+            '**' in line or
+            '_' in line and line.count('_') >= 2
+            for line in lines
+        )
+        
+        # Check for repetitive content (simple heuristic)
+        word_count = {}
+        words = raw_text.lower().split()
+        for word in words:
+            word_count[word] = word_count.get(word, 0) + 1
+        
+        # Check if any word appears more than 3 times (excluding common words)
+        common_words = {'the', 'and', 'or', 'a', 'an', 'is', 'are', 'to', 'of', 'in', 'for', 'with', 'n/a'}
+        has_repetition = any(
+            count > 3 and word not in common_words 
+            for word, count in word_count.items()
+        )
+        
+        # Determine extraction method
+        if total_lines > 0 and clean_lines / total_lines > 0.8:
+            if has_markdown:
+                return "clean_with_markdown"
+            elif has_repetition:
+                return "clean_with_repetition" 
+            else:
+                return "clean_extraction"
+        elif has_markdown and not has_repetition:
+            return "markdown_fallback"
+        elif has_repetition:
+            return "repetition_control"
+        else:
+            return "complex_parsing"
 
     def _parse_clean_response(self, raw_text: str) -> dict:
         """Parse clean KEY: value format response (same logic as comparison runner).
