@@ -513,23 +513,82 @@ The post-processing approach was implemented to:
 
 ## 📊 Performance Metrics
 
-The system tracks comprehensive performance metrics:
+The system tracks comprehensive performance metrics with intelligent extraction method detection:
 
 ### Extraction Metrics
 - **Fields Extracted**: Count of successfully extracted fields per document
 - **Field Success Rate**: Percentage of documents with each field extracted
 - **Value Completion**: Percentage of extracted fields with actual values (not "N/A")
+- **Extraction Method**: Intelligent detection of processing approach used per document
+
+### Extraction Method Classification
+
+The system automatically detects and reports the extraction method used for each document:
+
+#### **Clean Processing Methods**
+- **`clean_extraction`**: Optimal - Clean KEY: value format, no post-processing needed
+- **`clean_with_markdown`**: Good - Clean format with minor markdown formatting
+- **`clean_with_repetition`**: Acceptable - Clean format but contains repetitive content
+
+#### **Fallback Processing Methods**  
+- **`markdown_fallback`**: Moderate - Primarily markdown content requiring parsing
+- **`repetition_control`**: Challenging - Response needed repetition cleanup
+- **`complex_parsing`**: Difficult - Complex response requiring advanced parsing
+- **`error`**: Failed - Processing failed, no data extracted
+
+### Detection Algorithm
+
+The extraction method is determined by analyzing model responses:
+
+```python
+# Format Analysis: Ratio of KEY: value lines to total lines
+clean_ratio = clean_lines / total_lines
+
+# Content Analysis: Detection of formatting issues
+has_markdown = presence of #, **, _, |, -, * formatting
+has_repetition = words appearing >3 times (excluding common words)
+
+# Classification Logic
+if clean_ratio > 0.8:
+    if has_markdown: return "clean_with_markdown"
+    elif has_repetition: return "clean_with_repetition" 
+    else: return "clean_extraction"
+elif has_markdown: return "markdown_fallback"
+elif has_repetition: return "repetition_control"
+else: return "complex_parsing"
+```
 
 ### Performance Metrics
 - **Processing Time**: Time per document (including model loading)
 - **Memory Usage**: Peak GPU memory consumption
 - **Response Length**: Character count of model outputs
+- **Method Distribution**: Percentage breakdown of extraction methods used
 
 ### Quality Thresholds
 - **Excellent**: 12+ fields extracted (nearly half of possible fields)
 - **Good**: 8-11 fields extracted (solid extraction)
 - **Fair**: 5-7 fields extracted (basic extraction)
 - **Poor**: <5 fields extracted (needs optimization)
+
+### Batch Results Analysis
+
+When using `batch` command, results are saved to `batch_results.json` with detailed extraction method information:
+
+```json
+{
+  "filename": "invoice_001.png",
+  "extracted_fields": { "DOCUMENT_TYPE": "Tax Invoice", ... },
+  "processing_time": 2.34,
+  "model_confidence": 0.95,
+  "extraction_method": "clean_extraction"
+}
+```
+
+This enables analysis of:
+- Which documents process cleanly vs require post-processing
+- Model-specific response quality patterns  
+- Performance optimization opportunities
+- Success rate by extraction method type
 
 ## 🔧 Production Deployment
 
@@ -627,14 +686,6 @@ python model_comparison.py
 - **CLAUDE.md**: Development guidelines and project context
 - **model_comparison.yaml**: Configuration reference with comments
 - **Code Documentation**: Comprehensive docstrings throughout
-
-## 🤝 Contributing
-
-1. Follow development guidelines in `CLAUDE.md`
-2. Run `ruff check . --fix` before committing
-3. Test with both InternVL3 and Llama models
-4. Update documentation for new features
-5. Use conservative refactoring principles
 
 ## 📈 Recent Improvements
 
