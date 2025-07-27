@@ -45,9 +45,10 @@ class VisionProcessorLogger:
             log_file_path = self._get_log_file_path()
             # Ensure log directory exists
             from pathlib import Path
+
             log_dir = Path(log_file_path).parent
             log_dir.mkdir(parents=True, exist_ok=True)
-            
+
             file_handler = logging.FileHandler(log_file_path)
             file_handler.setLevel(logging.WARNING)  # Only warnings/errors to file
             formatter = logging.Formatter(
@@ -118,22 +119,28 @@ class VisionProcessorLogger:
         """Check if file logging should be enabled."""
         if not self.config:
             return True  # Default to enabled
-        
+
         # Check if we have logging config
-        logging_config = getattr(self.config, '_yaml_config_data', {}).get('logging', {})
-        return logging_config.get('file_logging', True)
+        logging_config = getattr(self.config, "_yaml_config_data", {}).get(
+            "logging", {}
+        )
+        return logging_config.get("file_logging", True)
 
     def _get_log_file_path(self) -> str:
         """Get log file path from configuration."""
         if not self.config:
             from ..exceptions import ConfigurationError
+
             raise ConfigurationError("No configuration available for log file path")
-        
+
         # Check if we have logging config
-        logging_config = getattr(self.config, '_yaml_config_data', {}).get('logging', {})
-        log_file = logging_config.get('log_file')
+        logging_config = getattr(self.config, "_yaml_config_data", {}).get(
+            "logging", {}
+        )
+        log_file = logging_config.get("log_file")
         if not log_file:
             from ..exceptions import ConfigurationError
+
             raise ConfigurationError(
                 "❌ FATAL: log_file not configured in YAML\n"
                 "💡 Fix: Add logging.log_file to model_comparison.yaml"

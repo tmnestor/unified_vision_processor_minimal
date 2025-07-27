@@ -329,7 +329,7 @@ def check_environment(
         # Load config to get default datasets path
         config = ConfigManager()
         datasets_path = config.defaults.datasets_path
-    
+
     console.print("\n📁 DATASET VALIDATION", style="bold blue")
     datasets_dir = Path(datasets_path)
     if datasets_dir.exists():

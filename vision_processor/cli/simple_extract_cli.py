@@ -44,12 +44,6 @@ def extract(
 ) -> None:
     """Extract data using single-step processing with YAML configuration."""
 
-    # Check image file exists
-    image_file = Path(image_path)
-    if not image_file.exists():
-        console.print(f"[red]❌ Image file not found: {image_path}[/red]")
-        raise typer.Exit(1) from None
-
     try:
         # Import dependencies
         if verbose:
@@ -57,9 +51,18 @@ def extract(
 
         from ..config import ConfigManager
         from ..extraction.extraction_manager import SimpleExtractionManager
+        from ..utils.path_resolver import PathResolver
 
-        # Load configuration from YAML
+        # Load configuration from YAML first
         config = ConfigManager(yaml_file)
+        path_resolver = PathResolver(config)
+
+        # Resolve image path using utility
+        try:
+            image_path = path_resolver.resolve_input_path(image_path)
+        except ValueError as e:
+            console.print(f"[red]❌ {e}[/red]")
+            raise typer.Exit(1) from None
 
         # Apply CLI logging overrides
         if debug:
@@ -83,7 +86,7 @@ def extract(
         # No need for explicit validation call
 
         # Process document
-        console.print(f"\n🔍 Processing document: {image_file.name}")
+        console.print(f"\n🔍 Processing document: {Path(image_path).name}")
 
         with console.status(
             f"[bold green]Processing with {config.current_model_type}..."
@@ -158,21 +161,25 @@ def compare(
 ) -> None:
     """Compare extraction results between models using YAML configuration."""
 
-    # Check image file exists
-    image_file = Path(image_path)
-    if not image_file.exists():
-        console.print(f"[red]❌ Image file not found: {image_path}[/red]")
-        raise typer.Exit(1) from None
-
     try:
-        # YAML configuration is passed directly to SimpleConfig
-
         # Import dependencies
         if verbose:
             console.print("[yellow]Loading dependencies...[/yellow]")
 
-        # Legacy SimpleConfig import removed - now using ConfigManager
+        from ..config import ConfigManager
         from ..extraction.extraction_manager import SimpleExtractionManager
+        from ..utils.path_resolver import PathResolver
+
+        # Load config first for path resolution
+        config = ConfigManager(yaml_file)
+        path_resolver = PathResolver(config)
+
+        # Resolve image path using utility
+        try:
+            image_path = path_resolver.resolve_input_path(image_path)
+        except ValueError as e:
+            console.print(f"[red]❌ {e}[/red]")
+            raise typer.Exit(1) from None
 
         results = {}
         model_list = [m.strip() for m in models.split(",")]
@@ -183,8 +190,6 @@ def compare(
             console.print(f"{'=' * 50}")
 
             # Create config with model override
-            from ..config import ConfigManager
-
             config = ConfigManager(yaml_file)
 
             # Apply CLI logging overrides
@@ -304,7 +309,9 @@ def config_info(
 @app.command()
 def batch(
     input_dir: str = typer.Argument(..., help="Directory containing images to process"),
-    output_dir: str = typer.Option(None, help="Directory to save results (default from config)"),
+    output_dir: str = typer.Option(
+        None, help="Directory to save results (default from config)"
+    ),
     model: Optional[str] = typer.Option(None, help="Override model type"),
     yaml_file: str = typer.Option(
         "model_comparison.yaml", help="Path to YAML configuration file"
@@ -332,8 +339,10 @@ def batch(
         # Load configuration
         from ..config import ConfigManager
         from ..extraction.extraction_manager import SimpleExtractionManager
+        from ..utils.path_resolver import PathResolver
 
         config = ConfigManager(yaml_file)
+        path_resolver = PathResolver(config)
 
         # Apply CLI logging overrides
         if debug:
@@ -349,10 +358,9 @@ def batch(
 
         if model:
             config.set_model_type(model)
-        
-        # Use config output_dir if not provided via CLI
-        if not output_dir:
-            output_dir = config.defaults.output_dir
+
+        # Resolve output directory using utility
+        output_dir = path_resolver.resolve_output_path(output_dir)
 
         # Find image files
         image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
@@ -369,7 +377,7 @@ def batch(
         console.print(f"📦 Found {len(image_files)} image files")
 
         # Create output directory
-        output_path.mkdir(parents=True, exist_ok=True)
+        output_path = path_resolver.ensure_output_dir(output_dir)
         console.print(f"📁 Output directory: {output_path}")
 
         # Process batch

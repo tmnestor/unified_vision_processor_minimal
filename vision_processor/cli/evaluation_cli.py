@@ -21,12 +21,14 @@ console = Console()
 @app.command()
 def compare(
     ground_truth_csv: str = typer.Argument(..., help="Path to ground truth CSV file"),
-    images_dir: str = typer.Option("datasets", help="Directory containing test images"),
+    images_dir: str = typer.Option(
+        None, help="Directory containing test images (default from config)"
+    ),
     models: str = typer.Option(
         "internvl3,llama32_vision", help="Models to compare (comma-separated)"
     ),
     output_dir: str = typer.Option(
-        "evaluation_results", help="Output directory for results"
+        None, help="Output directory for results (default from config)"
     ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
@@ -48,8 +50,10 @@ def compare(
     try:
         # Apply logging overrides via ConfigManager (evaluator will inherit these settings)
         from ..config import ConfigManager
+        from ..utils.path_resolver import PathResolver
 
         config = ConfigManager()
+        path_resolver = PathResolver(config)
 
         # Apply CLI logging overrides
         if debug:
@@ -62,6 +66,10 @@ def compare(
             config.defaults.console_output = False
             config.defaults.verbose_mode = False
             config.defaults.debug_mode = False
+
+        # Resolve paths using utility
+        images_dir = path_resolver.resolve_input_path(images_dir)
+        output_dir = path_resolver.resolve_output_path(output_dir)
 
         # Parse models
         model_list = [m.strip() for m in models.split(",")]
@@ -103,7 +111,8 @@ def benchmark(
     ),
     model: str = typer.Option("internvl3", help="Model to benchmark"),
     output_file: str = typer.Option(
-        "benchmark_results.json", help="Output file for results"
+        None,
+        help="Output file for results (default: benchmark_results.json in config output_dir)",
     ),
     iterations: int = typer.Option(3, help="Number of iterations per image"),
     verbose: bool = typer.Option(
@@ -128,8 +137,10 @@ def benchmark(
 
         # Setup model
         from ..config import ConfigManager
+        from ..utils.path_resolver import PathResolver
 
         config = ConfigManager()
+        path_resolver = PathResolver(config)
 
         # Apply CLI logging overrides
         if debug:
@@ -142,6 +153,11 @@ def benchmark(
             config.defaults.console_output = False
             config.defaults.verbose_mode = False
             config.defaults.debug_mode = False
+
+        # Resolve output file path using utility
+        output_file = path_resolver.resolve_output_path(
+            output_file, "benchmark_results.json" if not output_file else None
+        )
 
         config.set_model_type(model)
         manager = SimpleExtractionManager(config)
@@ -234,7 +250,9 @@ def benchmark(
 @app.command()
 def validate_ground_truth(
     ground_truth_csv: str = typer.Argument(..., help="Path to ground truth CSV file"),
-    images_dir: str = typer.Option("datasets", help="Directory containing test images"),
+    images_dir: str = typer.Option(
+        None, help="Directory containing test images (default from config)"
+    ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
@@ -247,15 +265,13 @@ def validate_ground_truth(
         console.print(f"[red]❌ Ground truth file not found: {ground_truth_csv}[/red]")
         raise typer.Exit(1) from None
 
-    if not Path(images_dir).exists():
-        console.print(f"[red]❌ Images directory not found: {images_dir}[/red]")
-        raise typer.Exit(1) from None
-
     try:
         # Apply logging overrides via ConfigManager
         from ..config import ConfigManager
+        from ..utils.path_resolver import PathResolver
 
         config = ConfigManager()
+        path_resolver = PathResolver(config)
 
         # Apply CLI logging overrides
         if debug:
@@ -268,6 +284,13 @@ def validate_ground_truth(
             config.defaults.console_output = False
             config.defaults.verbose_mode = False
             config.defaults.debug_mode = False
+
+        # Resolve images directory using utility
+        try:
+            images_dir = path_resolver.resolve_input_path(images_dir)
+        except ValueError as e:
+            console.print(f"[red]❌ {e}[/red]")
+            raise typer.Exit(1) from None
 
         # Load ground truth
         with Path(ground_truth_csv).open("r", encoding="utf-8") as f:
