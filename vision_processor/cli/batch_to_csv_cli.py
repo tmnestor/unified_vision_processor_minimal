@@ -41,10 +41,11 @@ def convert_to_csv(
     """Convert batch_results.json to CSV format with one row per image."""
 
     try:
+        # Use default config if no yaml_file specified
+        config_file = yaml_file or "model_comparison.yaml"
+        
         # Initialize configuration and get output directory
         try:
-            # Use default config if no yaml_file specified
-            config_file = yaml_file or "model_comparison.yaml"
             config_manager = ConfigManager(config_file)
             # Get output directory from config
             output_dir = config_manager.output_dir
@@ -64,10 +65,10 @@ def convert_to_csv(
             resolved_batch_path = batch_file
             console.print(f"📂 Loading batch results from: {resolved_batch_path}")
 
-        # Convert to DataFrame
+        # Convert to DataFrame (pass the same config file we used)
         batch_dataframe = batch_results_to_dataframe(
             batch_results_path=resolved_batch_path,
-            config_path=config,
+            config_path=config_file,  # Use the same config we loaded
             use_na_strings=keep_na,
         )
 
@@ -121,10 +122,11 @@ def analyze_batch_results(
     """Analyze batch results without saving to CSV."""
 
     try:
+        # Use default config if no yaml_file specified
+        config_file = yaml_file or "model_comparison.yaml"
+        
         # Initialize configuration and get output directory
         try:
-            # Use default config if no yaml_file specified
-            config_file = yaml_file or "model_comparison.yaml"
             config_manager = ConfigManager(config_file)
             # Get output directory from config
             output_dir = config_manager.output_dir
@@ -146,7 +148,7 @@ def analyze_batch_results(
 
         batch_dataframe = batch_results_to_dataframe(
             batch_results_path=resolved_batch_path,
-            config_path=config,
+            config_path=config_file,  # Use the same config we loaded
             use_na_strings=False,  # Use NaN for analysis
         )
 
