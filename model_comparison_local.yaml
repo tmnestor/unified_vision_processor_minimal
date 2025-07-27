@@ -1,7 +1,7 @@
 # Local test configuration for macOS development
 defaults:
   datasets_path: "/Users/tod/Desktop/datasets"
-  output_dir: "/Users/tod/Desktop/vision_comparison/output"
+  output_dir: "/Users/tod/Desktop/output"
   models: "llama,internvl"
   max_tokens: 700
   quantization: true
@@ -14,7 +14,7 @@ defaults:
 # Logging configuration for local development
 logging:
   file_logging: true
-  log_file: "/Users/tod/Desktop/vision_comparison/output/vision_processor.log"
+  log_file: "/Users/tod/Desktop/output/vision_processor.log"
   max_log_size: "10MB"
   backup_count: 3
 
