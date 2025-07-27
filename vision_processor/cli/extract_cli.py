@@ -82,8 +82,8 @@ def extract(
         if output_format:
             config.set_output_format(output_format)
 
-        # Configuration is validated during initialization in ConfigManager
-        # No need for explicit validation call
+        # Validate that a model has been explicitly selected
+        config.validate_model_selected()
 
         # Process document
         console.print(f"\n🔍 Processing document: {Path(image_path).name}")
@@ -206,8 +206,9 @@ def compare(
 
             config.set_model_type(model_name)
 
-            # Validate configuration
-            # ConfigManager validates during initialization, no explicit validation needed
+            # Validate that a model has been explicitly selected
+            config.validate_model_selected()
+
             try:
                 pass  # ConfigManager already validated
             except ValidationError as e:
@@ -279,9 +280,33 @@ def config_info(
             config.defaults.debug_mode = False
         # Display configuration info
         console.print("\n📋 Configuration Summary:")
-        console.print(f"   Model Type: {config.current_model_type}")
+        model_display = config.current_model_type or "❌ No model selected"
+        console.print(f"   Model Type: {model_display}")
         console.print(f"   Output Format: {config.output_format}")
         console.print(f"   Available Models: {list(config.get_available_models())}")
+
+        # Show actual paths being used
+        console.print("\n📁 Path Configuration:")
+        console.print(f"   Datasets Path: {config.defaults.datasets_path}")
+        console.print(f"   Output Directory: {config.defaults.output_dir}")
+        
+        # Check if paths exist
+        datasets_exists = Path(config.defaults.datasets_path).exists()
+        output_exists = Path(config.defaults.output_dir).exists()
+        console.print(f"   Datasets Exists: {'✅' if datasets_exists else '❌'}")
+        console.print(f"   Output Dir Exists: {'✅' if output_exists else '❌'}")
+        
+        if datasets_exists:
+            png_count = len(list(Path(config.defaults.datasets_path).glob("*.png")))
+            console.print(f"   PNG Files Found: {png_count}")
+
+        # Show logging configuration
+        logging_config = config._yaml_config_data.get("logging", {})
+        if logging_config:
+            console.print("\n📝 Logging Configuration:")
+            console.print(f"   Log File: {logging_config.get('log_file', 'Not configured')}")
+            console.print(f"   File Logging: {'✅' if logging_config.get('file_logging', False) else '❌'}")
+            console.print(f"   Log Level: {config.defaults.log_level}")
 
         # Also show YAML file location
         yaml_path = Path(yaml_file).absolute()
@@ -358,6 +383,9 @@ def batch(
 
         if model:
             config.set_model_type(model)
+
+        # Validate that a model has been explicitly selected
+        config.validate_model_selected()
 
         # Resolve output directory using utility
         output_dir = path_resolver.resolve_output_path(output_dir)

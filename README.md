@@ -79,23 +79,183 @@ model_paths:
   internvl: "/path/to/InternVL3-8B"
 ```
 
-### Basic Usage
+## 📋 CLI Usage
 
+The system provides comprehensive command-line interfaces for document processing, model comparison, and evaluation.
+
+### Core Commands
+
+#### 1. Single Document Extraction
 ```bash
-# Run full model comparison
-python model_comparison.py
-
-# Extract from single document
-python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png
-
-# Compare models on specific document
-python -m vision_processor.cli.simple_extract_cli compare datasets/image14.png --models llama,internvl
+# Basic extraction (uses default model from config)
+python -m vision_processor.cli.extract_cli extract image14.png
 
 # Extract with specific model
-python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png --model llama
+python -m vision_processor.cli.extract_cli extract image14.png --model llama
 
-# Batch processing
-python -m vision_processor.cli.simple_extract_cli batch ./datasets/ --output-dir ./results/
+# Extract with output format override
+python -m vision_processor.cli.extract_cli extract image14.png --output-format json
+
+# Custom YAML configuration
+python -m vision_processor.cli.extract_cli extract image14.png --yaml-file custom_config.yaml
+```
+
+#### 2. Model Comparison
+```bash
+# Compare default models on single document
+python -m vision_processor.cli.extract_cli compare image14.png
+
+# Compare specific models
+python -m vision_processor.cli.extract_cli compare image14.png --models llama,internvl
+
+# Comparison with custom config
+python -m vision_processor.cli.extract_cli compare image14.png --yaml-file production.yaml
+```
+
+#### 3. Batch Processing
+```bash
+# Batch process all images in directory
+python -m vision_processor.cli.extract_cli batch ./datasets/
+
+# Batch with custom output directory
+python -m vision_processor.cli.extract_cli batch ./datasets/ --output-dir ./batch_results/
+
+# Batch with specific model
+python -m vision_processor.cli.extract_cli batch ./datasets/ --model internvl
+```
+
+#### 4. Configuration Information
+```bash
+# View current configuration and paths
+python -m vision_processor.cli.extract_cli config-info
+
+# Check configuration with custom YAML
+python -m vision_processor.cli.extract_cli config-info --yaml-file production.yaml
+
+# View configuration with verbose details
+python -m vision_processor.cli.extract_cli config-info --verbose
+```
+
+### Model Comparison Script
+
+#### 5. Full Model Comparison Pipeline
+```bash
+# Run complete model comparison with default settings
+python model_comparison.py
+
+# Model comparison with CLI overrides
+python model_comparison.py compare --datasets-path ./test_images/ --output-dir ./comparison_results/
+
+# Compare specific models only
+python model_comparison.py compare --models llama --quantization
+
+# Environment validation
+python model_comparison.py check-environment
+
+# Model validation
+python model_comparison.py validate-models
+```
+
+### Evaluation Commands
+
+#### 6. Model Performance Evaluation
+```bash
+# Compare models against ground truth
+python -m vision_processor.cli.evaluation_cli compare ground_truth.csv
+
+# Evaluation with custom paths
+python -m vision_processor.cli.evaluation_cli compare ground_truth.csv --images-dir ./test_set/ --output-dir ./eval_results/
+
+# Benchmark single model performance
+python -m vision_processor.cli.evaluation_cli benchmark ./datasets/ --model llama --iterations 5
+
+# Validate ground truth data
+python -m vision_processor.cli.evaluation_cli validate-ground-truth ground_truth.csv --images-dir ./datasets/
+```
+
+### Path Resolution
+
+The system uses intelligent path resolution for both inputs and outputs:
+
+#### Input Path Resolution
+```bash
+# Relative paths resolve against configured datasets_path
+python -m vision_processor.cli.extract_cli extract image14.png
+# Resolves to: {datasets_path}/image14.png
+
+# Absolute paths used as-is
+python -m vision_processor.cli.extract_cli extract /full/path/to/image.png
+# Uses: /full/path/to/image.png
+```
+
+#### Output Path Resolution
+```bash
+# Relative output paths resolve against configured output_dir
+python -m vision_processor.cli.extract_cli batch ./datasets/ --output-dir results
+# Creates: {output_dir}/results/
+
+# Absolute output paths used as-is
+python -m vision_processor.cli.extract_cli batch ./datasets/ --output-dir /full/path/output
+# Creates: /full/path/output/
+```
+
+### Environment-Specific Usage
+
+#### Local Development
+```bash
+# Use local configuration with Desktop paths
+python -m vision_processor.cli.extract_cli extract image14.png --yaml-file model_comparison_local.yaml
+
+# Local batch processing
+python -m vision_processor.cli.extract_cli batch datasets/ --output-dir results/
+```
+
+#### Remote/Production (KFP)
+```bash
+# Use production configuration with NFS paths
+python -m vision_processor.cli.extract_cli extract image14.png --yaml-file model_comparison.yaml
+
+# Production batch processing
+python -m vision_processor.cli.extract_cli batch datasets/ --output-dir production_results/
+```
+
+### Advanced Usage
+
+#### Error Diagnosis
+```bash
+# Debug configuration issues
+python -m vision_processor.cli.extract_cli config-info --debug
+
+# Debug extraction problems
+python -m vision_processor.cli.extract_cli extract problem_image.png --debug
+
+# Debug model comparison
+python model_comparison.py compare --debug
+```
+
+#### Performance Testing
+```bash
+# Quick performance test
+python -m vision_processor.cli.evaluation_cli benchmark datasets/ --model llama --iterations 3
+
+# Memory usage monitoring
+python model_comparison.py check-environment --verbose
+
+# Validate all configured models
+python model_comparison.py validate-models
+```
+
+#### Automation-Friendly Usage
+```bash
+# Quiet mode for scripts (only errors/warnings)
+python -m vision_processor.cli.extract_cli batch datasets/ --quiet
+
+# JSON output for processing
+python -m vision_processor.cli.extract_cli extract image.png --output-format json --quiet
+
+# Exit codes for CI/CD
+python model_comparison.py validate-models --quiet
+echo $?  # 0 for success, 1 for failure
 ```
 
 ### Verbosity Control
@@ -105,7 +265,7 @@ All CLI commands support runtime verbosity control:
 ```bash
 # Quiet mode (minimal output, errors/warnings only)
 python model_comparison.py compare --quiet
-python -m vision_processor.cli.simple_extract_cli extract image.jpg --quiet
+python -m vision_processor.cli.extract_cli extract image.jpg --quiet
 
 # Verbose mode (detailed status messages)
 python model_comparison.py compare --verbose
@@ -113,7 +273,7 @@ python -m vision_processor.cli.evaluation_cli compare ground_truth.csv --verbose
 
 # Debug mode (full diagnostic output)
 python model_comparison.py compare --debug
-python -m vision_processor.cli.simple_extract_cli extract image.jpg --debug
+python -m vision_processor.cli.extract_cli extract image.jpg --debug
 ```
 
 ## ⚙️ Configuration
@@ -254,7 +414,7 @@ logging:
 python model_comparison.py compare --quiet
 
 # Standard processing with Rich output (default)
-python -m vision_processor.cli.simple_extract_cli extract image.jpg
+python -m vision_processor.cli.extract_cli extract image.jpg
 
 # Verbose processing with detailed status
 python -m vision_processor.cli.evaluation_cli compare data.csv --verbose
@@ -350,10 +510,10 @@ defaults:
 
 ```bash
 # Test extraction pipeline
-python -m vision_processor.cli.simple_extract_cli extract datasets/image14.png
+python -m vision_processor.cli.extract_cli extract datasets/image14.png
 
 # Validate configuration
-python -m vision_processor.cli.simple_extract_cli config-info
+python -m vision_processor.cli.extract_cli config-info
 
 # Run model comparison
 python model_comparison.py

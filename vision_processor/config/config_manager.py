@@ -224,7 +224,7 @@ class ConfigManager:
         self.extraction_prompt = self._yaml_config_data.get("extraction_prompt", "")
 
         # Runtime settings (can be overridden by CLI)
-        self.current_model_type = "internvl"  # Default
+        self.current_model_type = None  # Must be explicitly set
         self.current_output_format = "yaml"  # Default
         self.log_level = "INFO"
 
@@ -338,6 +338,17 @@ class ConfigManager:
                 reason="Must be 'llama' or 'internvl'",
             )
         self.current_model_type = model_type
+
+    def validate_model_selected(self) -> None:
+        """Ensure a model has been explicitly selected."""
+        if self.current_model_type is None:
+            available = list(self.get_available_models())
+            raise ConfigurationError(
+                f"❌ FATAL: No model specified\n"
+                f"💡 Available models: {available}\n"
+                f"💡 Fix: Add --model flag to CLI command\n"
+                f"💡 Example: --model llama or --model internvl"
+            )
 
     def set_output_format(self, output_format: str) -> None:
         """Set output format with validation."""
