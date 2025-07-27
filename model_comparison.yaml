@@ -70,10 +70,11 @@ repetition_control:
 
 # Logging configuration
 logging:
-  file_logging: true       # NEW - Enable file logging
-  log_file: "/home/jovyan/nfs_share/tod/output/vision_processor.log"  # NEW - Log file path
-  max_log_size: "10MB"     # NEW - Log rotation size
-  backup_count: 3          # NEW - Number of backup logs
+  file_logging: true       # Enable file logging
+  log_file: "/home/jovyan/nfs_share/tod/output/vision_processor.log"  # Log file path
+  file_log_level: "INFO"   # File logging level: DEBUG, INFO, WARNING, ERROR
+  max_log_size: "10MB"     # Log rotation size
+  backup_count: 3          # Number of backup logs
 
 # Device configuration for V100 production deployment
 device_config:

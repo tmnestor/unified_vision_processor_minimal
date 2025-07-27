@@ -50,7 +50,9 @@ class VisionProcessorLogger:
             log_dir.mkdir(parents=True, exist_ok=True)
 
             file_handler = logging.FileHandler(log_file_path)
-            file_handler.setLevel(logging.WARNING)  # Only warnings/errors to file
+            # Use configurable file log level (default to INFO for comprehensive logging)
+            file_log_level = self._get_file_log_level()
+            file_handler.setLevel(file_log_level)
             formatter = logging.Formatter(
                 "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
             )
@@ -146,3 +148,15 @@ class VisionProcessorLogger:
                 "💡 Fix: Add logging.log_file to model_comparison.yaml"
             )
         return log_file
+
+    def _get_file_log_level(self) -> int:
+        """Get file logging level from configuration."""
+        if not self.config:
+            return logging.INFO  # Default to INFO
+
+        # Check if we have logging config
+        logging_config = getattr(self.config, "_yaml_config_data", {}).get(
+            "logging", {}
+        )
+        file_log_level = logging_config.get("file_log_level", "INFO")
+        return getattr(logging, file_log_level.upper(), logging.INFO)

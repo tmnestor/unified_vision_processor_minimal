@@ -15,6 +15,7 @@ defaults:
 logging:
   file_logging: true
   log_file: "/Users/tod/Desktop/output/vision_processor.log"
+  file_log_level: "INFO"   # File logging level: DEBUG, INFO, WARNING, ERROR
   max_log_size: "10MB"
   backup_count: 3
 
