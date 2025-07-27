@@ -43,17 +43,19 @@ def convert_to_csv(
 
     try:
         # Initialize configuration and path resolver
-        config_manager = ConfigManager(yaml_file)
-        path_resolver = PathResolver(config_manager)
-
-        # Resolve batch file path (look in output directory if relative)
         try:
+            config_manager = ConfigManager(yaml_file)
+            path_resolver = PathResolver(config_manager)
+            
+            # Resolve batch file path (look in output directory if relative)
             resolved_batch_path = path_resolver.resolve_output_file_path(batch_file)
-        except Exception:
-            # Fallback to treating as absolute path if resolution fails
+            console.print(f"📂 Loading batch results from: {resolved_batch_path}")
+            
+        except Exception as e:
+            # Fallback: use current directory + filename
+            console.print(f"⚠️  Path resolution failed ({e}), using current directory")
             resolved_batch_path = batch_file
-
-        console.print(f"📂 Loading batch results from: {resolved_batch_path}")
+            console.print(f"📂 Loading batch results from: {resolved_batch_path}")
 
         # Convert to DataFrame
         batch_dataframe = batch_results_to_dataframe(
@@ -112,17 +114,19 @@ def analyze_batch_results(
 
     try:
         # Initialize configuration and path resolver
-        config_manager = ConfigManager(yaml_file)
-        path_resolver = PathResolver(config_manager)
-
-        # Resolve batch file path (look in output directory if relative)
         try:
+            config_manager = ConfigManager(yaml_file)
+            path_resolver = PathResolver(config_manager)
+            
+            # Resolve batch file path (look in output directory if relative)
             resolved_batch_path = path_resolver.resolve_output_file_path(batch_file)
-        except Exception:
-            # Fallback to treating as absolute path if resolution fails
+            console.print(f"📊 Analyzing batch results from: {resolved_batch_path}")
+            
+        except Exception as e:
+            # Fallback: use current directory + filename
+            console.print(f"⚠️  Path resolution failed ({e}), using current directory")
             resolved_batch_path = batch_file
-
-        console.print(f"📊 Analyzing batch results from: {resolved_batch_path}")
+            console.print(f"📊 Analyzing batch results from: {resolved_batch_path}")
 
         batch_dataframe = batch_results_to_dataframe(
             batch_results_path=resolved_batch_path,
