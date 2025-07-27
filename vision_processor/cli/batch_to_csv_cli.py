@@ -14,7 +14,6 @@ from ..utils.batch_to_dataframe import (
     print_dataframe_info,
     save_dataframe_to_csv,
 )
-from ..utils.path_resolver import PathResolver
 
 app = typer.Typer(help="Convert batch processing results to CSV format")
 console = Console()
@@ -42,18 +41,24 @@ def convert_to_csv(
     """Convert batch_results.json to CSV format with one row per image."""
 
     try:
-        # Initialize configuration and path resolver
+        # Initialize configuration and get output directory
         try:
             config_manager = ConfigManager(yaml_file)
-            path_resolver = PathResolver(config_manager)
+            # Get output directory from config
+            output_dir = config_manager.get_output_dir()
             
-            # Resolve batch file path (look in output directory if relative)
-            resolved_batch_path = path_resolver.resolve_output_file_path(batch_file)
-            console.print(f"📂 Loading batch results from: {resolved_batch_path}")
+            # If batch_file is just a filename, look in output directory
+            if "/" not in batch_file:
+                from pathlib import Path
+                resolved_batch_path = str(Path(output_dir) / batch_file)
+                console.print(f"📂 Looking for batch results in output directory: {resolved_batch_path}")
+            else:
+                resolved_batch_path = batch_file
+                console.print(f"📂 Loading batch results from: {resolved_batch_path}")
             
         except Exception as e:
             # Fallback: use current directory + filename
-            console.print(f"⚠️  Path resolution failed ({e}), using current directory")
+            console.print(f"⚠️  Config loading failed ({e}), using current directory")
             resolved_batch_path = batch_file
             console.print(f"📂 Loading batch results from: {resolved_batch_path}")
 
@@ -73,10 +78,11 @@ def convert_to_csv(
             # Resolve output path if provided
             resolved_output_path = None
             if output:
-                try:
-                    resolved_output_path = path_resolver.resolve_output_file_path(output)
-                except Exception:
-                    # Fallback to treating as absolute path if resolution fails
+                # If output is just a filename, put it in the same directory as batch file
+                if "/" not in output:
+                    from pathlib import Path
+                    resolved_output_path = str(Path(resolved_batch_path).parent / output)
+                else:
                     resolved_output_path = output
 
             csv_path = save_dataframe_to_csv(
@@ -113,18 +119,24 @@ def analyze_batch_results(
     """Analyze batch results without saving to CSV."""
 
     try:
-        # Initialize configuration and path resolver
+        # Initialize configuration and get output directory
         try:
             config_manager = ConfigManager(yaml_file)
-            path_resolver = PathResolver(config_manager)
+            # Get output directory from config
+            output_dir = config_manager.get_output_dir()
             
-            # Resolve batch file path (look in output directory if relative)
-            resolved_batch_path = path_resolver.resolve_output_file_path(batch_file)
-            console.print(f"📊 Analyzing batch results from: {resolved_batch_path}")
+            # If batch_file is just a filename, look in output directory
+            if "/" not in batch_file:
+                from pathlib import Path
+                resolved_batch_path = str(Path(output_dir) / batch_file)
+                console.print(f"📊 Looking for batch results in output directory: {resolved_batch_path}")
+            else:
+                resolved_batch_path = batch_file
+                console.print(f"📊 Analyzing batch results from: {resolved_batch_path}")
             
         except Exception as e:
             # Fallback: use current directory + filename
-            console.print(f"⚠️  Path resolution failed ({e}), using current directory")
+            console.print(f"⚠️  Config loading failed ({e}), using current directory")
             resolved_batch_path = batch_file
             console.print(f"📊 Analyzing batch results from: {resolved_batch_path}")
 
