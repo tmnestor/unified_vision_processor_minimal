@@ -43,7 +43,9 @@ def convert_to_csv(
     try:
         # Initialize configuration and get output directory
         try:
-            config_manager = ConfigManager(yaml_file)
+            # Use default config if no yaml_file specified
+            config_file = yaml_file or "model_comparison.yaml"
+            config_manager = ConfigManager(config_file)
             # Get output directory from config
             output_dir = config_manager.get_output_dir()
             
@@ -121,7 +123,9 @@ def analyze_batch_results(
     try:
         # Initialize configuration and get output directory
         try:
-            config_manager = ConfigManager(yaml_file)
+            # Use default config if no yaml_file specified
+            config_file = yaml_file or "model_comparison.yaml"
+            config_manager = ConfigManager(config_file)
             # Get output directory from config
             output_dir = config_manager.get_output_dir()
             
