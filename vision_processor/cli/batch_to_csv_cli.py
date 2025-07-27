@@ -91,7 +91,7 @@ def convert_to_csv(
             csv_path = save_dataframe_to_csv(
                 batch_results_path=resolved_batch_path,
                 output_csv_path=resolved_output_path,
-                config_path=config,
+                config_path=config_file,  # Use the same config we loaded
                 use_na_strings=keep_na,
             )
             console.print(f"✅ [green]Successfully saved to: {csv_path}[/green]")

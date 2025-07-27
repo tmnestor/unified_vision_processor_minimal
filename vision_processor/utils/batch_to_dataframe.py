@@ -98,12 +98,15 @@ def batch_results_to_dataframe(
             # Extract just filename from path
             image_name = Path(image_name).name
 
+        # Get extracted fields (they ARE nested under "extracted_fields")
+        extracted_fields = result.get("extracted_fields", {})
+
         # Build row starting with image name
         row = {"image": image_name}
 
-        # Add each expected field (fields are directly in result, not nested)
+        # Add each expected field from extracted_fields
         for field in expected_fields:
-            value = result.get(field, "N/A")
+            value = extracted_fields.get(field, "N/A")
 
             # Convert "N/A" to None/NaN unless user wants to keep strings
             if not use_na_strings and value == "N/A":
