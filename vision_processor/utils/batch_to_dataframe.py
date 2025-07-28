@@ -226,8 +226,29 @@ def _detect_model_name_from_batch(batch_data) -> Optional[str]:
     if isinstance(batch_data, list) and batch_data:
         # Direct list format - check first result
         first_result = batch_data[0]
-        if isinstance(first_result, dict) and "model" in first_result:
-            return first_result["model"]
+        if isinstance(first_result, dict):
+            # Check for explicit model field
+            if "model" in first_result:
+                return first_result["model"]
+            
+            # Try to infer from extraction_method field
+            if "extraction_method" in first_result:
+                extraction_method = first_result["extraction_method"]
+                print(f"DEBUG: Found extraction_method: {extraction_method}")
+                # Look for model names in the extraction method string
+                if "llama" in str(extraction_method).lower():
+                    return "llama"
+                elif "internvl" in str(extraction_method).lower():
+                    return "internvl"
+            
+            # Try to infer from filename patterns (some batch results include model in filename)
+            if "filename" in first_result:
+                filename = str(first_result["filename"]).lower()
+                if "llama" in filename:
+                    return "llama"
+                elif "internvl" in filename:
+                    return "internvl"
+                    
     elif isinstance(batch_data, dict):
         # Check if there's a results key
         if "results" in batch_data and batch_data["results"]:
@@ -238,6 +259,7 @@ def _detect_model_name_from_batch(batch_data) -> Optional[str]:
         elif "model" in batch_data:
             return batch_data["model"]
     
+    print("DEBUG: No model name detected from available fields")
     return None
 
 
