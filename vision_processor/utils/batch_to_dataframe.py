@@ -142,17 +142,24 @@ def save_dataframe_to_csv(
     # Generate output path if not provided
     if output_csv_path is None:
         batch_path = Path(batch_results_path)
+        print(f"DEBUG: Auto-generating filename for: {batch_path}")
         
         # Detect model name from batch results for filename
         model_name = _detect_model_name_from_batch_file(batch_results_path)
+        print(f"DEBUG: Model name detection result: {model_name}")
         
         # Include model name in filename
         if model_name:
             filename = f"{batch_path.stem}_{model_name}_dataframe.csv"
+            print(f"DEBUG: Using filename with model: {filename}")
         else:
             filename = f"{batch_path.stem}_dataframe.csv"
+            print(f"DEBUG: Using filename without model: {filename}")
         
         output_csv_path = batch_path.parent / filename
+        print(f"DEBUG: Final output path: {output_csv_path}")
+    else:
+        print(f"DEBUG: Using provided output path: {output_csv_path}")
 
     # Convert to DataFrame
     batch_dataframe = batch_results_to_dataframe(
