@@ -142,7 +142,17 @@ def save_dataframe_to_csv(
     # Generate output path if not provided
     if output_csv_path is None:
         batch_path = Path(batch_results_path)
-        output_csv_path = batch_path.parent / f"{batch_path.stem}_dataframe.csv"
+        
+        # Detect model name from batch results for filename
+        model_name = _detect_model_name_from_batch_file(batch_results_path)
+        
+        # Include model name in filename
+        if model_name:
+            filename = f"{batch_path.stem}_{model_name}_dataframe.csv"
+        else:
+            filename = f"{batch_path.stem}_dataframe.csv"
+        
+        output_csv_path = batch_path.parent / filename
 
     # Convert to DataFrame
     batch_dataframe = batch_results_to_dataframe(
@@ -160,6 +170,56 @@ def save_dataframe_to_csv(
     print(f"📋 Columns: image + {len(batch_dataframe.columns) - 1} fields")
 
     return output_path
+
+
+def _detect_model_name_from_batch_file(batch_results_path: Union[str, Path]) -> Optional[str]:
+    """Detect model name from batch results file.
+    
+    Args:
+        batch_results_path: Path to batch results JSON file
+        
+    Returns:
+        Model name if detected, None otherwise
+    """
+    try:
+        batch_path = Path(batch_results_path)
+        if not batch_path.exists():
+            return None
+            
+        with batch_path.open("r") as f:
+            batch_data = json.load(f)
+            
+        return _detect_model_name_from_batch(batch_data)
+    except (json.JSONDecodeError, IOError):
+        return None
+
+
+def _detect_model_name_from_batch(batch_data) -> Optional[str]:
+    """Detect model name from batch results data.
+    
+    Args:
+        batch_data: Parsed batch results JSON data
+        
+    Returns:
+        Model name if detected, None otherwise
+    """
+    # Handle different batch result formats
+    if isinstance(batch_data, list) and batch_data:
+        # Direct list format - check first result
+        first_result = batch_data[0]
+        if isinstance(first_result, dict) and "model" in first_result:
+            return first_result["model"]
+    elif isinstance(batch_data, dict):
+        # Check if there's a results key
+        if "results" in batch_data and batch_data["results"]:
+            first_result = batch_data["results"][0]
+            if isinstance(first_result, dict) and "model" in first_result:
+                return first_result["model"]
+        # Check if there's a model key at the top level
+        elif "model" in batch_data:
+            return batch_data["model"]
+    
+    return None
 
 
 def print_dataframe_info(batch_dataframe: pd.DataFrame) -> None:
