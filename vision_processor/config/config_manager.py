@@ -329,6 +329,26 @@ class ConfigManager:
             "internvl": self.extraction_prompt,
         }
 
+    def get_field_weights(self) -> Dict[str, float]:
+        """Get field importance weights from configuration.
+        
+        Returns:
+            Dictionary mapping field names to importance weights.
+            Fields not specified in config get default weight of 1.0.
+        """
+        # Get field weights from YAML config
+        yaml_weights = self._yaml_config_data.get("field_weights", {})
+        
+        # Get all expected fields
+        expected_fields = self.get_expected_fields()
+        
+        # Build complete weights dictionary with defaults
+        field_weights = {}
+        for field in expected_fields:
+            field_weights[field] = yaml_weights.get(field, 1.0)
+            
+        return field_weights
+
     def set_model_type(self, model_type: str) -> None:
         """Set current model type with validation."""
         if model_type not in ["llama", "internvl"]:

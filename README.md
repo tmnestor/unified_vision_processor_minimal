@@ -130,19 +130,19 @@ python -m vision_processor.cli.extract_cli batch ./datasets/ --model internvl
 #### 4. Batch Results Analysis
 ```bash
 # Convert batch_results.json to CSV DataFrame (one row per image)
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml
 
 # Convert with custom output path
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --output results_dataframe.csv
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --output results_dataframe.csv
 
 # Analyze batch results without saving CSV
-python -m vision_processor.cli.batch_to_csv_cli analyze batch_results.json
+python -m vision_processor.cli.batch_to_csv_cli analyze batch_results.json --yaml-file model_comparison.yaml
 
 # Keep "N/A" strings instead of converting to NaN
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --keep-na
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --keep-na
 
 # Show info only (no CSV file created)
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --info
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --info
 ```
 
 **DataFrame Structure:**

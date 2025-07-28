@@ -19,7 +19,12 @@ from rich.progress import track
 
 from ..config import ConfigManager
 from ..config.model_registry import get_model_registry
-from ..exceptions import ImageProcessingError, ModelInferenceError, ModelLoadError
+from ..exceptions import (
+    ConfigurationError,
+    ImageProcessingError,
+    ModelInferenceError,
+    ModelLoadError,
+)
 from ..utils.memory_monitor import MemoryMonitor
 from .model_validator import ModelValidator
 
@@ -716,35 +721,13 @@ class ComparisonRunner:
         # Get expected fields from config (parses from prompt if not explicitly defined)
         expected_fields = self.config.get_expected_fields()
         if not expected_fields:
-            # Fallback to hardcoded list if parsing fails
-            expected_fields = [
-                "DOCUMENT_TYPE",
-                "SUPPLIER",
-                "ABN",
-                "PAYER_NAME",
-                "PAYER_ADDRESS",
-                "PAYER_PHONE",
-                "PAYER_EMAIL",
-                "INVOICE_DATE",
-                "DUE_DATE",
-                "GST",
-                "TOTAL",
-                "SUBTOTAL",
-                "SUPPLIER_WEBSITE",
-                "ITEMS",
-                "QUANTITIES",
-                "PRICES",
-                "BUSINESS_ADDRESS",
-                "BUSINESS_PHONE",
-                "BANK_NAME",
-                "BSB_NUMBER",
-                "BANK_ACCOUNT_NUMBER",
-                "ACCOUNT_HOLDER",
-                "STATEMENT_PERIOD",
-                "OPENING_BALANCE",
-                "CLOSING_BALANCE",
-                "TRANSACTIONS",
-            ]
+            raise ConfigurationError(
+                "❌ FATAL: No expected fields found in configuration\n"
+                "💡 Expected: Fields defined in extraction_prompt section\n"
+                "💡 Fix: Check extraction_prompt format in model_comparison.yaml\n"
+                "💡 Required format: FIELD_NAME: [description]\n"
+                "💡 Example: DOCUMENT_TYPE: [type of document or N/A]"
+            )
 
         # Analyze field extraction by model
         model_field_stats: dict[str, dict[str, Any]] = {}
@@ -1153,34 +1136,7 @@ class ComparisonRunner:
                 )
 
             # Get expected fields from the prompt/config
-            expected_fields = [
-                "DOCUMENT_TYPE",
-                "SUPPLIER",
-                "ABN",
-                "PAYER_NAME",
-                "PAYER_ADDRESS",
-                "PAYER_PHONE",
-                "PAYER_EMAIL",
-                "INVOICE_DATE",
-                "DUE_DATE",
-                "GST",
-                "TOTAL",
-                "SUBTOTAL",
-                "SUPPLIER_WEBSITE",
-                "ITEMS",
-                "QUANTITIES",
-                "PRICES",
-                "BUSINESS_ADDRESS",
-                "BUSINESS_PHONE",
-                "BANK_NAME",
-                "BSB_NUMBER",
-                "BANK_ACCOUNT_NUMBER",
-                "ACCOUNT_HOLDER",
-                "STATEMENT_PERIOD",
-                "OPENING_BALANCE",
-                "CLOSING_BALANCE",
-                "TRANSACTIONS",
-            ]
+            expected_fields = self.config.get_expected_fields()
 
             # Much simpler approach: just insert newlines before each field
             reconstructed_text = single_line

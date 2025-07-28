@@ -60,6 +60,43 @@ post_processing:
   enabled: true               # Keep post-processing enabled (some responses still need markdown cleaning)
   smart_mode: true            # Use smart detection: skip processing for clean responses, process messy ones
   force_parsing: false        # Force field parsing even with clean output
+
+# Field importance weights for analysis and metrics
+# All fields default to 1.0 if not specified
+field_weights:
+  # High importance financial fields
+  GST: 1.2
+  TOTAL: 1.2
+  SUBTOTAL: 1.2
+  ABN: 1.2
+  
+  # Standard business fields (default weight 1.0)
+  DOCUMENT_TYPE: 1.0
+  SUPPLIER: 1.0
+  PAYER_NAME: 1.0
+  PAYER_ADDRESS: 1.0
+  INVOICE_DATE: 1.0
+  DUE_DATE: 1.0
+  ITEMS: 1.0
+  QUANTITIES: 1.0
+  PRICES: 1.0
+  BUSINESS_ADDRESS: 1.0
+  BUSINESS_PHONE: 1.0
+  
+  # Banking fields (moderate importance)
+  BANK_NAME: 1.1
+  BSB_NUMBER: 1.1
+  BANK_ACCOUNT_NUMBER: 1.1
+  ACCOUNT_HOLDER: 1.0
+  STATEMENT_PERIOD: 1.0
+  OPENING_BALANCE: 1.1
+  CLOSING_BALANCE: 1.1
+  TRANSACTIONS: 1.0
+  
+  # Contact information (lower priority)
+  PAYER_PHONE: 0.9
+  PAYER_EMAIL: 0.8
+  SUPPLIER_WEBSITE: 0.7
   
 # Repetition control configuration  
 repetition_control:

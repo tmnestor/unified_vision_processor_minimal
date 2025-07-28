@@ -11,30 +11,11 @@ Advanced metrics focusing on Information Extraction Capability:
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from ..config.config_manager import ConfigManager
 from ..utils.logging_config import VisionProcessorLogger
 
-# All fields equally weighted for extraction capability
-FIELD_WEIGHTS = {
-    "DATE": 1.0,
-    "SUPPLIER": 1.0,
-    "ABN": 1.0,
-    "GST": 1.0,
-    "TOTAL": 1.0,
-    "SUBTOTAL": 1.0,
-    "ITEMS": 1.0,
-    "QUANTITIES": 1.0,
-    "PRICES": 1.0,
-    "RECEIPT_NUMBER": 1.0,
-    "PAYMENT_METHOD": 1.0,
-    "DOCUMENT_TYPE": 1.0,
-    "BUSINESS_ADDRESS": 1.0,
-    "BUSINESS_PHONE": 1.0,
-    "PAYER_NAME": 1.0,
-    "PAYER_ADDRESS": 1.0,
-    "PAYER_PHONE": 1.0,
-    "PAYER_EMAIL": 1.0,
-    "BANK_ACCOUNT_NUMBER": 1.0,
-}
+# Field weights are now loaded dynamically from configuration
+# No hardcoded field weights - use ConfigManager.get_field_weights()
 
 
 @dataclass
@@ -88,8 +69,10 @@ class InformationExtractionMetrics:
 class InformationExtractionCalculator:
     """Calculate Information Extraction Capability metrics from results."""
 
-    def __init__(self):
+    def __init__(self, config_manager: ConfigManager):
         self.results: Dict[str, List[Dict]] = {}
+        self.config_manager = config_manager
+        self.field_weights = config_manager.get_field_weights()
 
     def add_results(self, model_name: str, results: List[Dict]):
         """Add results for a model."""
@@ -103,18 +86,18 @@ class InformationExtractionCalculator:
             return 0.0
 
         total_weight = 0.0
-        max_possible_weight = sum(FIELD_WEIGHTS.values())
+        max_possible_weight = sum(self.field_weights.values())
 
         for field in extracted_fields:
             field_upper = field.upper()
-            if field_upper in FIELD_WEIGHTS:
-                total_weight += FIELD_WEIGHTS[field_upper]
+            if field_upper in self.field_weights:
+                total_weight += self.field_weights[field_upper]
 
         return total_weight / max_possible_weight
 
     def _calculate_critical_field_coverage(self, extracted_fields: List[str]) -> float:
         """Calculate coverage of critical fields (weight >= 0.8)."""
-        critical_fields = [f for f, w in FIELD_WEIGHTS.items() if w >= 0.8]
+        critical_fields = [f for f, w in self.field_weights.items() if w >= 0.8]
         if not critical_fields:
             return 1.0
 
@@ -133,13 +116,13 @@ class InformationExtractionCalculator:
             return 0.0
 
         # Ratio of valuable fields (in our weight list) to total fields extracted
-        valuable_fields = sum(1 for f in extracted_fields if f.upper() in FIELD_WEIGHTS)
+        valuable_fields = sum(1 for f in extracted_fields if f.upper() in self.field_weights)
         return valuable_fields / total_fields
 
     def _calculate_extraction_completeness(self, extracted_fields: List[str]) -> float:
         """Calculate how complete the extraction is compared to maximum possible."""
-        max_possible_fields = len(FIELD_WEIGHTS)
-        relevant_fields = sum(1 for f in extracted_fields if f.upper() in FIELD_WEIGHTS)
+        max_possible_fields = len(self.field_weights)
+        relevant_fields = sum(1 for f in extracted_fields if f.upper() in self.field_weights)
         return relevant_fields / max_possible_fields
 
     def calculate_metrics(
@@ -259,7 +242,7 @@ class InformationExtractionCalculator:
         analysis: dict[str, Any] = {
             "models_tested": list(self.results.keys()),
             "total_images": sum(len(r) for r in self.results.values()),
-            "field_weights_used": FIELD_WEIGHTS,
+            "field_weights_used": self.field_weights,
             "metrics_breakdown": {},
         }
 
