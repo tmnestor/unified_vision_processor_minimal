@@ -184,13 +184,17 @@ def _detect_model_name_from_batch_file(batch_results_path: Union[str, Path]) -> 
     try:
         batch_path = Path(batch_results_path)
         if not batch_path.exists():
+            print(f"DEBUG: Batch file not found: {batch_path}")
             return None
             
         with batch_path.open("r") as f:
             batch_data = json.load(f)
-            
-        return _detect_model_name_from_batch(batch_data)
-    except (json.JSONDecodeError, IOError):
+        
+        model_name = _detect_model_name_from_batch(batch_data)
+        print(f"DEBUG: Detected model name: {model_name}")
+        return model_name
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"DEBUG: Error reading batch file: {e}")
         return None
 
 
@@ -203,6 +207,14 @@ def _detect_model_name_from_batch(batch_data) -> Optional[str]:
     Returns:
         Model name if detected, None otherwise
     """
+    print(f"DEBUG: Batch data type: {type(batch_data)}")
+    if isinstance(batch_data, list):
+        print(f"DEBUG: List length: {len(batch_data)}")
+        if batch_data:
+            print(f"DEBUG: First result keys: {list(batch_data[0].keys()) if isinstance(batch_data[0], dict) else 'Not a dict'}")
+    elif isinstance(batch_data, dict):
+        print(f"DEBUG: Dict keys: {list(batch_data.keys())}")
+    
     # Handle different batch result formats
     if isinstance(batch_data, list) and batch_data:
         # Direct list format - check first result

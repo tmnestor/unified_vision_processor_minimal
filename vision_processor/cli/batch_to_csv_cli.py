@@ -78,7 +78,7 @@ def convert_to_csv(
         # Save to CSV unless info-only mode
         if not info_only:
             console.print("\n💾 Saving to CSV...")
-            # Resolve output path if provided
+            # Only resolve output path if user explicitly provided one
             resolved_output_path = None
             if output:
                 # If output is just a filename, put it in the same directory as batch file
@@ -87,10 +87,11 @@ def convert_to_csv(
                     resolved_output_path = str(Path(resolved_batch_path).parent / output)
                 else:
                     resolved_output_path = output
+            # If no output specified, let save_dataframe_to_csv auto-generate with model name
 
             csv_path = save_dataframe_to_csv(
                 batch_results_path=resolved_batch_path,
-                output_csv_path=resolved_output_path,
+                output_csv_path=resolved_output_path,  # Will be None for auto-generation
                 config_path=config_file,  # Use the same config we loaded
                 use_na_strings=keep_na,
             )
