@@ -38,12 +38,13 @@ def compare(
 ) -> None:
     """Compare extraction performance between vision models."""
 
-    # Validate inputs
+    # Validate ground truth file first
     if not Path(ground_truth_csv).exists():
         console.print(f"[red]❌ Ground truth file not found: {ground_truth_csv}[/red]")
         raise typer.Exit(1) from None
 
-    if not Path(images_dir).exists():
+    # Simple path validation - just check if paths exist directly
+    if images_dir and not Path(images_dir).exists():
         console.print(f"[red]❌ Images directory not found: {images_dir}[/red]")
         raise typer.Exit(1) from None
 
@@ -67,8 +68,11 @@ def compare(
             config.defaults.verbose_mode = False
             config.defaults.debug_mode = False
 
-        # Resolve paths using utility
-        images_dir = path_resolver.resolve_input_path(images_dir)
+        # Only use path resolver if images_dir is None (use config default)
+        if images_dir is None:
+            images_dir = path_resolver.resolve_input_path(images_dir)
+        # Otherwise use the provided path directly
+        
         output_dir = path_resolver.resolve_output_path(output_dir)
 
         # Parse models

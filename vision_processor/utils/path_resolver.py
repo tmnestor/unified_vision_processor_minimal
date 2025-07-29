@@ -38,9 +38,14 @@ class PathResolver:
             if input_path.is_absolute():
                 resolved_path = input_path
             else:
-                # Relative path: resolve against configured datasets_path
-                base_path = Path(self.config.defaults.datasets_path)
-                resolved_path = base_path / path
+                # Try relative to current working directory first
+                cwd_path = Path.cwd() / path
+                if cwd_path.exists():
+                    resolved_path = cwd_path
+                else:
+                    # Fallback: resolve against configured datasets_path
+                    base_path = Path(self.config.defaults.datasets_path)
+                    resolved_path = base_path / path
 
         if not resolved_path.exists():
             raise ValueError(f"Path not found: {resolved_path}")
@@ -67,9 +72,14 @@ class PathResolver:
             if output_path.is_absolute():
                 resolved_path = output_path
             else:
-                # Relative path: resolve against configured output_dir
-                base_path = Path(self.config.defaults.output_dir)
-                resolved_path = base_path / path
+                # Try relative to current working directory first
+                cwd_path = Path.cwd() / path
+                if cwd_path.exists():
+                    resolved_path = cwd_path
+                else:
+                    # Fallback: resolve against configured output_dir
+                    base_path = Path(self.config.defaults.output_dir)
+                    resolved_path = base_path / path
 
         # Append filename if provided
         if filename:
