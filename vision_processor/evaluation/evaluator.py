@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import yaml
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
@@ -46,27 +47,8 @@ class ExtractionEvaluator:
         # Load ground truth
         self.ground_truth = self._load_ground_truth()
 
-        # Standard extraction fields for comparison (matches ground truth CSV)
-        self.extraction_fields = [
-            "DATE",
-            "STORE",
-            "ABN",
-            "GST",
-            "TOTAL",
-            "SUBTOTAL",
-            "ITEMS",
-            "QUANTITIES",
-            "PRICES",
-            "RECEIPT_NUMBER",
-            "PAYMENT_METHOD",
-            "DOCUMENT_TYPE",
-            "ADDRESS",
-            "PHONE",
-            "TIME",
-            "CARD_NUMBER",
-            "AUTH_CODE",
-            "STATUS",
-        ]
+        # Dynamic extraction fields from model_comparison.yaml
+        self.extraction_fields = self._load_extraction_fields()
 
     def _load_ground_truth(self) -> Dict[str, Dict[str, Any]]:
         """Load ground truth data from CSV."""
@@ -87,6 +69,70 @@ class ExtractionEvaluator:
 
         self.console.print(f"✅ Loaded ground truth for {len(ground_truth)} images")
         return ground_truth
+
+    def _load_extraction_fields(self) -> List[str]:
+        """Load extraction fields dynamically from model_comparison.yaml."""
+        try:
+            # Look for model_comparison.yaml in current directory and parent directories
+            config_path = Path("model_comparison.yaml")
+            if not config_path.exists():
+                config_path = Path("..") / "model_comparison.yaml"
+            if not config_path.exists():
+                config_path = Path("../../model_comparison.yaml")
+            
+            if not config_path.exists():
+                self.console.print("⚠️ model_comparison.yaml not found, using fallback fields", style="yellow")
+                # Fallback to basic fields if YAML not found
+                return [
+                    "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS", 
+                    "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST", 
+                    "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "QUANTITIES", "PRICES",
+                    "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME", "BSB_NUMBER",
+                    "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER", "STATEMENT_PERIOD",
+                    "OPENING_BALANCE", "CLOSING_BALANCE", "DESCRIPTIONS"
+                ]
+            
+            with config_path.open("r") as f:
+                config = yaml.safe_load(f)
+            
+            # Extract fields from extraction_prompt
+            extraction_prompt = config.get("extraction_prompt", "")
+            fields = []
+            
+            # Parse lines that match field pattern: "FIELD_NAME: [description]"
+            for line in extraction_prompt.split('\n'):
+                line = line.strip()  # Strip whitespace
+                if ':' in line and not line.startswith('#'):
+                    # Extract field name before the colon
+                    field_name = line.split(':')[0].strip()
+                    # Check if it's a valid field (uppercase, reasonable length, not explanatory text)
+                    if (field_name.isupper() and 
+                        len(field_name) <= 25 and  # Reasonable field name length
+                        not any(word in field_name.lower() for word in ['required', 'correct', 'wrong', 'critical', 'use', 'never', 'absolutely'])):
+                        fields.append(field_name)
+            
+            # Remove duplicates while preserving order
+            seen = set()
+            unique_fields = []
+            for field in fields:
+                if field not in seen:
+                    seen.add(field)
+                    unique_fields.append(field)
+            
+            self.console.print(f"✅ Loaded {len(unique_fields)} extraction fields from model_comparison.yaml")
+            return unique_fields
+            
+        except Exception as e:
+            self.console.print(f"⚠️ Error loading extraction fields: {e}", style="yellow")
+            # Return fallback fields
+            return [
+                "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS", 
+                "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST", 
+                "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "QUANTITIES", "PRICES",
+                "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME", "BSB_NUMBER",
+                "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER", "STATEMENT_PERIOD",
+                "OPENING_BALANCE", "CLOSING_BALANCE", "DESCRIPTIONS"
+            ]
 
     def _calculate_field_accuracy(
         self, extracted: str, ground_truth: str, field_type: str
