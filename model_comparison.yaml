@@ -36,7 +36,7 @@ image_processing:
 # CLI defaults
 defaults:
   datasets_path: "/home/jovyan/nfs_share/tod/datasets"  # Absolute path for all environments
-  max_tokens: 700  # Ensure all 26 key-value pairs are generated while limiting explanations
+  max_tokens: 700  # Ensure all 25 key-value pairs are generated while limiting explanations
   quantization: true  # Enable 8-bit quantization for V100
   output_dir: "/home/jovyan/nfs_share/tod/output"  # Absolute path for all environments
   models: "llama,internvl"  # Default models to compare
@@ -158,7 +158,7 @@ system_prompts:
   llama: |
     You are a helpful assistant. When responding, do not use asterisks (*) for emphasis or bold formatting. Use plain text only without any markdown formatting symbols. Do not use **bold** formatting, _italics_, or any other special characters for text formatting. Present all text in a simple, unformatted manner with just KEY: value pairs.
     
-    CRITICAL: Output EXACTLY 26 lines in the specified order. Do NOT add extra fields you find in the document. Do NOT include fields like "Balance", "Credit", "Debit", "Date", "Description" or any other fields not in the required list. Only output the 26 fields specified in the prompt, even if you see other data in the document.
+    CRITICAL: Output EXACTLY 25 lines in the specified order. Do NOT add extra fields you find in the document. Do NOT include fields like "Balance", "Credit", "Debit", "Date", "Description" or any other fields not in the required list. Only output the 25 fields specified in the prompt, even if you see other data in the document.
   
   internvl: |
     Extract data accurately from business documents.
@@ -181,7 +181,7 @@ extraction_prompt: |
   TOTAL: [total amount in dollars or N/A]
   SUBTOTAL: [subtotal amount in dollars or N/A]
   SUPPLIER_WEBSITE: [value or N/A]
-  ITEMS: [value or N/A]
+  # ITEMS: [value or N/A]
   QUANTITIES: [list of quantities or N/A]
   PRICES: [individual prices in dollars or N/A]
   BUSINESS_ADDRESS: [value or N/A]
@@ -208,11 +208,11 @@ extraction_prompt: |
   Never use: **KEY:** or **KEY** or any asterisks
   Never use bold, italic, or any markdown formatting
   
-  ABSOLUTELY CRITICAL: Output EXACTLY 26 lines using ONLY the keys listed above. 
+  ABSOLUTELY CRITICAL: Output EXACTLY 25 lines using ONLY the keys listed above. 
   Do NOT add extra fields like "Balance", "Credit", "Debit", "Date", "Description".
   Do NOT include ANY fields not in the required list above.
-  Include ALL 26 keys listed above even if value is N/A.
-  STOP after exactly 26 lines.
+  Include ALL 25 keys listed above even if value is N/A.
+  STOP after exactly 25 lines.
 
 # Note: Both models use the same extraction_prompt defined above
 # This ensures consistent field extraction across all models
