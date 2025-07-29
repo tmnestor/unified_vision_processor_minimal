@@ -182,7 +182,7 @@ extraction_prompt: |
   SUBTOTAL: [subtotal amount in dollars or N/A]
   SUPPLIER_WEBSITE: [value or N/A]
   ITEMS: [value or N/A]
-  QUANTITIES: [value or N/A]
+  QUANTITIES: [list of quantities or N/A]
   PRICES: [individual prices in dollars or N/A]
   BUSINESS_ADDRESS: [value or N/A]
   BUSINESS_PHONE: [value or N/A]
