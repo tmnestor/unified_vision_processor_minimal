@@ -28,11 +28,11 @@ export KMP_DUPLICATE_LIB_OK=TRUE
 
 #### Single Model Benchmarking
 ```bash
-# Evaluate InternVL3 model
-python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model internvl3
+# Evaluate InternVL model
+python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model internvl
 
-# Evaluate Llama-3.2-Vision model
-python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model llama32_vision
+# Evaluate Llama model
+python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model llama
 ```
 
 #### Model Comparison
@@ -41,7 +41,7 @@ python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model l
 python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv
 
 # Compare specific models
-python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv --models internvl3,llama32_vision
+python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv --models internvl,llama
 ```
 
 ### 2. Programmatic Evaluation
@@ -58,7 +58,7 @@ evaluator = ExtractionEvaluator(
 )
 
 # Compare models
-results = evaluator.compare_models(['internvl3', 'llama32_vision'])
+results = evaluator.compare_models(['internvl', 'llama'])
 
 # Generate report
 evaluator.generate_report(results)
@@ -67,7 +67,7 @@ evaluator.generate_report(results)
 #### Single Model Evaluation
 ```python
 # Evaluate single model
-results = evaluator.evaluate_model('internvl3')
+results = evaluator.evaluate_model('internvl')
 
 print(f"Accuracy: {results['avg_accuracy']:.1%}")
 print(f"Processing Time: {results['avg_processing_time']:.1f}s")
@@ -146,16 +146,16 @@ The evaluation system generates several output files in the specified output dir
 ```
 evaluation_results/
 ├── comparison_results.json          # Raw comparison data
-├── internvl3_results.json          # InternVL3 detailed results  
-├── llama32_vision_results.json     # Llama detailed results
+├── internvl_results.json           # InternVL detailed results  
+├── llama_results.json              # Llama detailed results
 └── evaluation_report.md            # Comprehensive markdown report
 ```
 
 ### JSON Results Structure
 ```json
 {
-  "internvl3": {
-    "model_type": "internvl3",
+  "internvl": {
+    "model_type": "internvl",
     "total_images": 10,
     "successful": 10,  
     "failed": 0,
@@ -194,7 +194,7 @@ The synthetic dataset includes different document types that test various aspect
 ### Document-Specific Performance
 ```python
 # Analyze performance by document type
-for image_file, result in results['internvl3']['detailed_results']:
+for image_file, result in results['internvl']['detailed_results']:
     doc_type = result['ground_truth']['DOCUMENT_TYPE']
     accuracy = result['overall_accuracy']
     print(f"{doc_type}: {accuracy:.1%} accuracy")
@@ -219,7 +219,7 @@ for image_file, result in results['internvl3']['detailed_results']:
 ```python
 # Evaluate on specific images
 test_images = ['synthetic_invoice_003.png', 'synthetic_invoice_007.png']  # Bank statements only
-results = evaluator.compare_models(['internvl3', 'llama32_vision'], test_images)
+results = evaluator.compare_models(['internvl', 'llama'], test_images)
 ```
 
 ### Field Subset Analysis
@@ -232,7 +232,7 @@ financial_fields = ['GST', 'TOTAL', 'SUBTOTAL', 'QUANTITIES', 'PRICES']
 ### Error Analysis
 ```python
 # Analyze failed extractions
-for result in results['internvl3']['detailed_results']:
+for result in results['internvl']['detailed_results']:
     if 'error' in result:
         print(f"Failed: {result['image_file']} - {result['error']}")
     elif result['overall_accuracy'] < 0.8:
@@ -299,7 +299,7 @@ for test_set in test_sets:
         images_dir=test_set,
         output_dir=f'results_{test_set}'
     )
-    results = evaluator.compare_models(['internvl3', 'llama32_vision'])
+    results = evaluator.compare_models(['internvl', 'llama'])
     evaluator.generate_report(results)
 ```
 
@@ -346,8 +346,8 @@ def validate_model_performance(model_name, min_accuracy=0.85):
         return False
 
 # Validate both models
-internvl_ready = validate_model_performance('internvl3')
-llama_ready = validate_model_performance('llama32_vision')
+internvl_ready = validate_model_performance('internvl')
+llama_ready = validate_model_performance('llama')
 ```
 
 ### Continuous Evaluation
