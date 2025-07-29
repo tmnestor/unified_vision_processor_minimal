@@ -511,8 +511,12 @@ class InternVLModel(BaseVisionModel):
             logger.info("Processed image as single tile")
 
             # Run inference - fix generation config for deterministic output
+            # Apply repetition control to token limit
+            max_tokens = kwargs.get("max_new_tokens", 1024)
+            max_tokens = self.repetition_controller.enforce_token_limit(max_tokens)
+            
             generation_config = {
-                "max_new_tokens": kwargs.get("max_new_tokens", 1024),
+                "max_new_tokens": max_tokens,
                 "do_sample": False,
                 "pad_token_id": self.tokenizer.eos_token_id,
             }
@@ -554,11 +558,14 @@ class InternVLModel(BaseVisionModel):
 
             # Handle response format
             raw_text = response[0] if isinstance(response, tuple) else response
+            
+            # Apply repetition control to clean the response
+            cleaned_text = self.repetition_controller.clean_response(raw_text)
 
             processing_time = time.time() - start_time
 
             return ModelResponse(
-                raw_text=raw_text,
+                raw_text=cleaned_text,
                 confidence=0.95,  # InternVL doesn't provide confidence scores
                 processing_time=processing_time,
                 device_used=str(self.device),

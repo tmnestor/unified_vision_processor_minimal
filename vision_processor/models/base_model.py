@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from PIL import Image
 
 from ..exceptions import InvalidImageError
+from ..utils.repetition_control import RepetitionController
 
 
 class ModelType(Enum):
@@ -93,6 +94,14 @@ class BaseVisionModel(ABC):
         self.model = None
         self.tokenizer = None
         self.processor = None
+
+        # Initialize repetition control for all models
+        config = kwargs.get("config")
+        if config and hasattr(config, "repetition_control"):
+            self.repetition_controller = RepetitionController.from_config(config)
+        else:
+            # Default: enabled repetition control for all models
+            self.repetition_controller = RepetitionController(enabled=True)
 
         # Model state
         self.is_loaded = False

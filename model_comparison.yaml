@@ -100,10 +100,10 @@ field_weights:
   
 # Repetition control configuration  
 repetition_control:
-  enabled: true               # Enable repetition detection and cleanup
-  word_threshold: 0.15        # 15% word repetition threshold
-  phrase_threshold: 2         # 2 phrase repetitions trigger cleaning
-  fallback_max_tokens: 1000   # Fallback token limit for repetition control
+  enabled: true               # Default: ON for both models
+  word_threshold: 0.15        # Word repetition threshold
+  phrase_threshold: 2         # Phrase repetition threshold
+  fallback_max_tokens: 1000   # Fallback token limit
 
 # Logging configuration
 logging:

@@ -46,44 +46,24 @@ class LlamaVisionModel(BaseVisionModel):
         # Extract config from kwargs and store as direct attribute
         self.config = kwargs.get("config")
 
-        # Extract repetition control configuration from ConfigManager
-        repetition_config = kwargs.get("repetition_control", {})
-        if hasattr(self.config, "repetition_control") and self.config:
-            # Use ConfigManager's structured config
-            repetition_config = {
-                "enabled": self.config.repetition_control.enabled
-                if self.config.repetition_control
-                else True,
-                "word_threshold": self.config.repetition_control.word_threshold
-                if self.config.repetition_control
-                else 3,
-                "phrase_threshold": self.config.repetition_control.phrase_threshold
-                if self.config.repetition_control
-                else 2,
-            }
-
-        # Store repetition control settings
-        self.repetition_enabled = repetition_config.get("enabled", True)
+        # Repetition control is now handled by BaseVisionModel
+        # Keep backwards compatibility for existing code
+        self.repetition_enabled = self.repetition_controller.enabled
 
         # Read max_new_tokens_limit from ConfigManager
         if hasattr(self.config, "get_model_config") and self.config:
             # Use ConfigManager's structured config
             model_config = self.config.get_model_config("llama")
             self.max_new_tokens_limit = model_config.max_new_tokens_limit
+            # Update repetition controller with model-specific limit
+            self.repetition_controller.max_new_tokens_limit = self.max_new_tokens_limit
         else:
             # Fallback for legacy config
             self.max_new_tokens_limit = 1024
+            self.repetition_controller.max_new_tokens_limit = self.max_new_tokens_limit
 
-        # Special tokens to clean from responses
-        self.cleanup_tokens = [
-            "<|begin_of_text|>",
-            "<|end_of_text|>",
-            "<|image|>",
-            "[INST]",
-            "[/INST]",
-            "<s>",
-            "</s>",
-        ]
+        # Special tokens are now handled by RepetitionController
+        # Keep this for legacy compatibility if needed
 
         logger.info(
             f"Llama repetition control - enabled={self.repetition_enabled}, "
@@ -597,43 +577,8 @@ class LlamaVisionModel(BaseVisionModel):
         return inputs
 
     def _clean_response(self, response: str, image_name: str = "") -> str:
-        """Clean response by removing repetition and special tokens."""
-        if not response:
-            return ""
-
-        cleaned = response
-
-        # Remove special tokens
-        if self.repetition_enabled:
-            for token in self.cleanup_tokens:
-                cleaned = cleaned.replace(token, "")
-
-            # Remove consecutive duplicate lines
-            lines = cleaned.split("\n")
-            unique_lines = []
-            prev_line = None
-
-            for line in lines:
-                line_cleaned = line.strip()
-                if line_cleaned and line_cleaned != prev_line:
-                    unique_lines.append(line)
-                    prev_line = line_cleaned
-
-            cleaned = "\n".join(unique_lines)
-
-            # Remove excessive whitespace
-            cleaned = re.sub(r"\s+", " ", cleaned)
-
-            # Truncate if too long
-            if len(cleaned) > self.max_new_tokens_limit * 5:  # Rough char estimate
-                cleaned = cleaned[: self.max_new_tokens_limit * 5] + "..."
-        else:
-            # Basic cleaning only
-            cleaned = re.sub(r"\s+", " ", cleaned)
-            if len(cleaned) > 1000:
-                cleaned = cleaned[:1000] + "..."
-
-        return cleaned.strip()
+        """Clean response using shared RepetitionController."""
+        return self.repetition_controller.clean_response(response)
 
     # === MAIN INFERENCE METHODS ===
 
@@ -664,10 +609,9 @@ class LlamaVisionModel(BaseVisionModel):
 
             # Generate with deterministic parameters to bypass safety mode
             # Use working implementation settings for OCR extraction
-            # Apply ultra-aggressive token limit to prevent repetition
+            # Apply token limit to prevent repetition using shared controller
             max_tokens = kwargs.get("max_new_tokens", 1024)
-            if self.repetition_enabled:
-                max_tokens = min(max_tokens, self.max_new_tokens_limit)
+            max_tokens = self.repetition_controller.enforce_token_limit(max_tokens)
 
             # Only log generation parameters in debug mode
             if logger.isEnabledFor(logging.DEBUG):
@@ -785,10 +729,9 @@ class LlamaVisionModel(BaseVisionModel):
             inputs = self._prepare_inputs(image, prompt)
 
             # Generate with CUDA-safe parameters (NO repetition_penalty)
-            # Use optimized settings for receipt extraction with ultra-aggressive repetition control
+            # Use optimized settings for receipt extraction with repetition control
             max_tokens = 1024
-            if self.repetition_enabled:
-                max_tokens = min(max_tokens, self.max_new_tokens_limit)
+            max_tokens = self.repetition_controller.enforce_token_limit(max_tokens)
 
             generation_kwargs = {
                 **inputs,
