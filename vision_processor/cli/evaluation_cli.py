@@ -25,7 +25,7 @@ def compare(
         None, help="Directory containing test images (default from config)"
     ),
     models: str = typer.Option(
-        "internvl3,llama32_vision", help="Models to compare (comma-separated)"
+        None, help="Models to compare (comma-separated, default from config)"
     ),
     output_dir: str = typer.Option(
         None, help="Output directory for results (default from config)"
@@ -75,8 +75,13 @@ def compare(
         
         output_dir = path_resolver.resolve_output_path(output_dir)
 
-        # Parse models
-        model_list = [m.strip() for m in models.split(",")]
+        # Parse models - use config default if not specified
+        if models is None:
+            # Get default models from config
+            default_models = config.defaults.models
+            model_list = [m.strip() for m in default_models.split(",")]
+        else:
+            model_list = [m.strip() for m in models.split(",")]
 
         # Create evaluator
         evaluator = ExtractionEvaluator(
@@ -113,7 +118,7 @@ def benchmark(
     images_dir: str = typer.Argument(
         ..., help="Directory containing images to benchmark"
     ),
-    model: str = typer.Option("internvl3", help="Model to benchmark"),
+    model: str = typer.Option(None, help="Model to benchmark (default from config)"),
     output_file: str = typer.Option(
         None,
         help="Output file for results (default: benchmark_results.json in config output_dir)",
@@ -163,6 +168,12 @@ def benchmark(
             output_file, "benchmark_results.json" if not output_file else None
         )
 
+        # Use config default model if not specified
+        if model is None:
+            # Get first model from config defaults
+            default_models = config.defaults.models
+            model = default_models.split(",")[0].strip()
+        
         config.set_model_type(model)
         manager = SimpleExtractionManager(config)
 
