@@ -68,10 +68,15 @@ def compare(
             config.defaults.verbose_mode = False
             config.defaults.debug_mode = False
 
-        # Only use path resolver if images_dir is None (use config default)
+        # Resolve images directory
         if images_dir is None:
-            images_dir = path_resolver.resolve_input_path(images_dir)
-        # Otherwise use the provided path directly
+            # Default to ground truth CSV directory if not specified
+            images_dir = str(Path(ground_truth_csv).parent)
+            console.print(f"📁 Using images directory: {images_dir} (same as ground truth CSV)")
+        else:
+            # Use provided path - convert relative to absolute
+            images_dir = str(Path(images_dir).resolve())
+            console.print(f"📁 Using specified images directory: {images_dir}")
         
         output_dir = path_resolver.resolve_output_path(output_dir)
 
@@ -300,11 +305,19 @@ def validate_ground_truth(
             config.defaults.verbose_mode = False
             config.defaults.debug_mode = False
 
-        # Resolve images directory using utility
-        try:
-            images_dir = path_resolver.resolve_input_path(images_dir)
-        except ValueError as e:
-            console.print(f"[red]❌ {e}[/red]")
+        # Resolve images directory
+        if images_dir is None:
+            # Default to ground truth CSV directory if not specified
+            images_dir = str(Path(ground_truth_csv).parent)
+            console.print(f"📁 Using images directory: {images_dir} (same as ground truth CSV)")
+        else:
+            # Use provided path - convert relative to absolute
+            images_dir = str(Path(images_dir).resolve())
+            console.print(f"📁 Using specified images directory: {images_dir}")
+        
+        # Validate images directory exists
+        if not Path(images_dir).exists():
+            console.print(f"[red]❌ Images directory not found: {images_dir}[/red]")
             raise typer.Exit(1) from None
 
         # Load ground truth

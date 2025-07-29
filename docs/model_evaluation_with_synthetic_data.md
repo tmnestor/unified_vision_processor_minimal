@@ -28,17 +28,20 @@ export KMP_DUPLICATE_LIB_OK=TRUE
 
 #### Single Model Benchmarking
 ```bash
-# Evaluate InternVL model
+# Evaluate InternVL model (auto-detects images in test_synthetic/)
 python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model internvl
 
-# Evaluate Llama model
-python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model llama
+# Evaluate Llama model with explicit images directory
+python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model llama --images-dir test_synthetic
 ```
 
 #### Model Comparison
 ```bash
-# Compare both models automatically
+# Compare both models (auto-detects images in same directory as CSV)
 python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv
+
+# Compare with explicit images directory
+python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv --images-dir test_synthetic
 
 # Compare specific models
 python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv --models internvl,llama
@@ -355,6 +358,58 @@ llama_ready = validate_model_performance('llama')
 # Schedule regular evaluations
 # crontab entry example:
 # 0 2 * * * cd /path/to/vision_comparison && python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv
+```
+
+## Updated Usage Examples
+
+### Path Resolution (Fixed)
+
+The CLI now automatically handles path resolution:
+
+#### Automatic Path Detection
+```bash
+# Images auto-detected in same directory as CSV
+python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv
+# Uses: test_synthetic/ for images
+```
+
+#### Explicit Images Directory
+```bash
+# Specify images directory explicitly
+python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv --images-dir test_synthetic
+# Uses: /full/path/to/test_synthetic/ for images
+```
+
+#### Cross-Environment Compatibility
+```bash
+# Works on local Mac development
+python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv
+
+# Works on remote Linux servers  
+python -m vision_processor.cli.evaluation_cli compare /home/user/datasets/ground_truth.csv --images-dir /home/user/datasets/images
+
+# Works in production
+python -m vision_processor.cli.evaluation_cli compare /opt/data/ground_truth.csv --images-dir /opt/data/images
+```
+
+### Production-Ready Commands
+
+```bash
+# Environment setup
+conda activate unified_vision_processor
+export KMP_DUPLICATE_LIB_OK=TRUE  # macOS only
+
+# Quick evaluation
+python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv
+
+# Full comparison with explicit paths
+python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv --images-dir test_synthetic --models internvl,llama --verbose
+
+# Single model benchmark
+python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model internvl
+
+# Production evaluation with custom output
+python -m vision_processor.cli.evaluation_cli compare production_data/ground_truth.csv --images-dir production_data/images --output-dir results/evaluation_$(date +%Y%m%d)
 ```
 
 This evaluation framework provides comprehensive model comparison capabilities with synthetic ground truth data, enabling data-driven decisions for production model selection.
