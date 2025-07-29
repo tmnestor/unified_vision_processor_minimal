@@ -33,21 +33,24 @@ batch_results.json → JSON parsing → DataFrame creation → CSV export
 
 #### 1. Convert Command
 ```bash
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --model llama
 ```
 
-**Purpose**: Converts batch results to DataFrame and saves as CSV
+**Purpose**: Converts batch results to DataFrame and saves as CSV with model-specific filename
 
 **Parameters**:
 - `batch_file`: Path to batch_results.json (resolved to output directory if relative)
 - `--yaml-file`: Configuration file (required for field schema)
+- `--model`: **REQUIRED** - Model name for filename (llama/internvl)
 - `--output`: Custom CSV output path (optional)
 - `--keep-na`: Keep "N/A" strings instead of converting to NaN (optional)
 - `--info`: Show DataFrame info without saving CSV (optional)
 
+**Output**: Creates `batch_results_{model}_dataframe.csv` (e.g., `batch_results_llama_dataframe.csv`)
+
 #### 2. Analyze Command
 ```bash
-python -m vision_processor.cli.batch_to_csv_cli analyze batch_results.json --yaml-file model_comparison.yaml
+python -m vision_processor.cli.batch_to_csv_cli analyze batch_results.json --yaml-file model_comparison.yaml --model llama
 ```
 
 **Purpose**: Analyzes batch results and shows statistics without creating CSV
@@ -157,10 +160,10 @@ Shows first 3 rows with first 5 fields to verify data structure.
 python -m vision_processor.cli.extract_cli batch ./datasets/ --model llama
 
 # Step 2: Convert to DataFrame
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --model llama
 
 # Step 3: Analyze with pandas/Excel
-python -c "import pandas as pd; df = pd.read_csv('batch_results_dataframe.csv'); print(df.describe())"
+python -c "import pandas as pd; df = pd.read_csv('batch_results_llama_dataframe.csv'); print(df.describe())"
 ```
 
 ### Configuration Dependency
@@ -174,7 +177,7 @@ The script requires the same YAML configuration file used for processing to:
 ### 1. Model Performance Analysis
 ```python
 import pandas as pd
-df = pd.read_csv('batch_results_dataframe.csv')
+df = pd.read_csv('batch_results_llama_dataframe.csv')
 
 # Calculate success rates per field
 success_rates = df.notna().mean() * 100
@@ -231,19 +234,19 @@ Printed to console during conversion:
 
 ## Best Practices
 
-### 1. Always specify --yaml-file
+### 1. Always specify --yaml-file and --model
 ```bash
-# Good
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml
+# Good - explicit model name for clear file organization
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --model llama
 
-# Avoid - may fail to find config
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json
+# FAILS - missing required --model parameter
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml
 ```
 
 ### 2. Use analyze command for exploration
 ```bash
 # Quick overview without creating files
-python -m vision_processor.cli.batch_to_csv_cli analyze batch_results.json --yaml-file model_comparison.yaml
+python -m vision_processor.cli.batch_to_csv_cli analyze batch_results.json --yaml-file model_comparison.yaml --model llama
 ```
 
 ### 3. Check data quality first

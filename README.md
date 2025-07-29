@@ -129,25 +129,26 @@ python -m vision_processor.cli.extract_cli batch ./datasets/ --model internvl
 
 #### 4. Batch Results Analysis
 ```bash
-# Convert batch_results.json to CSV DataFrame (one row per image)
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml
+# Convert batch_results.json to CSV DataFrame (one row per image) - REQUIRES --model
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --model llama
 
 # Convert with custom output path
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --output results_dataframe.csv
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --model internvl --output results_dataframe.csv
 
 # Analyze batch results without saving CSV
-python -m vision_processor.cli.batch_to_csv_cli analyze batch_results.json --yaml-file model_comparison.yaml
+python -m vision_processor.cli.batch_to_csv_cli analyze batch_results.json --yaml-file model_comparison.yaml --model llama
 
 # Keep "N/A" strings instead of converting to NaN
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --keep-na
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --model llama --keep-na
 
 # Show info only (no CSV file created)
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --info
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --model llama --info
 ```
 
 **DataFrame Structure:**
 - **Header**: `[image, DOCUMENT_TYPE, SUPPLIER, ABN, ...]` (27 columns: image + 26 fields)
 - **Rows**: One row per image with extracted field values
+- **Output**: `batch_results_{model}_dataframe.csv` (e.g., `batch_results_llama_dataframe.csv`)
 - **Missing values**: `None/NaN` (default, better for analysis) or `"N/A"` strings (with `--keep-na`)
 
 **Direct Python usage:**

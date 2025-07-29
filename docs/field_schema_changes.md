@@ -224,7 +224,7 @@ python -m vision_processor.cli.extract_cli batch ./test_datasets/ --model llama 
 #### 3. DataFrame Conversion Test
 ```bash
 # Test DataFrame creation with new fields
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --info
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --model llama --info
 ```
 
 ### Phase 3: Analysis Validation
@@ -296,7 +296,7 @@ cp model_comparison.yaml /staging/config/
 ```bash
 # Run comprehensive tests on staging
 python -m vision_processor.cli.extract_cli batch ./staging_test_set/ --model llama
-python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml
+python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --model llama
 ```
 
 #### 3. Performance Testing
