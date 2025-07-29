@@ -36,7 +36,7 @@ image_processing:
 # CLI defaults
 defaults:
   datasets_path: "/home/jovyan/nfs_share/tod/datasets"  # Absolute path for all environments
-  max_tokens: 700  # Ensure all 25 key-value pairs are generated while limiting explanations
+  max_tokens: 2048  # Ensure all 25 key-value pairs are generated with safety margin
   quantization: true  # Enable 8-bit quantization for V100
   output_dir: "/home/jovyan/nfs_share/tod/output"  # Absolute path for all environments
   models: "llama,internvl"  # Default models to compare
@@ -49,10 +49,10 @@ defaults:
 # Model-specific configurations
 model_config:
   llama:
-    max_new_tokens_limit: 2024  # Exact multiple of model architecture
+    max_new_tokens_limit: 2048  # Consistent with other token limits
     confidence_score: 0.85      # Default confidence for Llama responses
   internvl:
-    max_new_tokens_limit: 2024  # Ensure consistent limits across models
+    max_new_tokens_limit: 2048  # Consistent with other token limits
     confidence_score: 0.95      # Default confidence for InternVL responses
 
 # Post-processing configuration
@@ -103,7 +103,7 @@ repetition_control:
   enabled: true               # Default: ON for both models
   word_threshold: 0.15        # Word repetition threshold
   phrase_threshold: 2         # Phrase repetition threshold
-  fallback_max_tokens: 1000   # Fallback token limit
+  fallback_max_tokens: 2048   # Consistent with other token limits
 
 # Logging configuration
 logging:
