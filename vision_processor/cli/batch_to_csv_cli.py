@@ -38,7 +38,9 @@ def convert_to_csv(
         None, "--yaml-file", help="YAML configuration file"
     ),
     model_name: Optional[str] = typer.Option(
-        None, "--model", help="Model name for filename (llama/internvl) - auto-detected if not provided"
+        None,
+        "--model",
+        help="Model name for filename (llama/internvl) - auto-detected if not provided",
     ),
 ) -> None:
     """Convert batch_results.json to CSV format with one row per image."""
@@ -46,22 +48,25 @@ def convert_to_csv(
     try:
         # Use default config if no yaml_file specified
         config_file = yaml_file or "model_comparison.yaml"
-        
+
         # Initialize configuration and get output directory
         try:
             config_manager = ConfigManager(config_file)
             # Get output directory from config
             output_dir = config_manager.output_dir
-            
+
             # If batch_file is just a filename, look in output directory
             if "/" not in batch_file:
                 from pathlib import Path
+
                 resolved_batch_path = str(Path(output_dir) / batch_file)
-                console.print(f"📂 Looking for batch results in output directory: {resolved_batch_path}")
+                console.print(
+                    f"📂 Looking for batch results in output directory: {resolved_batch_path}"
+                )
             else:
                 resolved_batch_path = batch_file
                 console.print(f"📂 Loading batch results from: {resolved_batch_path}")
-            
+
         except Exception as e:
             # Fallback: use current directory + filename
             console.print(f"⚠️  Config loading failed ({e}), using current directory")
@@ -87,7 +92,10 @@ def convert_to_csv(
                 # If output is just a filename, put it in the same directory as batch file
                 if "/" not in output:
                     from pathlib import Path
-                    resolved_output_path = str(Path(resolved_batch_path).parent / output)
+
+                    resolved_output_path = str(
+                        Path(resolved_batch_path).parent / output
+                    )
                 else:
                     resolved_output_path = output
             # If no output specified, let save_dataframe_to_csv auto-generate with model name
@@ -129,22 +137,25 @@ def analyze_batch_results(
     try:
         # Use default config if no yaml_file specified
         config_file = yaml_file or "model_comparison.yaml"
-        
+
         # Initialize configuration and get output directory
         try:
             config_manager = ConfigManager(config_file)
             # Get output directory from config
             output_dir = config_manager.output_dir
-            
+
             # If batch_file is just a filename, look in output directory
             if "/" not in batch_file:
                 from pathlib import Path
+
                 resolved_batch_path = str(Path(output_dir) / batch_file)
-                console.print(f"📊 Looking for batch results in output directory: {resolved_batch_path}")
+                console.print(
+                    f"📊 Looking for batch results in output directory: {resolved_batch_path}"
+                )
             else:
                 resolved_batch_path = batch_file
                 console.print(f"📊 Analyzing batch results from: {resolved_batch_path}")
-            
+
         except Exception as e:
             # Fallback: use current directory + filename
             console.print(f"⚠️  Config loading failed ({e}), using current directory")

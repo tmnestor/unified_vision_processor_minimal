@@ -514,7 +514,7 @@ class InternVLModel(BaseVisionModel):
             # Apply repetition control to token limit
             max_tokens = kwargs.get("max_new_tokens", 1024)
             max_tokens = self.repetition_controller.enforce_token_limit(max_tokens)
-            
+
             generation_config = {
                 "max_new_tokens": max_tokens,
                 "do_sample": False,
@@ -558,7 +558,7 @@ class InternVLModel(BaseVisionModel):
 
             # Handle response format
             raw_text = response[0] if isinstance(response, tuple) else response
-            
+
             # Apply repetition control to clean the response
             cleaned_text = self.repetition_controller.clean_response(raw_text)
 

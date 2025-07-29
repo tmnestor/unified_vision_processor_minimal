@@ -1,0 +1,97 @@
+{
+  "image_filename": "test_invoice_2_fuel.png",
+  "invoice_data": {
+    "business_name": "Liberty Oil",
+    "supplier": "Liberty Oil",
+    "abn": "99 578 393 874",
+    "business_address": "726 Pitt Street, Darwin NT 0800",
+    "business_phone": "(61) 4759 1230",
+    "customer": {
+      "name": "William Harris",
+      "address": "789 King Street, Perth WA 6000",
+      "phone": "(38) 7606 6618",
+      "email": "william.harris@bigpond.com"
+    },
+    "payer_name": "William Harris",
+    "payer_address": "789 King Street, Perth WA 6000",
+    "payer_phone": "(38) 7606 6618",
+    "payer_email": "william.harris@bigpond.com",
+    "invoice_number": "INV-51725",
+    "date": "04/07/2025",
+    "due_date": "28/08/2025",
+    "document_type": "RECEIPT",
+    "transaction": {
+      "date": "04/07/2025",
+      "time": "11:06:52",
+      "receipt_number": "R777484",
+      "terminal": "T57",
+      "operator": "OP576"
+    },
+    "receipt_number": "R777484",
+    "items": [
+      [
+        "Car Wash",
+        3,
+        15.0,
+        45.0
+      ],
+      [
+        "Coffee Large",
+        3,
+        4.5,
+        13.5
+      ],
+      [
+        "Diesel",
+        2,
+        1.7,
+        3.4
+      ]
+    ],
+    "items_list": "Car Wash | Coffee Large | Diesel",
+    "quantities": "3 | 3 | 2",
+    "prices": "$15.00 | $4.50 | $1.70",
+    "subtotal": 61.9,
+    "gst": 6.19,
+    "total": 68.09,
+    "payment": {
+      "method": "VISA",
+      "card_number": "XXXX-XXXX-XXXX-7150",
+      "auth_code": "A642905",
+      "status": "APPROVED"
+    },
+    "payment_method": "VISA",
+    "bank_account": "064-000-636916-5",
+    "bsb": "064-000",
+    "account_number": "636916-5"
+  },
+  "ground_truth": {
+    "image_filename": "test_invoice_2_fuel.png",
+    "DOCUMENT_TYPE": "RECEIPT",
+    "SUPPLIER": "Liberty Oil",
+    "ABN": "99 578 393 874",
+    "PAYER_NAME": "William Harris",
+    "PAYER_ADDRESS": "789 King Street, Perth WA 6000",
+    "PAYER_PHONE": "(38) 7606 6618",
+    "PAYER_EMAIL": "william.harris@bigpond.com",
+    "INVOICE_DATE": "04/07/2025",
+    "DUE_DATE": "28/08/2025",
+    "GST": "$6.19",
+    "TOTAL": "$68.09",
+    "SUBTOTAL": "$61.90",
+    "SUPPLIER_WEBSITE": "N/A",
+    "QUANTITIES": "3 | 3 | 2",
+    "PRICES": "$15.00 | $4.50 | $1.70",
+    "BUSINESS_ADDRESS": "726 Pitt Street, Darwin NT 0800",
+    "BUSINESS_PHONE": "(61) 4759 1230",
+    "BANK_NAME": "N/A",
+    "BSB_NUMBER": "064-000",
+    "BANK_ACCOUNT_NUMBER": "064-000-636916-5",
+    "ACCOUNT_HOLDER": "N/A",
+    "STATEMENT_PERIOD": "N/A",
+    "OPENING_BALANCE": "N/A",
+    "CLOSING_BALANCE": "N/A",
+    "DESCRIPTIONS": "Car Wash | Coffee Large | Diesel"
+  },
+  "generated_at": "2025-07-29T13:58:52.757021"
+}

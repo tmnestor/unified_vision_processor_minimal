@@ -116,13 +116,17 @@ class InformationExtractionCalculator:
             return 0.0
 
         # Ratio of valuable fields (in our weight list) to total fields extracted
-        valuable_fields = sum(1 for f in extracted_fields if f.upper() in self.field_weights)
+        valuable_fields = sum(
+            1 for f in extracted_fields if f.upper() in self.field_weights
+        )
         return valuable_fields / total_fields
 
     def _calculate_extraction_completeness(self, extracted_fields: List[str]) -> float:
         """Calculate how complete the extraction is compared to maximum possible."""
         max_possible_fields = len(self.field_weights)
-        relevant_fields = sum(1 for f in extracted_fields if f.upper() in self.field_weights)
+        relevant_fields = sum(
+            1 for f in extracted_fields if f.upper() in self.field_weights
+        )
         return relevant_fields / max_possible_fields
 
     def calculate_metrics(
