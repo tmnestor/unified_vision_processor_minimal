@@ -28,11 +28,11 @@ export KMP_DUPLICATE_LIB_OK=TRUE
 
 #### Single Model Benchmarking
 ```bash
-# Evaluate InternVL model (auto-detects images in test_synthetic/)
+# Evaluate InternVL model (images_dir is positional argument)
 python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model internvl
 
-# Evaluate Llama model with explicit images directory
-python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model llama --images-dir test_synthetic
+# Evaluate Llama model (images_dir is positional, not --images-dir option)
+python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model llama
 ```
 
 #### Model Comparison
@@ -405,7 +405,7 @@ python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_
 # Full comparison with explicit paths
 python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv --images-dir test_synthetic --models internvl,llama --verbose
 
-# Single model benchmark
+# Single model benchmark (images_dir is positional)
 python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model internvl
 
 # Production evaluation with custom output

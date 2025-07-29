@@ -140,8 +140,8 @@ evaluator = ExtractionEvaluator(
 # Compare models using synthetic ground truth
 python -m vision_processor.cli.evaluation_cli compare test_synthetic/evaluation_ground_truth.csv
 
-# Single model evaluation
-python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model internvl3
+# Single model evaluation (images_dir is positional)
+python -m vision_processor.cli.evaluation_cli benchmark test_synthetic --model internvl
 ```
 
 ## Example Workflows
@@ -166,8 +166,8 @@ python generate_mixed_batch.py \
     --count 5 \
     --bank-statements 1
 
-# Test single model
-python -m vision_processor.cli.evaluation_cli benchmark quick_test --model llama32_vision
+# Test single model (images_dir is positional)
+python -m vision_processor.cli.evaluation_cli benchmark quick_test --model llama
 ```
 
 ### Production Validation

@@ -25,7 +25,8 @@ def generate_mixed_batch_with_bank_statements(
     console.print(f"📁 Output directory: {output_path.absolute()}", style="cyan")
     console.print("📊 Ground truth CSV will be generated for evaluation", style="blue")
     
-    business_types = ["retail", "fuel", "accommodation", "professional"]
+    # Weight retail and fuel types more heavily for receipt-style documents
+    business_types = ["retail", "retail", "retail", "fuel", "fuel", "accommodation", "professional"]
     invoices_data = []
     
     # Determine which documents should be bank statements
