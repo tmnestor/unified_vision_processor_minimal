@@ -193,7 +193,9 @@ extraction_prompt: |
   STATEMENT_PERIOD: [value or N/A]
   OPENING_BALANCE: [opening balance amount in dollars or N/A]
   CLOSING_BALANCE: [closing balance amount in dollars or N/A]
-  TRANSACTIONS: [list of transactions with dates and amounts or N/A]
+  TRANSACTIONS: [list of transaction descriptions N/A]
+
+  # TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
   CRITICAL: Output in PLAIN TEXT format only. Do NOT use markdown formatting.
   
