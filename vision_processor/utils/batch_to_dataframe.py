@@ -127,6 +127,7 @@ def save_dataframe_to_csv(
     output_csv_path: Optional[Union[str, Path]] = None,
     config_path: Optional[Union[str, Path]] = None,
     use_na_strings: bool = False,
+    model_name: Optional[str] = None,
 ) -> Path:
     """Convert batch_results.json to CSV file.
 
@@ -135,6 +136,7 @@ def save_dataframe_to_csv(
         output_csv_path: Output CSV path (optional, auto-generated if None)
         config_path: Path to config YAML (optional)
         use_na_strings: If True, keep "N/A" strings; if False, convert to None/NaN
+        model_name: Model name for filename (optional, auto-detected if None)
 
     Returns:
         Path to created CSV file
@@ -142,24 +144,26 @@ def save_dataframe_to_csv(
     # Generate output path if not provided
     if output_csv_path is None:
         batch_path = Path(batch_results_path)
-        print(f"DEBUG: Auto-generating filename for: {batch_path}")
         
-        # Detect model name from batch results for filename
-        model_name = _detect_model_name_from_batch_file(batch_results_path)
-        print(f"DEBUG: Model name detection result: {model_name}")
+        # Use explicit model name if provided, otherwise try to detect
+        detected_model_name = model_name
+        if not detected_model_name:
+            detected_model_name = _detect_model_name_from_batch_file(batch_results_path)
+        
+        # FAIL FAST: Model name is required for proper file organization
+        if not detected_model_name:
+            raise ValueError(
+                "❌ FATAL: Cannot determine model name for CSV filename\n"
+                "💡 Batch results file does not contain model information\n"
+                "💡 Fix: Add --model parameter to specify model name\n"
+                "💡 Example: --model llama or --model internvl\n"
+                "💡 Available models: llama, internvl"
+            )
         
         # Include model name in filename
-        if model_name:
-            filename = f"{batch_path.stem}_{model_name}_dataframe.csv"
-            print(f"DEBUG: Using filename with model: {filename}")
-        else:
-            filename = f"{batch_path.stem}_dataframe.csv"
-            print(f"DEBUG: Using filename without model: {filename}")
+        filename = f"{batch_path.stem}_{detected_model_name}_dataframe.csv"
         
         output_csv_path = batch_path.parent / filename
-        print(f"DEBUG: Final output path: {output_csv_path}")
-    else:
-        print(f"DEBUG: Using provided output path: {output_csv_path}")
 
     # Convert to DataFrame
     batch_dataframe = batch_results_to_dataframe(
@@ -191,17 +195,13 @@ def _detect_model_name_from_batch_file(batch_results_path: Union[str, Path]) -> 
     try:
         batch_path = Path(batch_results_path)
         if not batch_path.exists():
-            print(f"DEBUG: Batch file not found: {batch_path}")
             return None
             
         with batch_path.open("r") as f:
             batch_data = json.load(f)
         
-        model_name = _detect_model_name_from_batch(batch_data)
-        print(f"DEBUG: Detected model name: {model_name}")
-        return model_name
-    except (json.JSONDecodeError, IOError) as e:
-        print(f"DEBUG: Error reading batch file: {e}")
+        return _detect_model_name_from_batch(batch_data)
+    except (json.JSONDecodeError, IOError):
         return None
 
 
@@ -214,14 +214,6 @@ def _detect_model_name_from_batch(batch_data) -> Optional[str]:
     Returns:
         Model name if detected, None otherwise
     """
-    print(f"DEBUG: Batch data type: {type(batch_data)}")
-    if isinstance(batch_data, list):
-        print(f"DEBUG: List length: {len(batch_data)}")
-        if batch_data:
-            print(f"DEBUG: First result keys: {list(batch_data[0].keys()) if isinstance(batch_data[0], dict) else 'Not a dict'}")
-    elif isinstance(batch_data, dict):
-        print(f"DEBUG: Dict keys: {list(batch_data.keys())}")
-    
     # Handle different batch result formats
     if isinstance(batch_data, list) and batch_data:
         # Direct list format - check first result
@@ -234,7 +226,6 @@ def _detect_model_name_from_batch(batch_data) -> Optional[str]:
             # Try to infer from extraction_method field
             if "extraction_method" in first_result:
                 extraction_method = first_result["extraction_method"]
-                print(f"DEBUG: Found extraction_method: {extraction_method}")
                 # Look for model names in the extraction method string
                 if "llama" in str(extraction_method).lower():
                     return "llama"
@@ -259,7 +250,6 @@ def _detect_model_name_from_batch(batch_data) -> Optional[str]:
         elif "model" in batch_data:
             return batch_data["model"]
     
-    print("DEBUG: No model name detected from available fields")
     return None
 
 

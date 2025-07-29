@@ -37,6 +37,9 @@ def convert_to_csv(
     yaml_file: Optional[str] = typer.Option(
         None, "--yaml-file", help="YAML configuration file"
     ),
+    model_name: Optional[str] = typer.Option(
+        None, "--model", help="Model name for filename (llama/internvl) - auto-detected if not provided"
+    ),
 ) -> None:
     """Convert batch_results.json to CSV format with one row per image."""
 
@@ -94,6 +97,7 @@ def convert_to_csv(
                 output_csv_path=resolved_output_path,  # Will be None for auto-generation
                 config_path=config_file,  # Use the same config we loaded
                 use_na_strings=keep_na,
+                model_name=model_name,  # Pass explicit model name if provided
             )
             console.print(f"✅ [green]Successfully saved to: {csv_path}[/green]")
         else:
