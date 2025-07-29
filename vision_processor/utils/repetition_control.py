@@ -116,8 +116,14 @@ class RepetitionController:
             for token in self.cleanup_tokens:
                 cleaned = cleaned.replace(token, "")
 
+            # Remove aggressive "N/A" repetition patterns (common in InternVL)
+            cleaned = self._remove_na_repetition(cleaned)
+
             # Remove consecutive duplicate lines
             cleaned = self._remove_duplicate_lines(cleaned)
+
+            # Remove word-level repetition patterns
+            cleaned = self._remove_word_repetition(cleaned)
 
             # Remove excessive whitespace
             cleaned = re.sub(r"\s+", " ", cleaned)
@@ -216,3 +222,51 @@ class RepetitionController:
             metrics["word_repetition"] > threshold 
             or metrics["phrase_repetition"] > threshold
         )
+
+    def _remove_na_repetition(self, text: str) -> str:
+        """Remove aggressive N/A repetition patterns.
+        
+        Args:
+            text: Input text
+            
+        Returns:
+            Text with N/A repetition removed
+        """
+        # Remove patterns like "N/A N/A N/A N/A..." (3 or more consecutive N/A)
+        text = re.sub(r'(?:\s*N/A\s*){3,}', ' N/A', text, flags=re.IGNORECASE)
+        
+        # Remove patterns where N/A appears more than 2 times in a row
+        text = re.sub(r'\b(N/A\s+){2,}N/A\b', 'N/A', text, flags=re.IGNORECASE)
+        
+        # Clean up any remaining excessive N/A patterns
+        text = re.sub(r'\s*N/A(\s+N/A){2,}', ' N/A', text, flags=re.IGNORECASE)
+        
+        return text
+
+    def _remove_word_repetition(self, text: str) -> str:
+        """Remove word-level repetition patterns.
+        
+        Args:
+            text: Input text
+            
+        Returns:
+            Text with word repetition reduced
+        """
+        words = text.split()
+        if len(words) < 3:
+            return text
+            
+        # Track word repetition and remove excessive repeats
+        cleaned_words = []
+        word_count = {}
+        
+        for word in words:
+            word_lower = word.lower().strip(".,!?;:")
+            count = word_count.get(word_lower, 0)
+            
+            # Allow up to 2 repetitions of the same word, block more
+            if count < 2 or word_lower in ["and", "or", "the", "a", "an", "is", "are", "was", "were"]:
+                cleaned_words.append(word)
+                word_count[word_lower] = count + 1
+                
+        return " ".join(cleaned_words)
