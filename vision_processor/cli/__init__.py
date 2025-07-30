@@ -1,6 +1,5 @@
 """Vision Processor CLI Module."""
 
-from .evaluation_cli import app as evaluation_app
-from .extract_cli import app as extract_app
+from .unified_cli import app
 
-__all__ = ["extract_app", "evaluation_app"]
+__all__ = ["app"]

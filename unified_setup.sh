@@ -151,36 +151,48 @@ else
     echo "   💡 Consider using Mac M1 for code editing, GPU system for training"
 fi
 
-# Set up useful aliases for vision processor workflows
-alias vp-compare='python model_comparison.py compare'
-alias vp-visualize='python model_comparison.py visualize'
-alias vp-validate='python model_comparison.py validate-models'
-alias vp-check='python model_comparison.py check-environment'
-alias vp-models='python model_comparison.py list-models'
+# Set up unified aliases for vision processor workflows
+alias vp-compare='python -m vision_processor compare'
+alias vp-visualize='python -m vision_processor visualize'
+alias vp-extract='python -m vision_processor extract'
+alias vp-batch='python -m vision_processor batch'
+alias vp-check='python -m vision_processor check'
+alias vp-models='python -m vision_processor models'
+alias vp-config='python -m vision_processor config'
+alias vp-schema='python -m vision_processor schema'
 
-# Evaluation CLI aliases
-alias vp-eval='python -m vision_processor.cli.evaluation_cli'
-alias vp-eval-compare='python -m vision_processor.cli.evaluation_cli compare'
-alias vp-eval-viz='python -m vision_processor.cli.evaluation_cli visualize'
-alias vp-eval-validate='python -m vision_processor.cli.evaluation_cli validate-ground-truth'
+# Evaluation workflow aliases
+alias vp-evaluate='python -m vision_processor evaluate'
+alias vp-benchmark='python -m vision_processor benchmark'
+alias vp-validate-ground-truth='python -m vision_processor validate-ground-truth'
+
+# Utility aliases
+alias vp-convert='python -m vision_processor convert'
 
 # Quick comparison with logging
-alias vp-run='python model_comparison.py compare --verbose | tee "output_$(date +%Y%m%d_%H%M%S).txt"'
+alias vp-run='python -m vision_processor compare --verbose | tee "output_$(date +%Y%m%d_%H%M%S).txt"'
 
 echo ""
-echo "✅ Set up CLI shortcuts:"
-echo "   📊 Main Commands:"
-echo "   - vp-compare:     Run model comparison"
-echo "   - vp-visualize:   Generate charts and reports"
-echo "   - vp-validate:    Validate model configurations"
-echo "   - vp-check:       Check system environment"
-echo "   - vp-models:      List available models"
+echo "✅ Set up unified CLI shortcuts:"
+echo "   📊 Core Workflows:"
+echo "   - vp-compare:     Run model comparison with auto ground truth detection"
+echo "   - vp-visualize:   Generate charts and reports from results"
+echo "   - vp-extract:     Single image extraction"
+echo "   - vp-batch:       Batch process directory of images"
 echo ""
-echo "   🔬 Evaluation Commands:"
-echo "   - vp-eval:        Full evaluation CLI help"
-echo "   - vp-eval-compare: Compare against ground truth"
-echo "   - vp-eval-viz:    Generate visualizations"
-echo "   - vp-eval-validate: Validate ground truth CSV"
+echo "   🔬 Evaluation Workflows:"
+echo "   - vp-evaluate:    Ground truth evaluation"
+echo "   - vp-benchmark:   Performance testing"
+echo "   - vp-validate-ground-truth: CSV/image validation"
+echo ""
+echo "   🛠️  System Management:"
+echo "   - vp-check:       Environment validation"
+echo "   - vp-models:      List/validate models"
+echo "   - vp-config:      Show configuration"
+echo "   - vp-schema:      Show field schema"
+echo ""
+echo "   🔧 Utilities:"
+echo "   - vp-convert:     Batch results to CSV"
 echo ""
 echo "   🚀 Quick Actions:"
 echo "   - vp-run:         Compare with verbose logging"
@@ -219,16 +231,22 @@ echo ""
 echo "   # Compare with custom dataset"
 echo "   vp-compare --datasets-path /path/to/images --models llama,internvl"
 echo ""
+echo "   # Single image extraction"
+echo "   vp-extract image.png"
+echo ""
+echo "   # Batch process directory"
+echo "   vp-batch ./images/"
+echo ""
 echo "   # Generate visualizations from results"
 echo "   vp-visualize --ground-truth-csv /path/to/ground_truth.csv"
 echo ""
 echo "   # Evaluation workflow (3 steps)"
-echo "   vp-eval-validate ground_truth.csv"
-echo "   vp-eval-compare ground_truth.csv"
-echo "   vp-eval-viz"
+echo "   vp-validate-ground-truth ground_truth.csv"
+echo "   vp-evaluate ground_truth.csv"
+echo "   vp-visualize"
 echo ""
 echo "   # Check system and models"
-echo "   vp-check && vp-validate"
+echo "   vp-check && vp-models --validate"
 echo ""
 echo "📋 Current Environment:"
 echo "   - Working directory: $(pwd)"
