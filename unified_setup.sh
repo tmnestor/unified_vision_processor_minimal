@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# unified_setup.sh - Simplified Vision Processor Setup Script
+# unified_setup.sh - Vision Processor Setup Script
 # Usage: source unified_setup.sh [working_directory] [conda_env_name]
 #
-# This script sets up the simplified vision processor environment for:
-# - Mac M1 (local development)
+# This script sets up the unified vision processor environment for:
+# - Mac M1 (local development and planning)
 # - 2x H200 GPU system (development/training) 
 # - Single V100 GPU (production target)
-# - Simplified single-step processing with .env configuration
+# - YAML-based configuration with model comparison and evaluation pipelines
 
 # Set permissions for SSH and Kaggle (if they exist)
 [ -f "/home/jovyan/.ssh/id_ed25519" ] && chmod 600 /home/jovyan/.ssh/id_ed25519
@@ -47,7 +47,7 @@ CONDA_ENV=${2:-$DEFAULT_ENV}
 
 # Print header
 echo "========================================================"
-echo "🔬 Simplified Vision Document Processing System"
+echo "🔬 Unified Vision Document Processing System"
 echo "🚀 Setting up environment: $CONDA_ENV"
 echo "========================================================"
 
@@ -113,14 +113,21 @@ fi
 # Check YAML configuration file
 if [ -f "model_comparison.yaml" ]; then
     echo "✅ Found model_comparison.yaml configuration"
-    echo "   All settings now configured via YAML (no .env needed)"
+    echo "   All settings configured via YAML (no .env needed)"
+    
+    # Show key configuration paths
+    DATASETS_PATH=$(python -c "import yaml; c=yaml.safe_load(open('model_comparison.yaml')); print(c.get('defaults', {}).get('datasets_path', 'Not set'))" 2>/dev/null || echo "Not set")
+    OUTPUT_DIR=$(python -c "import yaml; c=yaml.safe_load(open('model_comparison.yaml')); print(c.get('defaults', {}).get('output_dir', 'Not set'))" 2>/dev/null || echo "Not set")
+    
+    echo "   📁 Datasets path: $DATASETS_PATH"
+    echo "   📁 Output directory: $OUTPUT_DIR"
 else
     echo "⚠️ No model_comparison.yaml found"
     echo "   This file contains all model paths and configuration"
-    echo "   Ensure model_paths section has correct paths:"
-    echo "   model_paths:"
-    echo "     llama: \"/path/to/Llama-3.2-11B-Vision-Instruct\""
-    echo "     internvl: \"/path/to/InternVL3-8B\""
+    echo "   Required sections:"
+    echo "   - defaults: datasets_path, output_dir, models"
+    echo "   - model_paths: llama, internvl paths"
+    echo "   - device_config: GPU and memory settings"
 fi
 
 # Detect hardware environment and suggest optimizations
@@ -144,20 +151,39 @@ else
     echo "   💡 Consider using Mac M1 for code editing, GPU system for training"
 fi
 
-# Set up useful aliases for simplified vision processor
-alias svp-extract='python -m vision_processor.cli.simple_extract_cli extract'
-alias svp-batch='python -m vision_processor.cli.simple_extract_cli batch'
-alias svp-compare='python -m vision_processor.cli.simple_extract_cli compare'
-alias svp-config='python -m vision_processor.cli.simple_extract_cli config-info'
-alias svp-help='python -m vision_processor.cli.simple_extract_cli --help'
+# Set up useful aliases for vision processor workflows
+alias vp-compare='python model_comparison.py compare'
+alias vp-visualize='python model_comparison.py visualize'
+alias vp-validate='python model_comparison.py validate-models'
+alias vp-check='python model_comparison.py check-environment'
+alias vp-models='python model_comparison.py list-models'
+
+# Evaluation CLI aliases
+alias vp-eval='python -m vision_processor.cli.evaluation_cli'
+alias vp-eval-compare='python -m vision_processor.cli.evaluation_cli compare'
+alias vp-eval-viz='python -m vision_processor.cli.evaluation_cli visualize'
+alias vp-eval-validate='python -m vision_processor.cli.evaluation_cli validate-ground-truth'
+
+# Quick comparison with logging
+alias vp-run='python model_comparison.py compare --verbose | tee "output_$(date +%Y%m%d_%H%M%S).txt"'
 
 echo ""
 echo "✅ Set up CLI shortcuts:"
-echo "   - svp-extract:  Extract from single document"
-echo "   - svp-batch:    Batch process directory"
-echo "   - svp-compare:  Compare models"
-echo "   - svp-config:   Show configuration"
-echo "   - svp-help:     Show help"
+echo "   📊 Main Commands:"
+echo "   - vp-compare:     Run model comparison"
+echo "   - vp-visualize:   Generate charts and reports"
+echo "   - vp-validate:    Validate model configurations"
+echo "   - vp-check:       Check system environment"
+echo "   - vp-models:      List available models"
+echo ""
+echo "   🔬 Evaluation Commands:"
+echo "   - vp-eval:        Full evaluation CLI help"
+echo "   - vp-eval-compare: Compare against ground truth"
+echo "   - vp-eval-viz:    Generate visualizations"
+echo "   - vp-eval-validate: Validate ground truth CSV"
+echo ""
+echo "   🚀 Quick Actions:"
+echo "   - vp-run:         Compare with verbose logging"
 
 # Verify installation
 echo ""
@@ -186,18 +212,23 @@ else
 fi
 
 echo ""
-echo "🎯 Quick Start:"
-echo "   # Extract from a single document"
-echo "   svp-extract datasets/image25.png --model internvl"
+echo "🎯 Quick Start Examples:"
+echo "   # Run complete model comparison"
+echo "   vp-compare"
 echo ""
-echo "   # Batch process directory"
-echo "   svp-batch datasets/ --output-dir results/ --model internvl"
+echo "   # Compare with custom dataset"
+echo "   vp-compare --datasets-path /path/to/images --models llama,internvl"
 echo ""
-echo "   # Compare models on single document"
-echo "   svp-compare datasets/image25.png --models internvl,llama"
+echo "   # Generate visualizations from results"
+echo "   vp-visualize --ground-truth-csv /path/to/ground_truth.csv"
 echo ""
-echo "   # Show current configuration"
-echo "   svp-config"
+echo "   # Evaluation workflow (3 steps)"
+echo "   vp-eval-validate ground_truth.csv"
+echo "   vp-eval-compare ground_truth.csv"
+echo "   vp-eval-viz"
+echo ""
+echo "   # Check system and models"
+echo "   vp-check && vp-validate"
 echo ""
 echo "📋 Current Environment:"
 echo "   - Working directory: $(pwd)"
@@ -207,15 +238,20 @@ echo "   - PYTHONPATH: $PYTHONPATH"
 
 echo ""
 echo "========================================================"
-echo "🚀 Simplified Vision Processor Ready!"
+echo "🚀 Unified Vision Processor Ready!"
 echo "========================================================"
 echo "Remember to run with 'source' to preserve environment:"
 echo "source unified_setup.sh [directory] [environment]"
 echo ""
-echo "Test the setup with:"
-echo "svp-config  # Show configuration"
-echo "python test_simple_extraction.py  # Run tests"
+echo "📖 Documentation:"
+echo "   - CLI Guide: docs/cli_usage_guide.md"
+echo "   - Model Evaluation: docs/model_evaluation_with_synthetic_data.md"
+echo ""
+echo "🔧 Test the setup:"
+echo "   vp-check    # Validate environment"
+echo "   vp-models   # List available models"
+echo "   vp-compare  # Run comparison (if models configured)"
+echo ""
+echo "🚀 Production workflow:"
+echo "   vp-run      # Compare with logging"
 echo "========================================================"
-
-alias runvision='git pull && reset && rm output_????????_??????.txt 2>/dev/null; python model_comparison.py compare \
-  --datasets-path ./datasets --output-dir ./results --models llama,internvl | tee "output_$(date +%Y%m%d_%H%M%S).txt"'
