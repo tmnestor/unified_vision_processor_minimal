@@ -1339,8 +1339,8 @@ class ComparisonRunner:
         for model_name in valid_models:
             try:
                 # Get model instance from registry to access memory estimation
-                model_instance = self.model_registry.get_model(
-                    model_name, self.config, enable_quantization=True
+                model_instance = self.model_registry.create_model(
+                    model_name, enable_quantization=True
                 )
 
                 # Get quantization config and estimate memory
