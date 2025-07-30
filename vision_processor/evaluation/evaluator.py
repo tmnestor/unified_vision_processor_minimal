@@ -529,8 +529,15 @@ class ExtractionEvaluator:
                     config, str(self.output_dir / "visualizations")
                 )
 
+                # Add memory data to comparison results for VRAM visualization
+                comparison_results_with_memory = self._add_memory_data_to_results(
+                    comparison_results, config, working_models
+                )
+
                 # Generate all visualizations
-                viz_paths = visualizer.generate_all_visualizations(comparison_results)
+                viz_paths = visualizer.generate_all_visualizations(
+                    comparison_results_with_memory
+                )
 
                 if viz_paths:
                     self.console.print(
@@ -632,6 +639,84 @@ class ExtractionEvaluator:
                     f.write(
                         f"- **Total Processing Time**: {results['total_processing_time']:.1f}s\n\n"
                     )
+
+    def _add_memory_data_to_results(
+        self, comparison_results: Dict[str, Any], config, working_models: List[tuple]
+    ) -> Dict[str, Any]:
+        """Add memory data to comparison results for VRAM visualization.
+
+        Args:
+            comparison_results: Original comparison results
+            config: ConfigManager instance
+            working_models: List of (model_name, results) tuples
+
+        Returns:
+            Enhanced comparison results with memory data
+        """
+        try:
+            from ..config.model_registry import get_model_registry
+
+            # Create enhanced results with memory data
+            enhanced_results = comparison_results.copy()
+            model_estimated_vram = {}
+
+            # Get model registry to access memory estimation methods
+            model_registry = get_model_registry(config)
+            model_names = [model_name for model_name, _ in working_models]
+
+            # Collect VRAM estimates for each model
+            for model_name in model_names:
+                try:
+                    # Get model instance with quantization enabled
+                    model_instance = model_registry.get_model(
+                        model_name, config, enable_quantization=True
+                    )
+
+                    # Get memory estimate if available
+                    if hasattr(model_instance, "_get_quantization_config") and hasattr(
+                        model_instance, "_estimate_memory_usage"
+                    ):
+                        quant_config = model_instance._get_quantization_config()
+                        estimated_gb = model_instance._estimate_memory_usage(
+                            quant_config
+                        )
+                        model_estimated_vram[model_name] = estimated_gb
+
+                        self.console.print(
+                            f"✅ Collected VRAM estimate for {model_name.upper()}: {estimated_gb:.1f}GB",
+                            style="green",
+                        )
+                    else:
+                        self.console.print(
+                            f"⚠️ No memory estimation available for {model_name}",
+                            style="yellow",
+                        )
+
+                except Exception as e:
+                    self.console.print(
+                        f"⚠️ Failed to get VRAM estimate for {model_name}: {e}",
+                        style="yellow",
+                    )
+
+            # Add memory data to results if we collected any
+            if model_estimated_vram:
+                enhanced_results["model_estimated_vram"] = model_estimated_vram
+                enhanced_results["models_tested"] = model_names
+                self.console.print(
+                    f"✅ Added VRAM data for {len(model_estimated_vram)} models",
+                    style="green",
+                )
+            else:
+                self.console.print(
+                    "❌ No VRAM estimates collected - VRAM chart will be skipped",
+                    style="red",
+                )
+
+            return enhanced_results
+
+        except Exception as e:
+            self.console.print(f"❌ Error collecting memory data: {e}", style="red")
+            return comparison_results
 
 
 def main():

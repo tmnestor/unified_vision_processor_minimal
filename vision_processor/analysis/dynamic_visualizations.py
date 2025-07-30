@@ -713,48 +713,35 @@ class DynamicModelVisualizer:
                         comparison_results.models_tested
                     )
 
-        # Fallback: extract from working model results if available
-        if not memory_data:
-            # Handle different comparison_results formats
-            if isinstance(comparison_results, dict):
-                # Dictionary format - check for model results
-                working_models = [
-                    (model, results)
-                    for model, results in comparison_results.items()
-                    if isinstance(results, dict) and "error" not in results
-                ]
-            elif hasattr(comparison_results, "models_tested"):
-                # ComparisonResults object format
-                working_models = [
-                    (model, {}) for model in comparison_results.models_tested
-                ]
-            else:
-                # Unknown format - try to infer from object attributes
-                working_models = []
-                if hasattr(comparison_results, "__dict__"):
-                    for attr_name, attr_value in comparison_results.__dict__.items():
-                        if "model" in attr_name.lower() and isinstance(
-                            attr_value, dict
-                        ):
-                            working_models.extend(
-                                [(k, v) for k, v in attr_value.items()]
-                            )
-
-            # Use default estimates based on model type
-            model_defaults = {
-                "llama": 13.3,  # Llama-3.2-11B with 8-bit quantization
-                "internvl": 11.2,  # InternVL3-8B with 8-bit quantization
-                "llama32_vision": 13.3,
-                "internvl3": 11.2,
-            }
-
-            for model_name, _ in working_models:
-                memory_data[model_name] = model_defaults.get(model_name.lower(), 10.0)
-
+        # If no memory data found, this indicates a problem with data collection
         if not memory_data:
             self.console.print(
-                "❌ No memory data available for VRAM chart", style="red"
+                "❌ VRAM data collection failed - no actual memory estimates available",
+                style="red",
             )
+            self.console.print(
+                "💡 This suggests the comparison runner is not collecting model VRAM estimates",
+                style="yellow",
+            )
+            self.console.print(
+                "💡 Check that _get_model_vram_estimates() is working correctly",
+                style="yellow",
+            )
+
+            # Debug: Show what data is available
+            if hasattr(comparison_results, "__dict__"):
+                available_attrs = [
+                    attr for attr in dir(comparison_results) if not attr.startswith("_")
+                ]
+                self.console.print(
+                    f"💡 Available data attributes: {available_attrs}", style="yellow"
+                )
+            elif isinstance(comparison_results, dict):
+                self.console.print(
+                    f"💡 Available data keys: {list(comparison_results.keys())}",
+                    style="yellow",
+                )
+
             return ""
 
         # Create VRAM usage chart
