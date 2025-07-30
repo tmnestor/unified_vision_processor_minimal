@@ -44,10 +44,21 @@ class LlamaVisionModel(BaseVisionModel):
 
     def __init__(self, *args, **kwargs):
         """Initialize LlamaVisionModel with repetition control."""
-        super().__init__(*args, **kwargs)
-
-        # Extract config from kwargs and store as direct attribute
+        # Extract config from kwargs and store as direct attribute BEFORE super().__init__
+        # This ensures config is available even if parent initialization fails
         self.config = kwargs.get("config")
+
+        # Debug config availability
+        logger.debug(
+            f"LlamaVisionModel init - config available: {self.config is not None}"
+        )
+        if self.config is None:
+            logger.error(
+                "❌ No config found in kwargs during LlamaVisionModel initialization"
+            )
+            logger.error(f"   Available kwargs keys: {list(kwargs.keys())}")
+
+        super().__init__(*args, **kwargs)
 
         # Repetition control is now handled by BaseVisionModel
         # Keep backwards compatibility for existing code
@@ -88,7 +99,7 @@ class LlamaVisionModel(BaseVisionModel):
                 "   image_processing:\n"
                 "     max_image_size: 1024"
             )
-        
+
         max_size = self.config.image_processing.max_image_size
 
         return ModelCapabilities(
@@ -110,35 +121,48 @@ class LlamaVisionModel(BaseVisionModel):
 
     def _setup_device(self) -> torch.device:
         """Setup device configuration for Llama-3.2-Vision."""
-        device_manager = DeviceManager(self.memory_limit_mb)
+        try:
+            device_manager = DeviceManager(self.memory_limit_mb)
 
-        # Use device manager to select optimal device
-        if self.device_config == DeviceConfig.AUTO:
-            device = device_manager.select_device(DeviceConfig.AUTO)
-        else:
-            device = device_manager.select_device(self.device_config)
+            # Use device manager to select optimal device
+            if self.device_config == DeviceConfig.AUTO:
+                device = device_manager.select_device(DeviceConfig.AUTO)
+            else:
+                device = device_manager.select_device(self.device_config)
 
-        # Store device manager for later use
-        self.device_manager = device_manager
+            # Store device manager for later use
+            self.device_manager = device_manager
 
-        # Force single GPU for fair V100 production comparison
-        if device.type == "cuda":
-            # Force single GPU mode to match V100 production constraints
-            # This ensures fair comparison with InternVL model that's V100-optimized
-            available_gpus = torch.cuda.device_count()
-            self.num_gpus = 1  # Force single GPU regardless of available GPUs
-            logger.info(
-                f"🔧 V100 Production Mode: Using 1 GPU (detected {available_gpus} available)"
-            )
+            # Force single GPU for fair V100 production comparison
+            if device.type == "cuda":
+                # Force single GPU mode to match V100 production constraints
+                # This ensures fair comparison with InternVL model that's V100-optimized
+                available_gpus = torch.cuda.device_count()
+                self.num_gpus = 1  # Force single GPU regardless of available GPUs
+                logger.info(
+                    f"🔧 V100 Production Mode: Using 1 GPU (detected {available_gpus} available)"
+                )
 
-            # Enable TF32 for GPU optimization on compatible hardware
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cudnn.allow_tf32 = True
-            logger.info("TF32 enabled for GPU optimization")
-        else:
+                # Enable TF32 for GPU optimization on compatible hardware
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
+                logger.info("TF32 enabled for GPU optimization")
+            else:
+                self.num_gpus = 0
+
+            return device
+
+        except Exception as e:
+            logger.error(f"❌ Device setup failed: {e}")
+            logger.error(f"   Config available: {hasattr(self, 'config')}")
+            if hasattr(self, "config"):
+                logger.error(f"   Config value: {self.config}")
+            logger.error(f"   Memory limit: {self.memory_limit_mb}")
+            logger.error(f"   Device config: {self.device_config}")
+            # Fallback to CPU
+            logger.warning("Falling back to CPU device")
             self.num_gpus = 0
-
-        return device
+            return torch.device("cpu")
 
     def _cleanup_memory(self) -> None:
         """Clean up GPU and system memory."""
