@@ -10,7 +10,6 @@ This replaces the previous scattered CLI interfaces and provides a clean,
 unified command structure based on the CLI consolidation plan.
 """
 
-import typer
 from .cli.unified_cli import app
 
 if __name__ == "__main__":
