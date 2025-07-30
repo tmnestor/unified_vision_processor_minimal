@@ -88,10 +88,30 @@ def run_production_comparison(
 
         # Load simple configuration with YAML file
         config = ConfigManager(yaml_file=config_path)
+        
+        # Apply CLI overrides to configuration
+        if datasets_path:
+            config.defaults.datasets_path = datasets_path
+        if output_dir:
+            config.defaults.output_dir = output_dir
+        if models:
+            config.defaults.models = ",".join(models)
+        if max_tokens:
+            config.defaults.max_tokens = max_tokens
+        if quantization is not None:
+            config.defaults.quantization = quantization
+        if trust_remote_code is not None:
+            config.defaults.trust_remote_code = trust_remote_code
+        
+        # Apply custom model paths if provided
+        if llama_path:
+            config.model_paths.llama = llama_path
+        if internvl_path:
+            config.model_paths.internvl = internvl_path
 
         # Simple validation - just check if models exist
-        if not Path(datasets_path).exists():
-            console.print("❌ Datasets path does not exist", style="bold red")
+        if not Path(config.defaults.datasets_path).exists():
+            console.print(f"❌ Datasets path does not exist: {config.defaults.datasets_path}", style="bold red")
             return None
 
         # Print configuration summary
