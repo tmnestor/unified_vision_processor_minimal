@@ -57,14 +57,19 @@ class DynamicModelVisualizer:
         # Load weights and thresholds from config manager
         self.field_weights = self.config_manager.get_field_weights()
 
-        # Load quality and speed thresholds
-        config_dict = self.config_manager.get_config_dict()
-        self.quality_thresholds = config_dict.get(
-            "quality_thresholds", {"excellent": 12, "good": 8, "fair": 5, "poor": 0}
-        )
-        self.speed_thresholds = config_dict.get(
-            "speed_thresholds", {"very_fast": 15.0, "fast": 25.0, "moderate": 40.0}
-        )
+        # Load quality and speed thresholds from config
+        try:
+            config_dict = self.config_manager.get_legacy_config_dict()
+            self.quality_thresholds = config_dict.get(
+                "quality_thresholds", {"excellent": 12, "good": 8, "fair": 5, "poor": 0}
+            )
+            self.speed_thresholds = config_dict.get(
+                "speed_thresholds", {"very_fast": 15.0, "fast": 25.0, "moderate": 40.0}
+            )
+        except AttributeError:
+            # Fallback if legacy config method doesn't exist
+            self.quality_thresholds = {"excellent": 12, "good": 8, "fair": 5, "poor": 0}
+            self.speed_thresholds = {"very_fast": 15.0, "fast": 25.0, "moderate": 40.0}
 
         self.console.print(
             f"✅ Dynamic config loaded: {len(self.extraction_fields)} fields, "
@@ -677,16 +682,29 @@ class DynamicModelVisualizer:
         v100_limit_gb = 16.0  # V100 VRAM limit
 
         # Check if we have memory data in the comparison results
-        if (
-            hasattr(comparison_results, "model_estimated_vram")
-            and comparison_results.model_estimated_vram
-        ):
-            memory_data = comparison_results.model_estimated_vram
+        # Handle both dict and object formats for comparison_results
+        if hasattr(comparison_results, "model_estimated_vram"):
+            # ComparisonResults object format
+            if comparison_results.model_estimated_vram:
+                memory_data = comparison_results.model_estimated_vram
+        elif isinstance(comparison_results, dict):
+            # Dictionary format - look for memory data in nested results
+            if "model_estimated_vram" in comparison_results:
+                memory_data = comparison_results["model_estimated_vram"]
+            elif "memory_summary" in comparison_results:
+                memory_summary = comparison_results["memory_summary"]
+                peak_gpu = memory_summary.get("peak_gpu_memory_gb", 0)
+                if peak_gpu > 0 and "models_tested" in comparison_results:
+                    # Distribute equally if we only have total peak
+                    for model in comparison_results["models_tested"]:
+                        memory_data[model] = peak_gpu / len(
+                            comparison_results["models_tested"]
+                        )
         elif (
             hasattr(comparison_results, "memory_summary")
             and comparison_results.memory_summary
         ):
-            # Try to extract from memory summary
+            # ComparisonResults object with memory_summary
             peak_gpu = comparison_results.memory_summary.get("peak_gpu_memory_gb", 0)
             if peak_gpu > 0:
                 # Distribute equally if we only have total peak
@@ -697,11 +715,30 @@ class DynamicModelVisualizer:
 
         # Fallback: extract from working model results if available
         if not memory_data:
-            working_models = [
-                (model, results)
-                for model, results in comparison_results.items()
-                if isinstance(results, dict) and "error" not in results
-            ]
+            # Handle different comparison_results formats
+            if isinstance(comparison_results, dict):
+                # Dictionary format - check for model results
+                working_models = [
+                    (model, results)
+                    for model, results in comparison_results.items()
+                    if isinstance(results, dict) and "error" not in results
+                ]
+            elif hasattr(comparison_results, "models_tested"):
+                # ComparisonResults object format
+                working_models = [
+                    (model, {}) for model in comparison_results.models_tested
+                ]
+            else:
+                # Unknown format - try to infer from object attributes
+                working_models = []
+                if hasattr(comparison_results, "__dict__"):
+                    for attr_name, attr_value in comparison_results.__dict__.items():
+                        if "model" in attr_name.lower() and isinstance(
+                            attr_value, dict
+                        ):
+                            working_models.extend(
+                                [(k, v) for k, v in attr_value.items()]
+                            )
 
             # Use default estimates based on model type
             model_defaults = {
