@@ -12,7 +12,18 @@ from ..evaluation import ExtractionEvaluator
 
 app = typer.Typer(
     name="evaluation",
-    help="Vision Model Evaluation Tools",
+    help="""
+Vision Model Evaluation Tools
+
+[bold cyan]Typical Workflow:[/bold cyan]
+1. [green]validate-ground-truth[/green] - Check your CSV and images match
+2. [blue]compare[/blue] - Run model comparison against ground truth  
+3. [magenta]visualize[/magenta] - Generate charts and reports from results
+
+[bold cyan]Quick Start:[/bold cyan]
+  evaluation_cli compare ground_truth.csv  # Compare all models
+  evaluation_cli visualize results.json    # Generate charts from results
+""",
     rich_markup_mode="rich",
 )
 console = Console()
@@ -41,7 +52,11 @@ def compare(
     debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ) -> None:
-    """Compare extraction performance between vision models."""
+    """[Step 2] Compare extraction performance between vision models against ground truth.
+    
+    Runs model inference on all images and compares results against ground truth CSV.
+    Generates JSON results file and optional visualizations.
+    """
 
     # Validate ground truth file first
     if not Path(ground_truth_csv).exists():
@@ -143,7 +158,11 @@ def benchmark(
     debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ) -> None:
-    """Benchmark processing speed and consistency for a single model."""
+    """[Optional] Benchmark processing speed and consistency for a single model.
+    
+    Tests model performance across multiple iterations to measure speed and consistency.
+    Useful for performance tuning and hardware optimization.
+    """
 
     if not Path(images_dir).exists():
         console.print(f"[red]❌ Images directory not found: {images_dir}[/red]")
@@ -287,7 +306,11 @@ def validate_ground_truth(
     debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
 ) -> None:
-    """Validate ground truth data against available images."""
+    """[Step 1] Validate ground truth data against available images.
+    
+    Checks that every image listed in ground truth CSV exists in the images directory.
+    Reports missing images and unused image files. Run this before comparison.
+    """
 
     if not Path(ground_truth_csv).exists():
         console.print(f"[red]❌ Ground truth file not found: {ground_truth_csv}[/red]")
@@ -373,6 +396,126 @@ def validate_ground_truth(
 
     except Exception as e:
         console.print(f"[red]❌ Validation failed: {e}[/red]")
+        raise typer.Exit(1) from None
+
+
+@app.command()
+def visualize(
+    results_file: str = typer.Argument(
+        ..., help="Path to comparison results JSON file (from compare command)"
+    ),
+    output_dir: str = typer.Option(
+        None, help="Output directory for visualizations (default from config)"
+    ),
+    ground_truth_csv: str = typer.Option(
+        None, help="Path to ground truth CSV (required for accuracy charts)"
+    ),
+    images_dir: str = typer.Option(
+        None, help="Directory containing images (default from config)"
+    ),
+    format: str = typer.Option(
+        "all", help="Visualization format: all, charts, html, or heatmaps"
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
+) -> None:
+    """[Step 3] Generate visualizations from comparison results.
+    
+    Creates charts, heatmaps, and HTML reports from JSON results produced by compare command.
+    Can generate different visualization types and formats.
+    
+    [bold cyan]Examples:[/bold cyan]
+      visualize results.json                           # Basic charts from results
+      visualize results.json --ground-truth-csv gt.csv # Full accuracy analysis
+      visualize results.json --format heatmaps         # Only accuracy heatmaps
+    """
+    
+    if not Path(results_file).exists():
+        console.print(f"[red]❌ Results file not found: {results_file}[/red]")
+        console.print("[yellow]💡 Run 'compare' command first to generate results[/yellow]")
+        raise typer.Exit(1) from None
+
+    try:
+        import json
+
+        from ..analysis.dynamic_visualizations import DynamicVisualizationGenerator
+        from ..config import ConfigManager
+
+        # Load configuration
+        config = ConfigManager()
+        
+        # Apply CLI logging overrides
+        if debug:
+            config.defaults.debug_mode = True
+            config.defaults.verbose_mode = True
+        elif verbose:
+            config.defaults.verbose_mode = True
+        if quiet:
+            config.defaults.console_output = False
+            config.defaults.verbose_mode = False
+            config.defaults.debug_mode = False
+        
+        # Use config defaults if not provided
+        effective_output_dir = output_dir or config.defaults.output_dir
+        effective_images_dir = images_dir or config.defaults.datasets_path
+        
+        console.print("🎨 [bold]GENERATING VISUALIZATIONS[/bold]")
+        console.print(f"📊 Results: {results_file}")
+        console.print(f"💾 Output: {effective_output_dir}")
+        
+        # Load comparison results
+        with Path(results_file).open('r') as f:
+            comparison_results = json.load(f)
+        
+        console.print(f"✅ Loaded results for {len(comparison_results)} models")
+        
+        # Initialize visualization generator
+        viz_generator = DynamicVisualizationGenerator(
+            output_dir=effective_output_dir,
+            config_manager=config
+        )
+        
+        # Generate visualizations based on format
+        viz_paths = []
+        
+        if format in ["all", "charts"]:
+            console.print("📈 Generating performance charts...")
+            chart_path = viz_generator.create_model_performance_dashboard(comparison_results)
+            if chart_path:
+                viz_paths.append(chart_path)
+        
+        if format in ["all", "heatmaps"] and ground_truth_csv:
+            console.print("🔥 Generating accuracy heatmaps...")
+            heatmap_path = viz_generator.create_field_accuracy_heatmap(comparison_results)
+            if heatmap_path:
+                viz_paths.append(heatmap_path)
+        
+        if format in ["all", "html"]:
+            console.print("🌐 Generating HTML report...")
+            html_path = viz_generator.create_interactive_html_report(
+                comparison_results, viz_paths
+            )
+            if html_path:
+                console.print(f"📄 Interactive report: {html_path}")
+        
+        console.print(f"\n🎉 Generated {len(viz_paths)} visualizations!")
+        
+        if viz_paths:
+            console.print("\n📊 [bold]Generated Files:[/bold]")
+            for path in viz_paths:
+                console.print(f"  📈 {Path(path).name}")
+        
+        if not ground_truth_csv and format in ["all", "heatmaps"]:
+            console.print("\n[yellow]💡 Add --ground-truth-csv for accuracy heatmaps[/yellow]")
+
+    except Exception as e:
+        console.print(f"[red]❌ Visualization failed: {e}[/red]")
+        if verbose:
+            import traceback
+            console.print(traceback.format_exc())
         raise typer.Exit(1) from None
 
 
