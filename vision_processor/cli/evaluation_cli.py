@@ -30,6 +30,11 @@ def compare(
     output_dir: str = typer.Option(
         None, help="Output directory for results (default from config)"
     ),
+    visualizations: bool = typer.Option(
+        True,
+        "--visualizations/--no-visualizations",
+        help="Generate dynamic visualizations (charts, heatmaps)",
+    ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
     ),
@@ -72,12 +77,14 @@ def compare(
         if images_dir is None:
             # Default to ground truth CSV directory if not specified
             images_dir = str(Path(ground_truth_csv).parent)
-            console.print(f"📁 Using images directory: {images_dir} (same as ground truth CSV)")
+            console.print(
+                f"📁 Using images directory: {images_dir} (same as ground truth CSV)"
+            )
         else:
             # Use provided path - convert relative to absolute
             images_dir = str(Path(images_dir).resolve())
             console.print(f"📁 Using specified images directory: {images_dir}")
-        
+
         output_dir = path_resolver.resolve_output_path(output_dir)
 
         # Parse models - use config default if not specified
@@ -103,8 +110,8 @@ def compare(
         # Run comparison
         results = evaluator.compare_models(models=model_list)
 
-        # Generate report
-        evaluator.generate_report(results)
+        # Generate report with optional visualizations
+        evaluator.generate_report(results, generate_visualizations=visualizations)
 
         console.print("\\n🎉 Evaluation completed successfully!")
         console.print(f"📄 View results: {Path(output_dir) / 'evaluation_report.md'}")
@@ -178,7 +185,7 @@ def benchmark(
             # Get first model from config defaults
             default_models = config.defaults.models
             model = default_models.split(",")[0].strip()
-        
+
         config.set_model_type(model)
         manager = SimpleExtractionManager(config)
 
@@ -309,12 +316,14 @@ def validate_ground_truth(
         if images_dir is None:
             # Default to ground truth CSV directory if not specified
             images_dir = str(Path(ground_truth_csv).parent)
-            console.print(f"📁 Using images directory: {images_dir} (same as ground truth CSV)")
+            console.print(
+                f"📁 Using images directory: {images_dir} (same as ground truth CSV)"
+            )
         else:
             # Use provided path - convert relative to absolute
             images_dir = str(Path(images_dir).resolve())
             console.print(f"📁 Using specified images directory: {images_dir}")
-        
+
         # Validate images directory exists
         if not Path(images_dir).exists():
             console.print(f"[red]❌ Images directory not found: {images_dir}[/red]")

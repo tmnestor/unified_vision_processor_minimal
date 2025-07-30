@@ -79,38 +79,73 @@ class ExtractionEvaluator:
                 config_path = Path("..") / "model_comparison.yaml"
             if not config_path.exists():
                 config_path = Path("../../model_comparison.yaml")
-            
+
             if not config_path.exists():
-                self.console.print("⚠️ model_comparison.yaml not found, using fallback fields", style="yellow")
+                self.console.print(
+                    "⚠️ model_comparison.yaml not found, using fallback fields",
+                    style="yellow",
+                )
                 # Fallback to basic fields if YAML not found
                 return [
-                    "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS", 
-                    "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST", 
-                    "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "QUANTITIES", "PRICES",
-                    "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME", "BSB_NUMBER",
-                    "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER", "STATEMENT_PERIOD",
-                    "OPENING_BALANCE", "CLOSING_BALANCE", "DESCRIPTIONS"
+                    "DOCUMENT_TYPE",
+                    "SUPPLIER",
+                    "ABN",
+                    "PAYER_NAME",
+                    "PAYER_ADDRESS",
+                    "PAYER_PHONE",
+                    "PAYER_EMAIL",
+                    "INVOICE_DATE",
+                    "DUE_DATE",
+                    "GST",
+                    "TOTAL",
+                    "SUBTOTAL",
+                    "SUPPLIER_WEBSITE",
+                    "QUANTITIES",
+                    "PRICES",
+                    "BUSINESS_ADDRESS",
+                    "BUSINESS_PHONE",
+                    "BANK_NAME",
+                    "BSB_NUMBER",
+                    "BANK_ACCOUNT_NUMBER",
+                    "ACCOUNT_HOLDER",
+                    "STATEMENT_PERIOD",
+                    "OPENING_BALANCE",
+                    "CLOSING_BALANCE",
+                    "DESCRIPTIONS",
                 ]
-            
+
             with config_path.open("r") as f:
                 config = yaml.safe_load(f)
-            
+
             # Extract fields from extraction_prompt
             extraction_prompt = config.get("extraction_prompt", "")
             fields = []
-            
+
             # Parse lines that match field pattern: "FIELD_NAME: [description]"
-            for line in extraction_prompt.split('\n'):
+            for line in extraction_prompt.split("\n"):
                 line = line.strip()  # Strip whitespace
-                if ':' in line and not line.startswith('#'):
+                if ":" in line and not line.startswith("#"):
                     # Extract field name before the colon
-                    field_name = line.split(':')[0].strip()
+                    field_name = line.split(":")[0].strip()
                     # Check if it's a valid field (uppercase, reasonable length, not explanatory text)
-                    if (field_name.isupper() and 
-                        len(field_name) <= 25 and  # Reasonable field name length
-                        not any(word in field_name.lower() for word in ['required', 'correct', 'wrong', 'critical', 'use', 'never', 'absolutely'])):
+                    if (
+                        field_name.isupper()
+                        and len(field_name) <= 25  # Reasonable field name length
+                        and not any(
+                            word in field_name.lower()
+                            for word in [
+                                "required",
+                                "correct",
+                                "wrong",
+                                "critical",
+                                "use",
+                                "never",
+                                "absolutely",
+                            ]
+                        )
+                    ):
                         fields.append(field_name)
-            
+
             # Remove duplicates while preserving order
             seen = set()
             unique_fields = []
@@ -118,20 +153,43 @@ class ExtractionEvaluator:
                 if field not in seen:
                     seen.add(field)
                     unique_fields.append(field)
-            
-            self.console.print(f"✅ Loaded {len(unique_fields)} extraction fields from model_comparison.yaml")
+
+            self.console.print(
+                f"✅ Loaded {len(unique_fields)} extraction fields from model_comparison.yaml"
+            )
             return unique_fields
-            
+
         except Exception as e:
-            self.console.print(f"⚠️ Error loading extraction fields: {e}", style="yellow")
+            self.console.print(
+                f"⚠️ Error loading extraction fields: {e}", style="yellow"
+            )
             # Return fallback fields
             return [
-                "DOCUMENT_TYPE", "SUPPLIER", "ABN", "PAYER_NAME", "PAYER_ADDRESS", 
-                "PAYER_PHONE", "PAYER_EMAIL", "INVOICE_DATE", "DUE_DATE", "GST", 
-                "TOTAL", "SUBTOTAL", "SUPPLIER_WEBSITE", "QUANTITIES", "PRICES",
-                "BUSINESS_ADDRESS", "BUSINESS_PHONE", "BANK_NAME", "BSB_NUMBER",
-                "BANK_ACCOUNT_NUMBER", "ACCOUNT_HOLDER", "STATEMENT_PERIOD",
-                "OPENING_BALANCE", "CLOSING_BALANCE", "DESCRIPTIONS"
+                "DOCUMENT_TYPE",
+                "SUPPLIER",
+                "ABN",
+                "PAYER_NAME",
+                "PAYER_ADDRESS",
+                "PAYER_PHONE",
+                "PAYER_EMAIL",
+                "INVOICE_DATE",
+                "DUE_DATE",
+                "GST",
+                "TOTAL",
+                "SUBTOTAL",
+                "SUPPLIER_WEBSITE",
+                "QUANTITIES",
+                "PRICES",
+                "BUSINESS_ADDRESS",
+                "BUSINESS_PHONE",
+                "BANK_NAME",
+                "BSB_NUMBER",
+                "BANK_ACCOUNT_NUMBER",
+                "ACCOUNT_HOLDER",
+                "STATEMENT_PERIOD",
+                "OPENING_BALANCE",
+                "CLOSING_BALANCE",
+                "DESCRIPTIONS",
             ]
 
     def _calculate_field_accuracy(
@@ -382,8 +440,10 @@ class ExtractionEvaluator:
 
         return comparison_results
 
-    def generate_report(self, comparison_results: Dict[str, Any]) -> None:
-        """Generate a comprehensive evaluation report."""
+    def generate_report(
+        self, comparison_results: Dict[str, Any], generate_visualizations: bool = True
+    ) -> None:
+        """Generate a comprehensive evaluation report with optional visualizations."""
         self.console.print("\n📊 EVALUATION REPORT")
         self.console.print("=" * 60)
 
@@ -453,6 +513,52 @@ class ExtractionEvaluator:
             self.console.print(
                 f"⚡ Fastest: {fastest_model[0].upper()} ({fastest_model[1]['avg_processing_time']:.1f}s)"
             )
+
+        # Generate visualizations if requested
+        if generate_visualizations and working_models:
+            self.console.print("\n🎨 GENERATING VISUALIZATIONS")
+            self.console.print("=" * 40)
+
+            try:
+                from ..analysis.dynamic_visualizations import DynamicModelVisualizer
+                from ..config import ConfigManager
+
+                # Initialize visualizer with same config
+                config = ConfigManager()
+                visualizer = DynamicModelVisualizer(
+                    config, str(self.output_dir / "visualizations")
+                )
+
+                # Generate all visualizations
+                viz_paths = visualizer.generate_all_visualizations(comparison_results)
+
+                if viz_paths:
+                    self.console.print(
+                        f"✅ Generated {len(viz_paths)} visualizations:", style="green"
+                    )
+                    for path in viz_paths:
+                        self.console.print(f"   📊 {Path(path).name}", style="cyan")
+
+                    # Create summary report with visualizations
+                    summary_path = visualizer.create_summary_report(
+                        comparison_results, viz_paths
+                    )
+                    self.console.print(
+                        f"📄 Visual report: {Path(summary_path).name}",
+                        style="bold green",
+                    )
+
+            except ImportError as e:
+                self.console.print(
+                    f"⚠️ Visualization dependencies missing: {e}", style="yellow"
+                )
+                self.console.print(
+                    "💡 Install with: pip install matplotlib seaborn", style="blue"
+                )
+            except Exception as e:
+                self.console.print(
+                    f"❌ Error generating visualizations: {e}", style="red"
+                )
 
         # Save detailed report
         report_file = self.output_dir / "evaluation_report.md"

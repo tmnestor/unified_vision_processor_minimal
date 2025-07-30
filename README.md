@@ -633,6 +633,132 @@ This enables analysis of:
 - Performance optimization opportunities
 - Success rate by extraction method type
 
+## 📊 Dynamic Visualizations
+
+The system includes a sophisticated visualization module that dynamically generates publication-ready charts and heatmaps for model performance analysis. All visualizations are configuration-driven with no hardcoded field names or thresholds.
+
+### Key Features
+
+- **Dynamic Field Discovery**: Automatically loads field definitions from `model_comparison.yaml`
+- **Configuration-Driven**: Thresholds, weights, and categories from YAML configuration
+- **Automatic Scaling**: Charts adapt to any number of fields and models
+- **Business-Importance Aware**: Field categorization based on configured weights
+- **Publication-Ready**: Professional styling with matplotlib and seaborn
+
+### Generated Visualizations
+
+#### 1. Field-Wise Accuracy Heatmap
+Shows accuracy for each field across all models with dynamic scaling:
+
+```bash
+# Generate all visualizations (default)
+python -m vision_processor.cli.evaluation_cli compare evaluation_ground_truth.csv
+
+# Generate with explicit visualization flag
+python -m vision_processor.cli.evaluation_cli compare evaluation_ground_truth.csv --visualizations
+
+# Skip visualizations for faster processing
+python -m vision_processor.cli.evaluation_cli compare evaluation_ground_truth.csv --no-visualizations
+```
+
+**Features:**
+- Dynamically scales to any number of fields (currently 26+ fields)
+- Color-coded performance (red = poor, green = excellent)
+- High-priority fields highlighted with gold borders
+- Automatic figure sizing based on field count
+
+#### 2. Model Performance Dashboard
+Comprehensive 2x2 dashboard showing:
+- Overall accuracy with configurable quality thresholds
+- Processing speed with performance benchmarks
+- Success rate comparison
+- Average fields extracted vs. total possible
+
+#### 3. Field Category Analysis
+Categorizes fields by business importance (from configuration weights):
+- **High Priority**: Fields with weight > 1.1 (critical business fields)
+- **Standard**: Fields with weight = 1.0 (important fields)  
+- **Lower Priority**: Fields with weight < 1.0 (supplementary fields)
+
+### CLI Integration
+
+The visualization system integrates seamlessly with existing evaluation commands:
+
+```bash
+# Full model comparison with visualizations
+python -m vision_processor.cli.evaluation_cli compare ground_truth.csv --model llama --visualizations
+
+# Benchmark single model with charts
+python -m vision_processor.cli.evaluation_cli benchmark datasets/ --model internvl --visualizations
+
+# Quick comparison without charts for speed
+python -m vision_processor.cli.evaluation_cli compare ground_truth.csv --model both --no-visualizations
+```
+
+### Output Files
+
+All visualizations are saved to `visualizations/` directory:
+
+```
+visualizations/
+├── field_accuracy_heatmap_26fields.png     # Dynamic heatmap
+├── model_performance_dashboard.png         # 2x2 performance dashboard  
+├── field_category_analysis.png            # Category-based analysis
+└── dynamic_model_comparison_report.html   # HTML summary report
+```
+
+### Dynamic Configuration Benefits
+
+The visualization system exemplifies the "no hardcoding" principle:
+
+```yaml
+# All visualization behavior driven by model_comparison.yaml
+expected_fields:
+  - DOCUMENT_TYPE    # Automatically included in all charts
+  - SUPPLIER         # Field discovery from extraction_prompt
+  - ABN              # No code changes needed for new fields
+
+field_weights:
+  DOCUMENT_TYPE: 1.2  # High priority (gold border in heatmap)
+  SUPPLIER: 1.0       # Standard priority
+  CARD_NUMBER: 0.8    # Lower priority
+
+quality_thresholds:
+  excellent: 12       # Green threshold line in dashboard
+  good: 8            # Used for color coding
+  
+speed_thresholds:
+  very_fast: 15.0    # Performance benchmark lines
+  fast: 25.0         # Automatically added to speed charts
+```
+
+### Integration with Model Comparison
+
+The visualization system works with the main comparison workflow:
+
+```bash
+# Run full comparison with visualizations
+python model_comparison.py compare --visualizations
+
+# Generate only visualizations from existing results
+python -c "
+from vision_processor.analysis.dynamic_visualizations import DynamicModelVisualizer
+from vision_processor.config.config_manager import ConfigManager
+config = ConfigManager('model_comparison.yaml')
+viz = DynamicModelVisualizer(config)
+# Load results and generate charts...
+"
+```
+
+### Professional Output
+
+All charts use consistent professional styling:
+- Clean color schemes with accessibility considerations
+- Proper typography and spacing
+- High-resolution PNG output (300 DPI)
+- Responsive sizing for different field counts
+- HTML summary reports with embedded visualizations
+
 ## 🔧 Production Deployment
 
 ### V100 GPU Optimization
