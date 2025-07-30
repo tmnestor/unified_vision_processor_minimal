@@ -21,8 +21,12 @@ Vision Model Evaluation Tools
 3. [magenta]visualize[/magenta] - Generate charts and reports from results
 
 [bold cyan]Quick Start:[/bold cyan]
-  evaluation_cli compare ground_truth.csv  # Compare all models
-  evaluation_cli visualize results.json    # Generate charts from results
+  evaluation_cli compare /path/to/ground_truth.csv
+  evaluation_cli visualize  # Auto-detects from config output_dir
+
+[bold cyan]With Config Paths:[/bold cyan]
+  evaluation_cli compare /home/jovyan/nfs_share/tod/datasets/ground_truth.csv
+  evaluation_cli visualize /home/jovyan/nfs_share/tod/output/comparison_results.json
 """,
     rich_markup_mode="rich",
 )
@@ -402,7 +406,7 @@ def validate_ground_truth(
 @app.command()
 def visualize(
     results_file: str = typer.Argument(
-        ..., help="Path to comparison results JSON file (from compare command)"
+        None, help="Path to comparison results JSON file (auto-detects if not provided)"
     ),
     output_dir: str = typer.Option(
         None, help="Output directory for visualizations (default from config)"
@@ -425,13 +429,39 @@ def visualize(
     """[Step 3] Generate visualizations from comparison results.
     
     Creates charts, heatmaps, and HTML reports from JSON results produced by compare command.
-    Can generate different visualization types and formats.
+    Auto-detects results file from config output directory if not specified.
     
     [bold cyan]Examples:[/bold cyan]
-      visualize results.json                           # Basic charts from results
-      visualize results.json --ground-truth-csv gt.csv # Full accuracy analysis
-      visualize results.json --format heatmaps         # Only accuracy heatmaps
+      visualize                                                    # Auto-detect results
+      visualize /output/comparison_results.json                    # Explicit path
+      visualize --ground-truth-csv /data/ground_truth.csv          # With ground truth
+      visualize --format heatmaps                                  # Only heatmaps
     """
+    
+    # Load configuration first to get paths
+    from ..config import ConfigManager
+    config = ConfigManager()
+    
+    # Auto-detect results file if not provided
+    if results_file is None:
+        effective_output_dir = output_dir or config.defaults.output_dir
+        candidates = [
+            Path(effective_output_dir) / "comparison_results.json",
+            Path(effective_output_dir) / "comparison_results_full.json", 
+            Path(effective_output_dir) / "production_results.json",
+        ]
+        
+        for candidate in candidates:
+            if candidate.exists():
+                results_file = str(candidate)
+                console.print(f"🔍 Auto-detected results: {candidate.name}")
+                break
+        
+        if results_file is None:
+            console.print(f"[red]❌ No results file found in: {effective_output_dir}[/red]")
+            console.print("[yellow]💡 Run 'compare' command first or specify results file path[/yellow]")
+            console.print(f"[yellow]💡 Looking for: {', '.join(c.name for c in candidates)}[/yellow]")
+            raise typer.Exit(1) from None
     
     if not Path(results_file).exists():
         console.print(f"[red]❌ Results file not found: {results_file}[/red]")
@@ -442,10 +472,6 @@ def visualize(
         import json
 
         from ..analysis.dynamic_visualizations import DynamicVisualizationGenerator
-        from ..config import ConfigManager
-
-        # Load configuration
-        config = ConfigManager()
         
         # Apply CLI logging overrides
         if debug:
