@@ -354,6 +354,9 @@ class ComparisonRunner:
 
             # Create model instance
             try:
+                # Set current model type for configuration access
+                self.config.set_model_type(model_name)
+                
                 model_path = getattr(self.config.model_paths, model_name)
                 model = self.model_registry.create_model(
                     model_name,
