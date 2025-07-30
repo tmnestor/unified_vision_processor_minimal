@@ -658,6 +658,206 @@ class DynamicModelVisualizer:
         self.console.print(f"✅ Category analysis saved: {save_path}", style="green")
         return str(save_path)
 
+    def create_vram_usage_comparison(
+        self, comparison_results: Dict[str, Any], save_path: Optional[str] = None
+    ) -> str:
+        """Create V100 VRAM usage comparison chart for both models.
+
+        Args:
+            comparison_results: Model comparison results from evaluator
+            save_path: Optional path to save chart
+
+        Returns:
+            Path to saved chart file
+        """
+        self.console.print("🎨 Creating V100 VRAM usage comparison...", style="blue")
+
+        # Extract memory data from comparison results
+        memory_data = {}
+        v100_limit_gb = 16.0  # V100 VRAM limit
+
+        # Check if we have memory data in the comparison results
+        if (
+            hasattr(comparison_results, "model_estimated_vram")
+            and comparison_results.model_estimated_vram
+        ):
+            memory_data = comparison_results.model_estimated_vram
+        elif (
+            hasattr(comparison_results, "memory_summary")
+            and comparison_results.memory_summary
+        ):
+            # Try to extract from memory summary
+            peak_gpu = comparison_results.memory_summary.get("peak_gpu_memory_gb", 0)
+            if peak_gpu > 0:
+                # Distribute equally if we only have total peak
+                for model in comparison_results.models_tested:
+                    memory_data[model] = peak_gpu / len(
+                        comparison_results.models_tested
+                    )
+
+        # Fallback: extract from working model results if available
+        if not memory_data:
+            working_models = [
+                (model, results)
+                for model, results in comparison_results.items()
+                if isinstance(results, dict) and "error" not in results
+            ]
+
+            # Use default estimates based on model type
+            model_defaults = {
+                "llama": 13.3,  # Llama-3.2-11B with 8-bit quantization
+                "internvl": 11.2,  # InternVL3-8B with 8-bit quantization
+                "llama32_vision": 13.3,
+                "internvl3": 11.2,
+            }
+
+            for model_name, _ in working_models:
+                memory_data[model_name] = model_defaults.get(model_name.lower(), 10.0)
+
+        if not memory_data:
+            self.console.print(
+                "❌ No memory data available for VRAM chart", style="red"
+            )
+            return ""
+
+        # Create VRAM usage chart
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+        fig.suptitle(
+            "V100 VRAM Usage Comparison (16GB Limit)",
+            fontsize=16,
+            fontweight="bold",
+            y=0.95,
+        )
+
+        models = [model.upper() for model in memory_data.keys()]
+        vram_usage = list(memory_data.values())
+
+        # Left chart: VRAM usage bars
+        bars = ax1.bar(
+            models,
+            vram_usage,
+            color=[self.colors["primary"], self.colors["secondary"]][: len(models)],
+            alpha=0.8,
+        )
+        ax1.set_title("Estimated VRAM Usage", fontweight="bold")
+        ax1.set_ylabel("VRAM Usage (GB)")
+        ax1.set_ylim(0, v100_limit_gb + 2)
+
+        # Add V100 limit line
+        ax1.axhline(
+            y=v100_limit_gb,
+            color="red",
+            linestyle="--",
+            linewidth=2,
+            alpha=0.8,
+            label="V100 Limit (16GB)",
+        )
+
+        # Add safety margin line (85% of 16GB)
+        safety_limit = v100_limit_gb * 0.85
+        ax1.axhline(
+            y=safety_limit,
+            color="orange",
+            linestyle="--",
+            linewidth=2,
+            alpha=0.8,
+            label=f"Safety Limit ({safety_limit:.1f}GB)",
+        )
+
+        # Add value labels on bars
+        for bar, usage in zip(bars, vram_usage, strict=False):
+            ax1.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 0.2,
+                f"{usage:.1f}GB",
+                ha="center",
+                va="bottom",
+                fontweight="bold",
+                fontsize=11,
+            )
+
+            # Add compliance status
+            compliance_color = (
+                "green"
+                if usage <= safety_limit
+                else "orange"
+                if usage <= v100_limit_gb
+                else "red"
+            )
+            status = (
+                "✅ Safe"
+                if usage <= safety_limit
+                else "⚠️  Margin"
+                if usage <= v100_limit_gb
+                else "❌ Over"
+            )
+            ax1.text(
+                bar.get_x() + bar.get_width() / 2,
+                usage / 2,
+                status,
+                ha="center",
+                va="center",
+                fontweight="bold",
+                color=compliance_color,
+                fontsize=10,
+            )
+
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
+
+        # Right chart: VRAM utilization percentages
+        utilization = [(usage / v100_limit_gb) * 100 for usage in vram_usage]
+        bars2 = ax2.bar(
+            models,
+            utilization,
+            color=[self.colors["warning"], self.colors["info"]][: len(models)],
+            alpha=0.8,
+        )
+        ax2.set_title("V100 VRAM Utilization", fontweight="bold")
+        ax2.set_ylabel("Utilization (%)")
+        ax2.set_ylim(0, 110)
+
+        # Add threshold lines
+        ax2.axhline(
+            y=85,
+            color="orange",
+            linestyle="--",
+            alpha=0.7,
+            label="Safety Threshold (85%)",
+        )
+        ax2.axhline(
+            y=100, color="red", linestyle="--", alpha=0.7, label="V100 Limit (100%)"
+        )
+
+        # Add percentage labels
+        for bar, util in zip(bars2, utilization, strict=False):
+            ax2.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 1,
+                f"{util:.1f}%",
+                ha="center",
+                va="bottom",
+                fontweight="bold",
+                fontsize=11,
+            )
+
+        ax2.legend()
+        ax2.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+
+        # Save chart
+        if save_path is None:
+            save_path = self.output_dir / "v100_vram_usage_comparison.png"
+        else:
+            save_path = Path(save_path)
+
+        plt.savefig(save_path, dpi=300, bbox_inches="tight", facecolor="white")
+        plt.close()
+
+        self.console.print(f"✅ VRAM comparison saved: {save_path}", style="green")
+        return str(save_path)
+
     def generate_all_visualizations(
         self, comparison_results: Dict[str, Any]
     ) -> List[str]:
@@ -690,6 +890,11 @@ class DynamicModelVisualizer:
             category_path = self.create_field_category_analysis(comparison_results)
             if category_path:
                 saved_files.append(category_path)
+
+            # 4. V100 VRAM usage comparison
+            vram_path = self.create_vram_usage_comparison(comparison_results)
+            if vram_path:
+                saved_files.append(vram_path)
 
             self.console.print(
                 f"✅ Generated {len(saved_files)} visualizations", style="bold green"

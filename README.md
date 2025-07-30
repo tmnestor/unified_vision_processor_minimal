@@ -680,6 +680,13 @@ Categorizes fields by business importance (from configuration weights):
 - **Standard**: Fields with weight = 1.0 (important fields)  
 - **Lower Priority**: Fields with weight < 1.0 (supplementary fields)
 
+#### 4. V100 VRAM Usage Comparison
+Shows estimated VRAM usage for V100 GPU compliance:
+- **Left Chart**: VRAM usage in GB with V100 limit lines (16GB limit, 13.6GB safety)
+- **Right Chart**: VRAM utilization percentages with threshold indicators
+- **Compliance Status**: Visual indicators (✅ Safe, ⚠️ Margin, ❌ Over) for each model
+- **Dynamic Estimates**: Uses model-specific memory estimation methods
+
 ### CLI Integration
 
 The visualization system integrates seamlessly with existing evaluation commands:
@@ -704,6 +711,7 @@ visualizations/
 ├── field_accuracy_heatmap_26fields.png     # Dynamic heatmap
 ├── model_performance_dashboard.png         # 2x2 performance dashboard  
 ├── field_category_analysis.png            # Category-based analysis
+├── v100_vram_usage_comparison.png         # V100 VRAM compliance chart
 └── dynamic_model_comparison_report.html   # HTML summary report
 ```
 

@@ -76,11 +76,19 @@ class ComparisonResults:
     overall_success_rate: float = 0.0
     model_success_rates: dict[str, float] | None = None
 
+    # Memory usage metrics
+    memory_summary: dict[str, float] | None = None
+    model_estimated_vram: dict[str, float] | None = None  # Estimated VRAM per model
+
     def __post_init__(self):
         if self.model_execution_times is None:
             self.model_execution_times = {}
         if self.model_success_rates is None:
             self.model_success_rates = {}
+        if self.memory_summary is None:
+            self.memory_summary = {}
+        if self.model_estimated_vram is None:
+            self.model_estimated_vram = {}
 
 
 class ComparisonRunner:
@@ -150,6 +158,10 @@ class ComparisonRunner:
         total_time = time.time() - start_time
         success_metrics = self._calculate_success_metrics(extraction_results)
 
+        # Step 7: Collect memory usage data
+        memory_summary = self.memory_monitor.get_memory_summary()
+        model_estimated_vram = self._get_model_vram_estimates(valid_models)
+
         # Create results object
         self.results = ComparisonResults(
             config=self.config,
@@ -163,6 +175,8 @@ class ComparisonRunner:
             model_execution_times=success_metrics["execution_times"],
             overall_success_rate=success_metrics["overall_success_rate"],
             model_success_rates=success_metrics["model_success_rates"],
+            memory_summary=memory_summary,
+            model_estimated_vram=model_estimated_vram,
         )
 
         # Step 7: Print summary with memory analysis
@@ -1269,6 +1283,46 @@ class ComparisonRunner:
 
         # Consider successful if we have at least 3 valid key-value pairs
         return valid_pairs >= 3
+
+    def _get_model_vram_estimates(self, valid_models: list[str]) -> dict[str, float]:
+        """Get estimated VRAM usage for each model based on their configuration.
+
+        Args:
+            valid_models: List of model names that were validated
+
+        Returns:
+            Dictionary mapping model names to estimated VRAM usage in GB
+        """
+        vram_estimates = {}
+
+        for model_name in valid_models:
+            try:
+                # Get model instance from registry to access memory estimation
+                model_instance = self.model_registry.get_model(
+                    model_name, self.config, enable_quantization=True
+                )
+
+                # Get quantization config and estimate memory
+                if hasattr(model_instance, "_get_quantization_config"):
+                    quant_config = model_instance._get_quantization_config()
+                    if hasattr(model_instance, "_estimate_memory_usage"):
+                        estimated_gb = model_instance._estimate_memory_usage(
+                            quant_config
+                        )
+                        vram_estimates[model_name] = estimated_gb
+                    else:
+                        # Fallback for models without memory estimation
+                        vram_estimates[model_name] = 8.0  # Default estimate
+                else:
+                    vram_estimates[model_name] = 8.0  # Default estimate
+
+            except Exception as e:
+                self.console.print(
+                    f"⚠️  Could not estimate VRAM for {model_name}: {e}", style="yellow"
+                )
+                vram_estimates[model_name] = 8.0  # Safe default
+
+        return vram_estimates
 
     def _cleanup_gpu_memory(self):
         """Aggressive memory cleanup for V100 16GB limit (matching original script)."""

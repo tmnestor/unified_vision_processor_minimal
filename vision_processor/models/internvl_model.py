@@ -156,6 +156,84 @@ class InternVLModel(BaseVisionModel):
             logger.warning("BitsAndBytesConfig not available - falling back to FP16")
             return None
 
+    def _estimate_memory_usage(
+        self, quantization_config: BitsAndBytesConfig | None
+    ) -> float:
+        """Estimate model memory usage in GB for V100 validation."""
+        # Determine model size from path for accurate memory estimation
+        model_sizes = {
+            "InternVL3-1B": 0.9_000_000_000,  # 0.9B parameters
+            "InternVL3-2B": 2_000_000_000,  # 2B parameters
+            "InternVL3-8B": 8_000_000_000,  # 8B parameters (primary)
+            "InternVL3-9B": 9_000_000_000,  # 9B parameters
+            "InternVL3-14B": 15_000_000_000,  # 15B parameters
+            "InternVL3-38B": 38_000_000_000,  # 38B parameters
+            "InternVL3-78B": 78_000_000_000,  # 78B parameters
+        }
+
+        # Extract model size from path
+        base_params = 8_000_000_000  # Default to InternVL3-8B
+        for size_key, param_count in model_sizes.items():
+            if (
+                size_key in str(self.model_path)
+                or size_key.replace("-", "_").lower() in str(self.model_path).lower()
+            ):
+                base_params = param_count
+                break
+
+        if quantization_config:
+            if (
+                hasattr(quantization_config, "load_in_8bit")
+                and quantization_config.load_in_8bit
+            ):
+                # 8-bit quantization: ~1 byte per parameter
+                memory_gb = (base_params * 1.0) / (1024**3)
+                overhead = 1.4  # InternVL vision components + quantization overhead
+                return memory_gb * overhead
+
+        # FP16: 2 bytes per parameter
+        memory_gb = (base_params * 2.0) / (1024**3)
+        overhead = 1.3  # Vision model overhead
+        return memory_gb * overhead
+
+    def _validate_v100_compliance(self, estimated_memory_gb: float) -> None:
+        """Validate that estimated memory usage complies with V100 limits."""
+        # Get memory config from ConfigManager
+        if hasattr(self.config, "memory_config"):
+            v100_limit_gb = self.config.memory_config.v100_limit_gb
+            safety_margin = self.config.memory_config.safety_margin
+        else:
+            # Fallback for legacy config
+            v100_limit_gb = 16.0
+            safety_margin = 0.85
+        effective_limit = v100_limit_gb * safety_margin
+
+        if estimated_memory_gb > effective_limit:
+            logger.error("❌ V100 COMPLIANCE FAILURE:")
+            logger.error(f"   Estimated memory: {estimated_memory_gb:.1f}GB")
+            logger.error(f"   V100 safe limit: {effective_limit:.1f}GB (85% of 16GB)")
+            logger.error(f"   Excess: {estimated_memory_gb - effective_limit:.1f}GB")
+            logger.error("")
+            logger.error("💡 SOLUTIONS:")
+            if not self.enable_quantization:
+                logger.error("   1. Enable quantization (set quantization=true)")
+            else:
+                logger.error(
+                    "   1. Use smaller model variant (e.g., InternVL3-2B instead of InternVL3-8B)"
+                )
+                logger.error("   2. Consider InternVL3-1B for minimal memory usage")
+
+            raise RuntimeError(
+                f"Model memory ({estimated_memory_gb:.1f}GB) exceeds V100 safe limit ({effective_limit:.1f}GB)"
+            )
+        else:
+            safety_percent = (
+                (effective_limit - estimated_memory_gb) / effective_limit * 100
+            )
+            logger.info(
+                f"✅ V100 Compliance: {estimated_memory_gb:.1f}GB / {v100_limit_gb:.1f}GB ({safety_percent:.1f}% safety margin)"
+            )
+
     def _split_model(self, model_name: str) -> dict[str, int]:
         """Create device mapping for multi-GPU configuration.
         Based on the model architecture, distributes layers across available GPUs.
@@ -265,6 +343,10 @@ class InternVLModel(BaseVisionModel):
                 )
             else:
                 logger.info("🔧 V100 Mode: Loading model on single GPU...")
+
+            # Validate V100 memory compliance
+            estimated_memory = self._estimate_memory_usage(quantization_config)
+            self._validate_v100_compliance(estimated_memory)
         elif hasattr(self, "kwargs") and self.kwargs.get("force_multi_gpu", False):
             logger.info(
                 f"Multi-GPU mode requested, distributing across {self.num_gpus} GPUs",
