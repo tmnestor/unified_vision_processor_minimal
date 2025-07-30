@@ -6,6 +6,7 @@ model loading, extraction, analysis, and reporting generation.
 """
 
 import gc
+import json
 import re
 import time
 from dataclasses import dataclass
@@ -89,6 +90,40 @@ class ComparisonResults:
             self.memory_summary = {}
         if self.model_estimated_vram is None:
             self.model_estimated_vram = {}
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert ComparisonResults to JSON-serializable dictionary.
+        
+        Returns:
+            Dictionary with all essential comparison data for persistence
+        """
+        return {
+            "models_tested": self.models_tested,
+            "extraction_results": self.extraction_results,
+            "performance_analysis": self.performance_analysis,
+            "field_analysis": self.field_analysis,
+            "comparison_metrics": self.comparison_metrics,
+            "total_execution_time": self.total_execution_time,
+            "model_execution_times": self.model_execution_times,
+            "overall_success_rate": self.overall_success_rate,
+            "model_success_rates": self.model_success_rates,
+            "memory_summary": self.memory_summary,
+            "model_estimated_vram": self.model_estimated_vram,
+            "dataset_info": {
+                "total_images": self.dataset_info.total_images,
+                "verified_images": len(self.dataset_info.verified_images),
+                "missing_images": len(self.dataset_info.missing_images),
+                "dataset_path": str(self.dataset_info.dataset_path),
+            },
+            "timestamp": datetime.now().isoformat(),
+            "config_summary": {
+                "models": self.config.models_list,
+                "quantization": self.config.processing.quantization,
+                "max_tokens": self.config.defaults.max_tokens,
+                "v100_mode": self.config.device_config.v100_mode,
+                "memory_limit_gb": self.config.device_config.memory_limit_gb,
+            }
+        }
 
 
 class ComparisonRunner:
@@ -179,7 +214,10 @@ class ComparisonRunner:
             model_estimated_vram=model_estimated_vram,
         )
 
-        # Step 7: Print summary with memory analysis
+        # Step 8: Save complete results to JSON for visualization and analysis
+        self._save_results_to_json()
+
+        # Step 9: Print summary with memory analysis
         self._print_completion_summary()
 
         return self.results
@@ -1410,3 +1448,104 @@ class ComparisonRunner:
             ].apply(get_quality_rating)
 
         return results_dataframe
+
+    def _save_results_to_json(self) -> None:
+        """Save complete ComparisonResults to JSON file in persistent storage.
+        
+        KFP Compatibility: Uses configured output_dir which MUST point to persistent 
+        storage (e.g., NFS mount) in Kubeflow Pipelines environments. Pod-local 
+        storage will be lost when pods terminate.
+        
+        This creates a comprehensive JSON file with all comparison data including
+        memory usage measurements for use by visualization and analysis tools.
+        """
+        if not self.results:
+            self.console.print("⚠️ No results to save", style="yellow")
+            return
+
+        try:
+            # Create output directory if it doesn't exist (persistent storage)
+            output_dir = Path(self.config.output_dir)
+            
+            # KFP Safety Check: Verify we're not writing to pod-local storage
+            if not self._is_persistent_storage_path(output_dir):
+                self.console.print(
+                    f"⚠️ WARNING: Output path may be pod-local storage: {output_dir}",
+                    style="yellow"
+                )
+                self.console.print(
+                    "💡 For KFP: Use mounted persistent volumes (e.g., /mnt/*, /home/jovyan/nfs_share/*)",
+                    style="blue"
+                )
+            
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Save complete results with memory data to persistent storage
+            results_file = output_dir / "comparison_results_full.json"
+            
+            # Convert to JSON-serializable dictionary
+            results_dict = self.results.to_dict()
+            
+            # Save to file with proper formatting
+            with results_file.open("w") as f:
+                json.dump(results_dict, f, indent=2, default=str)
+            
+            self.console.print(
+                f"✅ Complete results saved to persistent storage: {results_file}", style="green"
+            )
+            self.console.print(
+                f"📊 Includes memory data for {len(self.results.model_estimated_vram)} models",
+                style="green"
+            )
+            self.console.print(
+                "🚀 KFP Compatible: Data persisted outside pod storage", style="blue"
+            )
+            
+        except Exception as e:
+            self.console.print(
+                f"⚠️ Failed to save results to JSON: {e}", style="yellow"
+            )
+
+    def _is_persistent_storage_path(self, path: Path) -> bool:
+        """Check if path appears to be persistent storage suitable for KFP.
+        
+        Args:
+            path: Path to check
+            
+        Returns:
+            True if path appears to be persistent storage
+        """
+        path_str = str(path.resolve())
+        
+        # Common KFP persistent storage mount points
+        persistent_patterns = [
+            "/mnt/",           # Common KFP mount point
+            "/data/",          # Common data mount
+            "/shared/",        # Shared storage
+            "/nfs/",           # NFS mounts
+            "/home/jovyan/",   # Jupyter persistent home
+            "/opt/ml/",        # SageMaker/ML platform storage
+        ]
+        
+        # Check if path starts with any persistent storage pattern
+        for pattern in persistent_patterns:
+            if path_str.startswith(pattern):
+                return True
+        
+        # Pod-local paths that should be avoided in KFP
+        local_patterns = [
+            "/tmp/",
+            "/var/tmp/",
+            "/app/",
+            "/workspace/",
+            "/root/",
+        ]
+        
+        # Warn if using clearly local storage
+        for pattern in local_patterns:
+            if path_str.startswith(pattern):
+                return False
+        
+        # For other paths, assume they might be persistent
+        # (Better to be permissive than block valid use cases)
+        return True

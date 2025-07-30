@@ -404,6 +404,24 @@ class ConfigManager:
         """Get list of available models."""
         return self.models_list
 
+    def get_model_display_name(self, model_type: str) -> str:
+        """Get the display name for a model from its path.
+        
+        Args:
+            model_type: Model type key ('llama' or 'internvl')
+            
+        Returns:
+            Display name extracted from model path (e.g., 'Llama-3.2-11B-Vision-Instruct')
+        """
+        model_path = self.get_model_path(model_type)
+        if model_path:
+            # Extract the model name from the path (last directory component)
+            from pathlib import Path
+            return Path(model_path).name
+        else:
+            # Fallback to uppercase model type if no path available
+            return model_type.upper()
+
     def is_multi_gpu_enabled(self, model_type: Optional[str] = None) -> bool:
         """Check if multi-GPU is enabled for specified model."""
         if model_type is None:

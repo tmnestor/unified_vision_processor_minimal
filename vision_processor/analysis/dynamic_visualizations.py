@@ -57,19 +57,18 @@ class DynamicModelVisualizer:
         # Load weights and thresholds from config manager
         self.field_weights = self.config_manager.get_field_weights()
 
-        # Load quality and speed thresholds from config
-        try:
-            config_dict = self.config_manager.get_legacy_config_dict()
-            self.quality_thresholds = config_dict.get(
-                "quality_thresholds", {"excellent": 12, "good": 8, "fair": 5, "poor": 0}
-            )
-            self.speed_thresholds = config_dict.get(
-                "speed_thresholds", {"very_fast": 15.0, "fast": 25.0, "moderate": 40.0}
-            )
-        except AttributeError:
-            # Fallback if legacy config method doesn't exist
-            self.quality_thresholds = {"excellent": 12, "good": 8, "fair": 5, "poor": 0}
-            self.speed_thresholds = {"very_fast": 15.0, "fast": 25.0, "moderate": 40.0}
+        # Set visualization thresholds (these are for chart display, not business logic)
+        self.quality_thresholds = {
+            "excellent": 12,  # 12+ fields out of 26 = excellent
+            "good": 8,  # 8-11 fields = good
+            "fair": 5,  # 5-7 fields = fair
+            "poor": 0,  # <5 fields = poor
+        }
+        self.speed_thresholds = {
+            "very_fast": 15.0,  # <15s per document = very fast
+            "fast": 25.0,  # 15-25s = fast
+            "moderate": 40.0,  # 25-40s = moderate, >40s = slow
+        }
 
         self.console.print(
             f"✅ Dynamic config loaded: {len(self.extraction_fields)} fields, "

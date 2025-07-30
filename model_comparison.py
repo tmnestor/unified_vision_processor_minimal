@@ -8,12 +8,18 @@ field labels for Australian Tax Office document processing.
 
 KFP (Kubeflow Pipelines) Usage:
     python model_comparison.py compare --datasets-path /mnt/datasets --output-dir /mnt/output
-    python model_comparison.py compare --datasets-path /data/images --models llama --quantization
+    python model_comparison.py visualize --ground-truth-csv evaluation_ground_truth.csv --output-dir /mnt/output
     python model_comparison.py check-environment --datasets-path /mnt/input
 
 Local Usage:
     python model_comparison.py compare --datasets-path ./datasets --output-dir ./results
-    python model_comparison.py compare --datasets-path ~/data --models internvl --max-tokens 128
+    python model_comparison.py visualize --images-dir ./datasets --output-dir ./results
+    python model_comparison.py validate-models
+
+Architecture Improvements:
+- ✅ Unified command interface: all functionality through model_comparison.py
+- ✅ Simplified workflow: compare → visualize (no complex module paths)
+- ✅ KFP-compatible persistent storage with fail-fast validation
 
 Production Features:
 - ✅ Modular architecture with extensible components
@@ -448,6 +454,117 @@ def validate_models(
 
     except Exception as e:
         console.print(f"❌ Model validation failed: {e}", style="bold red")
+        raise typer.Exit(1) from None
+
+
+@app.command()
+def visualize(
+    ground_truth_csv: str = typer.Option(
+        "evaluation_ground_truth.csv", help="Path to ground truth CSV file"
+    ),
+    images_dir: str = typer.Option(
+        None, help="Directory containing test images (default from config)"
+    ),
+    output_dir: str = typer.Option(
+        None, help="Output directory for visualizations (default from config)"
+    ),
+    config_path: str = typer.Option(
+        "model_comparison.yaml", help="Path to model comparison configuration YAML file"
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug output"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimize output"),
+):
+    """Generate visualizations from existing comparison results or run new evaluation"""
+    
+    # Load configuration
+    try:
+        config = ConfigManager(yaml_file=config_path)
+        
+        # Apply CLI logging overrides
+        if debug:
+            config.defaults.debug_mode = True
+            config.defaults.verbose_mode = True
+        elif verbose:
+            config.defaults.verbose_mode = True
+        if quiet:
+            config.defaults.console_output = False
+            config.defaults.verbose_mode = False
+            config.defaults.debug_mode = False
+            
+        # Use config defaults if not provided
+        effective_images_dir = images_dir or config.defaults.datasets_path
+        effective_output_dir = output_dir or config.defaults.output_dir
+        
+        console.print("🎨 GENERATING VISUALIZATIONS", style="bold blue")
+        console.print("=" * 40)
+        
+        # Check if ground truth file exists
+        if not Path(ground_truth_csv).exists():
+            console.print(f"❌ Ground truth file not found: {ground_truth_csv}", style="bold red")
+            console.print("💡 Create ground truth CSV with image_file and field columns", style="blue")
+            raise typer.Exit(1)
+            
+        # Check if images directory exists
+        if not Path(effective_images_dir).exists():
+            console.print(f"❌ Images directory not found: {effective_images_dir}", style="bold red")
+            raise typer.Exit(1)
+            
+        # Import and run evaluation with visualizations
+        from vision_processor.evaluation.evaluator import ExtractionEvaluator
+        
+        evaluator = ExtractionEvaluator(
+            ground_truth_csv=ground_truth_csv,
+            images_dir=effective_images_dir,
+            output_dir=effective_output_dir,
+            config_manager=config
+        )
+        
+        # Check if we have existing comparison results to visualize
+        results_file = Path(effective_output_dir) / "comparison_results.json"
+        if results_file.exists():
+            console.print(f"✅ Found existing comparison results: {results_file}")
+            console.print("🎨 Generating visualizations from stored results...")
+            
+            # Load existing results
+            import json
+            with results_file.open("r") as f:
+                comparison_results = json.load(f)
+                
+            # Generate report with visualizations
+            evaluator.generate_report(comparison_results, generate_visualizations=True)
+            
+        else:
+            console.print("⚠️ No existing comparison results found", style="yellow")
+            console.print("🔄 Running new model comparison and evaluation...", style="blue")
+            
+            # Run fresh comparison
+            models = config.defaults.models.split(",") if config.defaults.models else ["llama", "internvl"]
+            models = [m.strip() for m in models]
+            
+            comparison_results = evaluator.compare_models(models=models)
+            evaluator.generate_report(comparison_results, generate_visualizations=True)
+            
+        console.print("\n🎉 Visualization generation completed!", style="bold green")
+        console.print(f"📁 Results saved in: {effective_output_dir}", style="green")
+        
+        # Show visualization files created
+        viz_dir = Path(effective_output_dir) / "visualizations"
+        if viz_dir.exists():
+            viz_files = list(viz_dir.glob("*.png")) + list(viz_dir.glob("*.html"))
+            if viz_files:
+                console.print(f"\n📊 Generated {len(viz_files)} visualization files:", style="cyan")
+                for viz_file in sorted(viz_files):
+                    console.print(f"   📈 {viz_file.name}", style="cyan")
+                    
+    except Exception as e:
+        console.print(f"❌ Visualization generation failed: {e}", style="bold red")
+        if debug:
+            import traceback
+            console.print("🔍 Full traceback:", style="red")
+            console.print(traceback.format_exc(), style="red")
         raise typer.Exit(1) from None
 
 

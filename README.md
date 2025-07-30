@@ -10,8 +10,11 @@ This system provides model-agnostic document processing with dynamic field detec
 
 - **Model Agnostic**: Seamless switching between InternVL3 and Llama-3.2-Vision models
 - **Production Ready**: Optimized for V100 16GB GPU deployment with 8-bit quantization
+- **Unified Interface**: All functionality through `model_comparison.py` - no complex module paths
+- **Simplified Workflow**: Intuitive `compare` → `visualize` command structure
 - **Dynamic Field Extraction**: Configurable field schemas with automatic prompt generation
 - **Unified Configuration**: Single YAML source of truth for all settings
+- **KFP Compatible**: Persistent storage support for Kubeflow Pipelines
 - **Robust Parsing**: Handles various model output formats with fallback strategies
 - **Memory Efficient**: Built-in memory monitoring and cleanup
 - **DataFrame Integration**: Convert batch results to pandas DataFrames for analysis
@@ -84,11 +87,73 @@ model_paths:
 
 ## 📋 CLI Usage
 
-The system provides comprehensive command-line interfaces for document processing, model comparison, and evaluation.
+### Unified Interface - All Commands Through `model_comparison.py`
 
-### Core Commands
+The architecture has been simplified to provide all functionality through a single, intuitive interface:
 
-#### 1. Single Document Extraction
+### Primary Workflow
+
+#### 1. Model Comparison
+```bash
+# Run complete model comparison with default settings
+python model_comparison.py compare
+
+# Model comparison with custom paths
+python model_comparison.py compare --datasets-path ./test_images/ --output-dir ./results/
+
+# Compare specific models only
+python model_comparison.py compare --models llama --quantization
+```
+
+#### 2. Generate Visualizations (NEW SIMPLIFIED APPROACH)
+```bash
+# Generate visualizations from existing results
+python model_comparison.py visualize
+
+# Generate with custom ground truth file
+python model_comparison.py visualize --ground-truth-csv evaluation_ground_truth.csv
+
+# Generate with custom paths
+python model_comparison.py visualize --images-dir ./test_images/ --output-dir ./results/
+```
+
+#### 3. Complete Workflow Examples
+
+**After (Intuitive):**
+```bash
+python model_comparison.py compare
+python model_comparison.py visualize
+```
+
+**KFP-Compatible:**
+```bash
+# KFP Pipeline Step 1: Run Comparison
+python model_comparison.py compare --datasets-path /mnt/datasets --output-dir /mnt/output
+
+# KFP Pipeline Step 2: Generate Visualizations (SIMPLIFIED!)
+python model_comparison.py visualize --ground-truth-csv evaluation_ground_truth.csv --output-dir /mnt/output
+```
+
+### Advanced Commands
+
+#### 4. Environment Management
+```bash
+# Check production environment and dependencies
+python model_comparison.py check-environment
+
+# Validate all configured models
+python model_comparison.py validate-models
+
+# List available models in registry
+python model_comparison.py list-models
+
+# Show core field schema
+python model_comparison.py show-schema
+```
+
+### Legacy CLI Commands (Still Available)
+
+#### 5. Single Document Extraction
 ```bash
 # Basic extraction (requires explicit model selection)
 python -m vision_processor.cli.extract_cli extract image14.png --model llama
@@ -99,23 +164,16 @@ python -m vision_processor.cli.extract_cli extract image14.png --model internvl
 # Extract with output format override
 python -m vision_processor.cli.extract_cli extract image14.png --output-format json
 
-# Custom YAML configuration
-python -m vision_processor.cli.extract_cli extract image14.png --yaml-file custom_config.yaml
-```
-
-#### 2. Model Comparison
+#### 6. Model Comparison (Legacy)
 ```bash
 # Compare default models on single document
 python -m vision_processor.cli.extract_cli compare image14.png
 
 # Compare specific models
 python -m vision_processor.cli.extract_cli compare image14.png --models llama,internvl
-
-# Comparison with custom config
-python -m vision_processor.cli.extract_cli compare image14.png --yaml-file production.yaml
 ```
 
-#### 3. Batch Processing
+#### 7. Batch Processing (Legacy)
 ```bash
 # Batch process all images in directory
 python -m vision_processor.cli.extract_cli batch ./datasets/
@@ -127,7 +185,7 @@ python -m vision_processor.cli.extract_cli batch ./datasets/ --output-dir ./batc
 python -m vision_processor.cli.extract_cli batch ./datasets/ --model internvl
 ```
 
-#### 4. Batch Results Analysis
+#### 8. Batch Results Analysis
 ```bash
 # Convert batch_results.json to CSV DataFrame (one row per image) - REQUIRES --model
 python -m vision_processor.cli.batch_to_csv_cli convert batch_results.json --yaml-file model_comparison.yaml --model llama
@@ -167,53 +225,13 @@ missing_per_field = df.isnull().sum()
 overall_completion = (df.count().sum() / df.size) * 100
 ```
 
-#### 5. Configuration Information
+#### 9. Configuration Information (Legacy)
 ```bash
 # View current configuration and paths
 python -m vision_processor.cli.extract_cli config-info
 
 # Check configuration with custom YAML
 python -m vision_processor.cli.extract_cli config-info --yaml-file production.yaml
-
-# View configuration with verbose details
-python -m vision_processor.cli.extract_cli config-info --verbose
-```
-
-### Model Comparison Script
-
-#### 6. Full Model Comparison Pipeline
-```bash
-# Run complete model comparison with default settings
-python model_comparison.py
-
-# Model comparison with CLI overrides
-python model_comparison.py compare --datasets-path ./test_images/ --output-dir ./comparison_results/
-
-# Compare specific models only
-python model_comparison.py compare --models llama --quantization
-
-# Environment validation
-python model_comparison.py check-environment
-
-# Model validation
-python model_comparison.py validate-models
-```
-
-### Evaluation Commands
-
-#### 7. Model Performance Evaluation
-```bash
-# Compare models against ground truth
-python -m vision_processor.cli.evaluation_cli compare ground_truth.csv
-
-# Evaluation with custom paths
-python -m vision_processor.cli.evaluation_cli compare ground_truth.csv --images-dir ./test_set/ --output-dir ./eval_results/
-
-# Benchmark single model performance
-python -m vision_processor.cli.evaluation_cli benchmark ./datasets/ --model llama --iterations 5
-
-# Validate ground truth data
-python -m vision_processor.cli.evaluation_cli validate-ground-truth ground_truth.csv --images-dir ./datasets/
 ```
 
 ### Path Resolution
@@ -298,23 +316,21 @@ python model_comparison.py compare --debug
 
 #### Performance Testing
 ```bash
-# Quick performance test
-python -m vision_processor.cli.evaluation_cli benchmark datasets/ --model llama --iterations 3
-
 # Memory usage monitoring
 python model_comparison.py check-environment --verbose
 
 # Validate all configured models
 python model_comparison.py validate-models
+
+# Quick performance comparison
+python model_comparison.py compare --models llama
 ```
 
 #### Automation-Friendly Usage
 ```bash
 # Quiet mode for scripts (only errors/warnings)
-python -m vision_processor.cli.extract_cli batch datasets/ --quiet
-
-# JSON output for processing
-python -m vision_processor.cli.extract_cli extract image.png --output-format json --quiet
+python model_comparison.py compare --quiet
+python model_comparison.py visualize --quiet
 
 # Exit codes for CI/CD
 python model_comparison.py validate-models --quiet
@@ -323,20 +339,20 @@ echo $?  # 0 for success, 1 for failure
 
 ### Verbosity Control
 
-All CLI commands support runtime verbosity control:
+All commands support runtime verbosity control:
 
 ```bash
 # Quiet mode (minimal output, errors/warnings only)
 python model_comparison.py compare --quiet
-python -m vision_processor.cli.extract_cli extract image.jpg --quiet
+python model_comparison.py visualize --quiet
 
 # Verbose mode (detailed status messages)
 python model_comparison.py compare --verbose
-python -m vision_processor.cli.evaluation_cli compare ground_truth.csv --verbose
+python model_comparison.py visualize --verbose
 
 # Debug mode (full diagnostic output)
 python model_comparison.py compare --debug
-python -m vision_processor.cli.extract_cli extract image.jpg --debug
+python model_comparison.py visualize --debug
 ```
 
 ## ⚙️ Configuration
@@ -480,11 +496,45 @@ python model_comparison.py compare --quiet
 python -m vision_processor.cli.extract_cli extract image.jpg
 
 # Verbose processing with detailed status
-python -m vision_processor.cli.evaluation_cli compare data.csv --verbose
+python model_comparison.py visualize --verbose
 
 # Debug processing with full diagnostics
 python model_comparison.py compare --debug
 ```
+
+## 🎯 Production Usage Patterns
+
+### KFP (Kubeflow Pipelines) Integration
+
+For production KFP environments with persistent storage:
+
+**After (Intuitive):**
+```bash
+# KFP Pipeline Step 1: Run Comparison  
+python model_comparison.py compare --datasets-path /mnt/datasets --output-dir /mnt/output
+
+# KFP Pipeline Step 2: Generate Visualizations (SIMPLIFIED!)
+python model_comparison.py visualize --ground-truth-csv evaluation_ground_truth.csv --output-dir /mnt/output
+```
+
+**KFP Storage Requirements:**
+- Use persistent volume mounts (e.g., `/mnt/*`, `/data/*`, `/home/jovyan/nfs_share/*`)
+- Avoid pod-local storage (`/tmp/*`, `/app/*`, `/workspace/*`)
+- All generated data persists across pipeline steps and pod restarts
+
+### Local Development
+
+**After (Intuitive):**
+```bash
+python model_comparison.py compare
+python model_comparison.py visualize
+```
+
+**Architecture Benefits:**
+- ✅ **Unified Interface**: All functionality through one script
+- ✅ **No Complex Paths**: Eliminates `python -m vision_processor.cli.evaluation_cli`
+- ✅ **Smart Logic**: Uses existing results when available
+- ✅ **Consistent CLI**: Same flags and configuration throughout
 
 ## 🧪 Model Support
 
@@ -651,14 +701,14 @@ The system includes a sophisticated visualization module that dynamically genera
 Shows accuracy for each field across all models with dynamic scaling:
 
 ```bash
-# Generate all visualizations (default)
-python -m vision_processor.cli.evaluation_cli compare evaluation_ground_truth.csv
+# Generate all visualizations (simplified)
+python model_comparison.py visualize
 
-# Generate with explicit visualization flag
-python -m vision_processor.cli.evaluation_cli compare evaluation_ground_truth.csv --visualizations
+# Generate with custom ground truth file
+python model_comparison.py visualize --ground-truth-csv evaluation_ground_truth.csv
 
-# Skip visualizations for faster processing
-python -m vision_processor.cli.evaluation_cli compare evaluation_ground_truth.csv --no-visualizations
+# Generate with custom output directory
+python model_comparison.py visualize --output-dir ./custom_viz_results/
 ```
 
 **Features:**
@@ -689,17 +739,18 @@ Shows estimated VRAM usage for V100 GPU compliance:
 
 ### CLI Integration
 
-The visualization system integrates seamlessly with existing evaluation commands:
+The visualization system integrates with the unified command interface:
 
 ```bash
-# Full model comparison with visualizations
-python -m vision_processor.cli.evaluation_cli compare ground_truth.csv --model llama --visualizations
+# Complete workflow: comparison + visualizations
+python model_comparison.py compare
+python model_comparison.py visualize
 
-# Benchmark single model with charts
-python -m vision_processor.cli.evaluation_cli benchmark datasets/ --model internvl --visualizations
+# Quick visualization from existing results
+python model_comparison.py visualize --ground-truth-csv evaluation_ground_truth.csv
 
-# Quick comparison without charts for speed
-python -m vision_processor.cli.evaluation_cli compare ground_truth.csv --model both --no-visualizations
+# Custom paths for visualization
+python model_comparison.py visualize --images-dir ./test_set/ --output-dir ./viz_results/
 ```
 
 ### Output Files
@@ -742,20 +793,15 @@ speed_thresholds:
 
 ### Integration with Model Comparison
 
-The visualization system works with the main comparison workflow:
+The visualization system works seamlessly with the unified workflow:
 
 ```bash
-# Run full comparison with visualizations
-python model_comparison.py compare --visualizations
+# Complete workflow (recommended)
+python model_comparison.py compare
+python model_comparison.py visualize
 
-# Generate only visualizations from existing results
-python -c "
-from vision_processor.analysis.dynamic_visualizations import DynamicModelVisualizer
-from vision_processor.config.config_manager import ConfigManager
-config = ConfigManager('model_comparison.yaml')
-viz = DynamicModelVisualizer(config)
-# Load results and generate charts...
-"
+# One-step visualization from stored results
+python model_comparison.py visualize --ground-truth-csv evaluation_ground_truth.csv
 ```
 
 ### Professional Output
@@ -814,20 +860,127 @@ defaults:
 - **Robust Parsing**: Multiple parsing strategies with fallbacks
 - **Universal Parser**: Handles various model output formats
 
+## 📊 Ground Truth Dataset Usage
+
+The system uses a comprehensive ground truth evaluation dataset to provide objective, quantitative performance metrics for model comparison.
+
+### **Current Ground Truth Dataset**
+- **Location**: `/synthetic_receipt_generator_with_ground_truth/evaluation_data/evaluation_ground_truth.csv`
+- **Size**: 20 synthetic invoices/receipts with corresponding PNG images
+- **Format**: CSV with `image_file` column + 25 field columns
+- **Coverage**: Synthetic Australian business documents (invoices, receipts, bank statements)
+
+### **How Ground Truth is Used**
+
+#### **1. Data Loading**
+```python
+# Loads CSV file with image_file as key, all other columns as field values
+ground_truth = {}
+with Path(self.ground_truth_csv).open("r", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        image_file = row.pop("image_file")  # Use image filename as key
+        # Convert numeric fields (GST, TOTAL, SUBTOTAL) to float
+        ground_truth[image_file] = row
+```
+
+#### **2. Field-by-Field Accuracy Calculation**
+
+**Different comparison strategies per field type:**
+
+- **Numeric Fields (GST, TOTAL, SUBTOTAL)**:
+  - Converts to float, allows 0.01 tolerance
+  - `return 1.0 if abs(extracted_num - ground_truth_num) < 0.01 else 0.0`
+
+- **List Fields (ITEMS, QUANTITIES, PRICES)**:
+  - Splits on `|` separator, compares item-by-item
+  - `matches / total_items` accuracy ratio
+
+- **Date Fields**:
+  - Extracts numeric date components, exact match required
+  - `return 1.0 if extracted_date == gt_date else 0.0`
+
+- **String Fields (Default)**:
+  - Exact match = 1.0 accuracy
+  - Partial match (substring) = 0.8 accuracy  
+  - No match = 0.0 accuracy
+
+#### **3. Per-Image Evaluation**
+```python
+# For each test image:
+gt_data = self.ground_truth.get(image_file, {})  # Get ground truth row
+extracted_data = result.extracted_fields        # Get model extraction results
+
+# Calculate accuracy for each field
+for field in self.extraction_fields:
+    gt_value = gt_data.get(field, "")
+    ext_value = extracted_data.get(field, "")
+    field_accuracies[field] = self._calculate_field_accuracy(ext_value, gt_value, field)
+
+# Overall accuracy = average of all field accuracies
+overall_accuracy = sum(field_accuracies.values()) / len(field_accuracies)
+```
+
+#### **4. Aggregate Metrics Generation**
+- **Per-Model Averages**: Accuracy, processing time, fields extracted
+- **Field-wise Performance**: Individual accuracy per field across all images  
+- **Success Rates**: Percentage of images processed without errors
+- **Comparative Analysis**: Side-by-side model performance
+
+### **Current Evaluation Workflow**
+
+```bash
+# Generate evaluation with ground truth
+python model_comparison.py visualize --ground-truth-csv evaluation_ground_truth.csv
+```
+
+**What happens:**
+1. **Loads 20 synthetic images** from evaluation dataset
+2. **Runs both models** (Llama-3.2-Vision + InternVL3) on each image
+3. **Compares extracted fields** against ground truth values  
+4. **Calculates field-wise accuracy** using specialized comparison logic
+5. **Generates visualizations** showing model performance differences
+
+### **Ground Truth Dataset Structure**
+
+**Example record:**
+```csv
+image_file,DOCUMENT_TYPE,SUPPLIER,ABN,TOTAL,GST,...
+synthetic_invoice_001.png,RECEIPT,ALDI Australia,74 878 226 893,$46.68,$4.24,...
+```
+
+**Field Coverage (25 fields):**
+- **Document metadata**: DOCUMENT_TYPE, SUPPLIER, ABN
+- **Financial data**: TOTAL, GST, SUBTOTAL, QUANTITIES, PRICES  
+- **Contact info**: PAYER_NAME, PAYER_ADDRESS, BUSINESS_PHONE
+- **Banking data**: BANK_NAME, BSB_NUMBER, ACCOUNT_HOLDER (for bank statements)
+- **Dates**: INVOICE_DATE, DUE_DATE
+
+### **Evaluation Benefits**
+
+✅ **Quantitative Accuracy**: Precise field-by-field accuracy measurement  
+✅ **Model Comparison**: Direct performance comparison between models  
+✅ **Field Analysis**: Identifies which fields each model handles best  
+✅ **Synthetic Data**: Controlled, consistent test dataset  
+✅ **Specialized Logic**: Handles numeric tolerance, list matching, date parsing
+
+The ground truth evaluation provides objective, measurable performance metrics rather than subjective assessment, enabling data-driven model selection and optimization.
+
 ## 🧪 Testing & Validation
 
 ```bash
-# Test extraction pipeline
-python -m vision_processor.cli.extract_cli extract datasets/image14.png
-
-# Validate configuration
-python -m vision_processor.cli.extract_cli config-info
+# Validate environment and models
+python model_comparison.py check-environment
+python model_comparison.py validate-models
 
 # Run model comparison
-python model_comparison.py
+python model_comparison.py compare
 
-# Evaluate model performance
-python -m vision_processor.cli.evaluation_cli compare evaluation_ground_truth.csv
+# Generate performance evaluation and visualizations
+python model_comparison.py visualize --ground-truth-csv evaluation_ground_truth.csv
+
+# Test single document extraction (legacy)
+python -m vision_processor.cli.extract_cli extract datasets/image14.png --model llama
 ```
 
 ## 🛠️ Development
@@ -878,6 +1031,13 @@ python model_comparison.py
 - ✅ **Rich Console Output**: Color-coded messages with emojis for better UX
 - ✅ **File Logging**: Production-ready logging with rotation and configurable levels
 - ✅ **Runtime Configuration**: CLI flags override YAML defaults for flexible control
+
+### Architecture Simplification (Latest)
+- ✅ **Unified Command Interface**: All functionality through `model_comparison.py` script
+- ✅ **Simplified Workflow**: Intuitive `compare` → `visualize` command structure
+- ✅ **Eliminated Complex Paths**: No more `python -m vision_processor.cli.evaluation_cli`
+- ✅ **KFP Integration**: Streamlined pipeline commands for production deployment
+- ✅ **Smart Logic**: Visualizations auto-detect existing results vs. running fresh evaluation
 
 ### Code Organization
 - ✅ **Conservative Refactoring**: llama_model.py organized with clear sections

@@ -28,6 +28,7 @@ class ExtractionEvaluator:
         ground_truth_csv: str,
         images_dir: str,
         output_dir: str,
+        config_manager=None,
     ):
         """Initialize evaluator.
 
@@ -35,11 +36,13 @@ class ExtractionEvaluator:
             ground_truth_csv: Path to CSV with ground truth data
             images_dir: Directory containing test images
             output_dir: Directory to save evaluation results
+            config_manager: Optional ConfigManager for getting model display names
         """
         self.ground_truth_csv = ground_truth_csv
         self.images_dir = Path(images_dir)
         self.output_dir = Path(output_dir)
         self.console = Console()
+        self.config_manager = config_manager
 
         # Create output directory
         self.output_dir.mkdir(exist_ok=True)
@@ -49,6 +52,21 @@ class ExtractionEvaluator:
 
         # Dynamic extraction fields from model_comparison.yaml
         self.extraction_fields = self._load_extraction_fields()
+
+    def _get_model_display_name(self, model_type: str) -> str:
+        """Get the display name for a model type.
+        
+        Args:
+            model_type: Model type key (e.g., 'llama', 'internvl')
+            
+        Returns:
+            Display name for the model (e.g., 'Llama-3.2-11B-Vision-Instruct', 'InternVL3-8B')
+        """
+        if self.config_manager:
+            return self.config_manager.get_model_display_name(model_type)
+        else:
+            # Fallback to uppercase if no config manager available
+            return model_type.upper()
 
     def _load_ground_truth(self) -> Dict[str, Dict[str, Any]]:
         """Load ground truth data from CSV."""
@@ -327,7 +345,7 @@ class ExtractionEvaluator:
         self, model_type: str, test_images: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Evaluate a specific model on all test images using working extraction manager."""
-        self.console.print(f"\n🔬 Evaluating {model_type.upper()} model...")
+        self.console.print(f"\n🔬 Evaluating {self._get_model_display_name(model_type)} model...")
 
         # Setup extraction manager using ConfigManager
         from ..config import ConfigManager
@@ -450,23 +468,35 @@ class ExtractionEvaluator:
         # Overview table
         overview_table = Table(title="Model Performance Overview")
         overview_table.add_column("Model", style="cyan")
-        overview_table.add_column("Success Rate", justify="center")
         overview_table.add_column("Avg Accuracy", justify="center")
         overview_table.add_column("Avg Speed (s)", justify="center")
-        overview_table.add_column("Fields/Image", justify="center")
+        overview_table.add_column("Non-N/A Fields/Image", justify="center")
+        overview_table.add_column("VRAM Usage", justify="center")
 
         for model_type, results in comparison_results.items():
             if "error" not in results:
+                # Calculate non-N/A fields (fields with actual values, not "N/A")
+                non_na_fields = self._calculate_non_na_fields(results)
+
+                # Get VRAM usage from enhanced results
+                vram_usage = "N/A"
+                if (
+                    "model_estimated_vram" in comparison_results
+                    and model_type in comparison_results["model_estimated_vram"]
+                ):
+                    vram_gb = comparison_results["model_estimated_vram"][model_type]
+                    vram_usage = f"{vram_gb:.1f}GB"
+
                 overview_table.add_row(
-                    model_type.upper(),
-                    f"{results['success_rate']:.1%}",
+                    self._get_model_display_name(model_type),
                     f"{results['avg_accuracy']:.1%}",
                     f"{results['avg_processing_time']:.1f}s",
-                    f"{results['avg_fields_extracted']:.1f}",
+                    f"{non_na_fields:.1f}",
+                    vram_usage,
                 )
             else:
                 overview_table.add_row(
-                    model_type.upper(), "FAILED", "N/A", "N/A", "N/A"
+                    self._get_model_display_name(model_type), "FAILED", "N/A", "N/A", "N/A"
                 )
 
         self.console.print(overview_table)
@@ -483,7 +513,7 @@ class ExtractionEvaluator:
         ]
 
         for model, _ in working_models:
-            field_table.add_column(model.upper(), justify="center")
+            field_table.add_column(self._get_model_display_name(model), justify="center")
 
         # Get all fields
         all_fields = set()
@@ -508,10 +538,10 @@ class ExtractionEvaluator:
 
             self.console.print("\n🏆 WINNERS:")
             self.console.print(
-                f"🎯 Best Accuracy: {best_model[0].upper()} ({best_model[1]['avg_accuracy']:.1%})"
+                f"🎯 Best Accuracy: {self._get_model_display_name(best_model[0])} ({best_model[1]['avg_accuracy']:.1%})"
             )
             self.console.print(
-                f"⚡ Fastest: {fastest_model[0].upper()} ({fastest_model[1]['avg_processing_time']:.1f}s)"
+                f"⚡ Fastest: {self._get_model_display_name(fastest_model[0])} ({fastest_model[1]['avg_processing_time']:.1f}s)"
             )
 
         # Generate visualizations if requested
@@ -523,8 +553,17 @@ class ExtractionEvaluator:
                 from ..analysis.dynamic_visualizations import DynamicModelVisualizer
                 from ..config import ConfigManager
 
-                # Initialize visualizer with same config
-                config = ConfigManager()
+                # Use the existing config manager that was passed to the evaluator
+                config = self.config_manager or ConfigManager("model_comparison.yaml")
+
+                # Debug: Show what methods are available on ConfigManager
+                config_methods = [
+                    method for method in dir(config) if not method.startswith("_")
+                ]
+                self.console.print(
+                    f"📝 ConfigManager methods: {config_methods[:10]}...", style="dim"
+                )
+
                 visualizer = DynamicModelVisualizer(
                     config, str(self.output_dir / "visualizations")
                 )
@@ -582,16 +621,28 @@ class ExtractionEvaluator:
 
             f.write("## Overview\n\n")
             f.write(
-                "| Model | Success Rate | Avg Accuracy | Avg Speed | Fields/Image |\n"
+                "| Model | Avg Accuracy | Avg Speed | Non-N/A Fields/Image | VRAM Usage |\n"
             )
-            f.write("|-------|-------------|-------------|-----------|-------------|\n")
+            f.write(
+                "|-------|-------------|-----------|---------------------|------------|\n"
+            )
 
             for model_type, results in comparison_results.items():
                 if "error" not in results:
+                    # Calculate non-N/A fields and get VRAM usage
+                    non_na_fields = self._calculate_non_na_fields(results)
+                    vram_usage = "N/A"
+                    if (
+                        "model_estimated_vram" in comparison_results
+                        and model_type in comparison_results["model_estimated_vram"]
+                    ):
+                        vram_gb = comparison_results["model_estimated_vram"][model_type]
+                        vram_usage = f"{vram_gb:.1f}GB"
+
                     f.write(
-                        f"| {model_type.upper()} | {results['success_rate']:.1%} | "
+                        f"| {self._get_model_display_name(model_type)} | "
                         f"{results['avg_accuracy']:.1%} | {results['avg_processing_time']:.1f}s | "
-                        f"{results['avg_fields_extracted']:.1f} |\n"
+                        f"{non_na_fields:.1f} | {vram_usage} |\n"
                     )
 
             f.write("\n## Field-wise Accuracy\n\n")
@@ -605,7 +656,7 @@ class ExtractionEvaluator:
                 # Header
                 f.write("| Field |")
                 for model, _ in working_models:
-                    f.write(f" {model.upper()} |")
+                    f.write(f" {self._get_model_display_name(model)} |")
                 f.write("\n|-------|")
                 for _ in working_models:
                     f.write("---------|")
@@ -625,7 +676,7 @@ class ExtractionEvaluator:
 
             f.write("\n## Detailed Results\n\n")
             for model_type, results in comparison_results.items():
-                f.write(f"### {model_type.upper()}\n\n")
+                f.write(f"### {self._get_model_display_name(model_type)}\n\n")
                 if "error" in results:
                     f.write(f"**Error**: {results['error']}\n\n")
                 else:
@@ -640,10 +691,53 @@ class ExtractionEvaluator:
                         f"- **Total Processing Time**: {results['total_processing_time']:.1f}s\n\n"
                     )
 
+    def _calculate_non_na_fields(self, model_results: Dict[str, Any]) -> float:
+        """Calculate average number of non-N/A fields per image for a model.
+
+        Args:
+            model_results: Results dictionary for a single model
+
+        Returns:
+            Average number of fields with actual values (not "N/A") per image
+        """
+        if "extracted_data" not in model_results:
+            # Fallback: use field-wise accuracy data if available
+            if "field_wise_accuracy" in model_results:
+                # Count fields with >0% accuracy (fields that were found in at least some images)
+                non_zero_fields = sum(
+                    1
+                    for accuracy in model_results["field_wise_accuracy"].values()
+                    if accuracy > 0
+                )
+                return float(non_zero_fields)
+            return 0.0
+
+        # Calculate from actual extracted data
+        total_non_na_fields = 0
+        total_images = len(model_results["extracted_data"])
+
+        if total_images == 0:
+            return 0.0
+
+        for image_data in model_results["extracted_data"]:
+            if isinstance(image_data, dict):
+                # Count fields that have values other than "N/A", "", or None
+                non_na_count = sum(
+                    1
+                    for value in image_data.values()
+                    if value and str(value).strip().upper() not in ["N/A", ""]
+                )
+                total_non_na_fields += non_na_count
+
+        return total_non_na_fields / total_images
+
     def _add_memory_data_to_results(
         self, comparison_results: Dict[str, Any], config, working_models: List[tuple]
     ) -> Dict[str, Any]:
         """Add memory data to comparison results for VRAM visualization.
+
+        First attempts to read stored memory data from comparison_results_full.json,
+        falls back to basic estimates only if no stored data is available.
 
         Args:
             comparison_results: Original comparison results
@@ -653,70 +747,95 @@ class ExtractionEvaluator:
         Returns:
             Enhanced comparison results with memory data
         """
-        try:
-            from ..config.model_registry import get_model_registry
+        # Create enhanced results with memory data
+        enhanced_results = comparison_results.copy()
+        model_names = [model_name for model_name, _ in working_models]
 
-            # Create enhanced results with memory data
-            enhanced_results = comparison_results.copy()
+        # First, try to load stored memory data from ComparisonRunner output
+        stored_memory_data = self._load_stored_memory_data(config)
+        
+        if stored_memory_data:
+            # Use stored memory data from previous comparison run
             model_estimated_vram = {}
-
-            # Get model registry to access memory estimation methods
-            model_registry = get_model_registry(config)
-            model_names = [model_name for model_name, _ in working_models]
-
-            # Collect VRAM estimates for each model
             for model_name in model_names:
-                try:
-                    # Get model instance with quantization enabled
-                    model_instance = model_registry.get_model(
-                        model_name, config, enable_quantization=True
-                    )
-
-                    # Get memory estimate if available
-                    if hasattr(model_instance, "_get_quantization_config") and hasattr(
-                        model_instance, "_estimate_memory_usage"
-                    ):
-                        quant_config = model_instance._get_quantization_config()
-                        estimated_gb = model_instance._estimate_memory_usage(
-                            quant_config
-                        )
-                        model_estimated_vram[model_name] = estimated_gb
-
-                        self.console.print(
-                            f"✅ Collected VRAM estimate for {model_name.upper()}: {estimated_gb:.1f}GB",
-                            style="green",
-                        )
-                    else:
-                        self.console.print(
-                            f"⚠️ No memory estimation available for {model_name}",
-                            style="yellow",
-                        )
-
-                except Exception as e:
+                if model_name in stored_memory_data:
+                    model_estimated_vram[model_name] = stored_memory_data[model_name]
                     self.console.print(
-                        f"⚠️ Failed to get VRAM estimate for {model_name}: {e}",
-                        style="yellow",
+                        f"✅ Loaded stored VRAM data for {self._get_model_display_name(model_name)}: {stored_memory_data[model_name]:.1f}GB",
+                        style="green",
                     )
-
-            # Add memory data to results if we collected any
+                
             if model_estimated_vram:
                 enhanced_results["model_estimated_vram"] = model_estimated_vram
                 enhanced_results["models_tested"] = model_names
                 self.console.print(
-                    f"✅ Added VRAM data for {len(model_estimated_vram)} models",
+                    f"✅ Using stored VRAM data for {len(model_estimated_vram)} models",
                     style="green",
                 )
+                return enhanced_results
+
+        # Fallback: No stored data available, skip VRAM visualization
+        self.console.print(
+            "⚠️ No stored memory data found - VRAM visualization will be skipped",
+            style="yellow",
+        )
+        self.console.print(
+            "💡 Run model comparison first to generate memory data",
+            style="blue",
+        )
+        
+        return enhanced_results
+
+    def _load_stored_memory_data(self, config) -> Dict[str, float]:
+        """Load stored memory data from comparison_results_full.json.
+        
+        KFP Compatibility: Reads from persistent storage configured in output_dir.
+        In KFP environments, this MUST be mounted persistent volume (e.g., NFS).
+        
+        Args:
+            config: ConfigManager instance to get output directory
+            
+        Returns:
+            Dictionary mapping model names to VRAM usage in GB, empty if not found
+        """
+        try:
+            # Look for stored comparison results in output directory
+            output_dir = Path(config.output_dir)
+            results_file = output_dir / "comparison_results_full.json"
+            
+            if not results_file.exists():
+                self.console.print(
+                    f"📁 No stored results found at: {results_file}",
+                    style="dim",
+                )
+                return {}
+            
+            # Load and parse JSON file
+            with results_file.open("r") as f:
+                stored_results = json.load(f)
+            
+            # Extract memory data
+            memory_data = stored_results.get("model_estimated_vram", {})
+            
+            if memory_data:
+                self.console.print(
+                    f"📁 Found stored memory data: {results_file}",
+                    style="green",
+                )
+                return memory_data
             else:
                 self.console.print(
-                    "❌ No VRAM estimates collected - VRAM chart will be skipped",
-                    style="red",
+                    "📁 Stored results found but no memory data available",
+                    style="yellow",
                 )
-
-            return enhanced_results
-
+                return {}
+                
         except Exception as e:
-            self.console.print(f"❌ Error collecting memory data: {e}", style="red")
-            return comparison_results
+            self.console.print(
+                f"⚠️ Error loading stored memory data: {e}",
+                style="yellow",
+            )
+            return {}
 
 
 def main():
@@ -737,7 +856,10 @@ def main():
         return 1
 
     # Create evaluator
-    evaluator = ExtractionEvaluator(ground_truth_csv, images_dir)
+    from ..config import ConfigManager
+    config = ConfigManager()
+    output_dir = "results"  # Default output directory
+    evaluator = ExtractionEvaluator(ground_truth_csv, images_dir, output_dir, config_manager=config)
 
     try:
         # Run comparison using working extraction managers

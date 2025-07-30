@@ -100,6 +100,7 @@ def compare(
             ground_truth_csv=ground_truth_csv,
             images_dir=images_dir,
             output_dir=output_dir,
+            config_manager=config,
         )
 
         console.print(f"🔬 Evaluating {len(model_list)} models on ground truth data")
