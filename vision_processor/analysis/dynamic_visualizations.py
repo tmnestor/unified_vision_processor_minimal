@@ -393,7 +393,17 @@ class DynamicModelVisualizer:
         models = [model.upper() for model, _ in working_models]
 
         # 1. Overall Accuracy Comparison
-        accuracies = [results["avg_accuracy"] * 100 for _, results in working_models]
+        accuracies = []
+        for _, results in working_models:
+            if "avg_accuracy" in results:
+                accuracies.append(results["avg_accuracy"] * 100)
+            elif "field_wise_accuracy" in results:
+                # Calculate average from field-wise accuracies
+                field_accs = list(results["field_wise_accuracy"].values())
+                avg_acc = sum(field_accs) / len(field_accs) if field_accs else 0.0
+                accuracies.append(avg_acc * 100)
+            else:
+                accuracies.append(0.0)
         bars1 = ax1.bar(
             models,
             accuracies,
@@ -977,10 +987,19 @@ class DynamicModelVisualizer:
         ]
 
         for model, results in working_models:
+            # Calculate overall accuracy
+            if "avg_accuracy" in results:
+                overall_accuracy = results["avg_accuracy"]
+            elif "field_wise_accuracy" in results:
+                field_accs = list(results["field_wise_accuracy"].values())
+                overall_accuracy = sum(field_accs) / len(field_accs) if field_accs else 0.0
+            else:
+                overall_accuracy = 0.0
+                
             html_content += f"""
             <div class="metric">
                 <h3>{model.upper()} Performance</h3>
-                <p><strong>Overall Accuracy:</strong> {results["avg_accuracy"]:.1%}</p>
+                <p><strong>Overall Accuracy:</strong> {overall_accuracy:.1%}</p>
                 <p><strong>Processing Speed:</strong> {results["avg_processing_time"]:.1f}s per document</p>
                 <p><strong>Success Rate:</strong> {results["success_rate"]:.1%}</p>
                 <p><strong>Fields Extracted:</strong> {results["avg_fields_extracted"]:.1f} of {len(self.extraction_fields)} possible</p>
