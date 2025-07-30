@@ -143,7 +143,7 @@ class ComparisonRunner:
 
         # Initialize components
         self.model_registry = get_model_registry(self.config)
-        self.model_validator = ModelValidator(self.model_registry)
+        self.model_validator = ModelValidator(self.model_registry, self.config)
         # Pure model comparison - no complex extraction components needed
 
         # Results storage
