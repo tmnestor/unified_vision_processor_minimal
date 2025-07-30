@@ -139,7 +139,7 @@ class ComparisonRunner:
         self.console = Console()
 
         # Initialize memory monitor
-        self.memory_monitor = MemoryMonitor(self.console)
+        self.memory_monitor = MemoryMonitor(self.console, self.config)
 
         # Initialize components
         self.model_registry = get_model_registry(self.config)
