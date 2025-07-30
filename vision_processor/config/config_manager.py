@@ -93,14 +93,17 @@ class ConfigManager:
         # Parse configuration sections into structured objects
         self._parse_configuration()
 
-        # Initialize logger after configuration is parsed
-        self.logger = VisionProcessorLogger(self)
-
         # Set up device mapping manager
         self.device_manager = DeviceMapManager(self.device_config)
 
         # Validate configuration
         self._validate_configuration()
+
+        # Initialize logger last, after all configuration is complete
+        self.logger = VisionProcessorLogger(self)
+
+        # Show delayed warnings now that logger is available
+        self._show_model_path_warnings()
 
         # Set environment variables for offline mode
         if self.defaults.trust_remote_code:
@@ -230,17 +233,14 @@ class ConfigManager:
 
     def _validate_configuration(self) -> None:
         """Validate configuration with explicit error messages."""
-        # Validate model paths exist
-        for model_name, path in [
+        # Validate model paths exist (warnings will be shown by logger when initialized)
+        for _model_name, path in [
             ("llama", self.model_paths.llama),
             ("internvl", self.model_paths.internvl),
         ]:
             if path and not Path(path).exists():
-                self.logger.warning(f"Model path does not exist: {path}")
-                self.logger.warning(f"Model: {model_name}")
-                self.logger.warning(
-                    f"Fix: Update model_paths.{model_name} in {self.yaml_file}"
-                )
+                # Store warnings to be shown later when logger is available
+                pass  # Skip model path warnings during validation
 
         # Validate device configuration
         self.device_manager.validate_device_configuration()
@@ -266,6 +266,19 @@ class ConfigManager:
                 "❌ FATAL: No extraction_prompt found in configuration\n"
                 "💡 Fix: Add extraction_prompt section to model_comparison.yaml"
             )
+
+    def _show_model_path_warnings(self) -> None:
+        """Show model path warnings now that logger is available."""
+        for model_name, path in [
+            ("llama", self.model_paths.llama),
+            ("internvl", self.model_paths.internvl),
+        ]:
+            if path and not Path(path).exists():
+                self.logger.warning(f"Model path does not exist: {path}")
+                self.logger.warning(f"Model: {model_name}")
+                self.logger.warning(
+                    f"Fix: Update model_paths.{model_name} in {self.yaml_file}"
+                )
 
     def _setup_offline_mode(self) -> None:
         """Set up environment variables for offline operation."""
@@ -406,10 +419,10 @@ class ConfigManager:
 
     def get_model_display_name(self, model_type: str) -> str:
         """Get the display name for a model from its path.
-        
+
         Args:
             model_type: Model type key ('llama' or 'internvl')
-            
+
         Returns:
             Display name extracted from model path (e.g., 'Llama-3.2-11B-Vision-Instruct')
         """
@@ -417,6 +430,7 @@ class ConfigManager:
         if model_path:
             # Extract the model name from the path (last directory component)
             from pathlib import Path
+
             return Path(model_path).name
         else:
             # Fallback to uppercase model type if no path available

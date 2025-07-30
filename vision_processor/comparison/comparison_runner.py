@@ -93,7 +93,7 @@ class ComparisonResults:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert ComparisonResults to JSON-serializable dictionary.
-        
+
         Returns:
             Dictionary with all essential comparison data for persistence
         """
@@ -122,7 +122,7 @@ class ComparisonResults:
                 "max_tokens": self.config.defaults.max_tokens,
                 "v100_mode": self.config.device_config.v100_mode,
                 "memory_limit_gb": self.config.device_config.memory_limit_gb,
-            }
+            },
         }
 
 
@@ -1451,11 +1451,11 @@ class ComparisonRunner:
 
     def _save_results_to_json(self) -> None:
         """Save complete ComparisonResults to JSON file in persistent storage.
-        
-        KFP Compatibility: Uses configured output_dir which MUST point to persistent 
-        storage (e.g., NFS mount) in Kubeflow Pipelines environments. Pod-local 
+
+        KFP Compatibility: Uses configured output_dir which MUST point to persistent
+        storage (e.g., NFS mount) in Kubeflow Pipelines environments. Pod-local
         storage will be lost when pods terminate.
-        
+
         This creates a comprehensive JSON file with all comparison data including
         memory usage measurements for use by visualization and analysis tools.
         """
@@ -1466,72 +1466,71 @@ class ComparisonRunner:
         try:
             # Create output directory if it doesn't exist (persistent storage)
             output_dir = Path(self.config.output_dir)
-            
+
             # KFP Safety Check: Verify we're not writing to pod-local storage
             if not self._is_persistent_storage_path(output_dir):
                 self.console.print(
                     f"⚠️ WARNING: Output path may be pod-local storage: {output_dir}",
-                    style="yellow"
+                    style="yellow",
                 )
                 self.console.print(
                     "💡 For KFP: Use mounted persistent volumes (e.g., /mnt/*, /home/jovyan/nfs_share/*)",
-                    style="blue"
+                    style="blue",
                 )
-            
+
             output_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Save complete results with memory data to persistent storage
             results_file = output_dir / "comparison_results_full.json"
-            
+
             # Convert to JSON-serializable dictionary
             results_dict = self.results.to_dict()
-            
+
             # Save to file with proper formatting
             with results_file.open("w") as f:
                 json.dump(results_dict, f, indent=2, default=str)
-            
+
             self.console.print(
-                f"✅ Complete results saved to persistent storage: {results_file}", style="green"
+                f"✅ Complete results saved to persistent storage: {results_file}",
+                style="green",
             )
             self.console.print(
                 f"📊 Includes memory data for {len(self.results.model_estimated_vram)} models",
-                style="green"
+                style="green",
             )
             self.console.print(
                 "🚀 KFP Compatible: Data persisted outside pod storage", style="blue"
             )
-            
+
         except Exception as e:
-            self.console.print(
-                f"⚠️ Failed to save results to JSON: {e}", style="yellow"
-            )
+            self.console.print(f"⚠️ Failed to save results to JSON: {e}", style="yellow")
 
     def _is_persistent_storage_path(self, path: Path) -> bool:
         """Check if path appears to be persistent storage suitable for KFP.
-        
+
         Args:
             path: Path to check
-            
+
         Returns:
             True if path appears to be persistent storage
         """
         path_str = str(path.resolve())
-        
+
         # Common KFP persistent storage mount points
         persistent_patterns = [
-            "/mnt/",           # Common KFP mount point
-            "/data/",          # Common data mount
-            "/shared/",        # Shared storage
-            "/nfs/",           # NFS mounts
-            "/home/jovyan/",   # Jupyter persistent home
-            "/opt/ml/",        # SageMaker/ML platform storage
+            "/mnt/",  # Common KFP mount point
+            "/data/",  # Common data mount
+            "/shared/",  # Shared storage
+            "/nfs/",  # NFS mounts
+            "/home/jovyan/",  # Jupyter persistent home
+            "/opt/ml/",  # SageMaker/ML platform storage
         ]
-        
+
         # Check if path starts with any persistent storage pattern
         for pattern in persistent_patterns:
             if path_str.startswith(pattern):
                 return True
-        
+
         # Pod-local paths that should be avoided in KFP
         local_patterns = [
             "/tmp/",
@@ -1540,12 +1539,12 @@ class ComparisonRunner:
             "/workspace/",
             "/root/",
         ]
-        
+
         # Warn if using clearly local storage
         for pattern in local_patterns:
             if path_str.startswith(pattern):
                 return False
-        
+
         # For other paths, assume they might be persistent
         # (Better to be permissive than block valid use cases)
         return True

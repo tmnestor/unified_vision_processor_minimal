@@ -55,10 +55,10 @@ class ExtractionEvaluator:
 
     def _get_model_display_name(self, model_type: str) -> str:
         """Get the display name for a model type.
-        
+
         Args:
             model_type: Model type key (e.g., 'llama', 'internvl')
-            
+
         Returns:
             Display name for the model (e.g., 'Llama-3.2-11B-Vision-Instruct', 'InternVL3-8B')
         """
@@ -345,7 +345,9 @@ class ExtractionEvaluator:
         self, model_type: str, test_images: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Evaluate a specific model on all test images using working extraction manager."""
-        self.console.print(f"\n🔬 Evaluating {self._get_model_display_name(model_type)} model...")
+        self.console.print(
+            f"\n🔬 Evaluating {self._get_model_display_name(model_type)} model..."
+        )
 
         # Setup extraction manager using ConfigManager
         from ..config import ConfigManager
@@ -496,7 +498,11 @@ class ExtractionEvaluator:
                 )
             else:
                 overview_table.add_row(
-                    self._get_model_display_name(model_type), "FAILED", "N/A", "N/A", "N/A"
+                    self._get_model_display_name(model_type),
+                    "FAILED",
+                    "N/A",
+                    "N/A",
+                    "N/A",
                 )
 
         self.console.print(overview_table)
@@ -513,7 +519,9 @@ class ExtractionEvaluator:
         ]
 
         for model, _ in working_models:
-            field_table.add_column(self._get_model_display_name(model), justify="center")
+            field_table.add_column(
+                self._get_model_display_name(model), justify="center"
+            )
 
         # Get all fields
         all_fields = set()
@@ -753,7 +761,7 @@ class ExtractionEvaluator:
 
         # First, try to load stored memory data from ComparisonRunner output
         stored_memory_data = self._load_stored_memory_data(config)
-        
+
         if stored_memory_data:
             # Use stored memory data from previous comparison run
             model_estimated_vram = {}
@@ -764,7 +772,7 @@ class ExtractionEvaluator:
                         f"✅ Loaded stored VRAM data for {self._get_model_display_name(model_name)}: {stored_memory_data[model_name]:.1f}GB",
                         style="green",
                     )
-                
+
             if model_estimated_vram:
                 enhanced_results["model_estimated_vram"] = model_estimated_vram
                 enhanced_results["models_tested"] = model_names
@@ -783,18 +791,18 @@ class ExtractionEvaluator:
             "💡 Run model comparison first to generate memory data",
             style="blue",
         )
-        
+
         return enhanced_results
 
     def _load_stored_memory_data(self, config) -> Dict[str, float]:
         """Load stored memory data from comparison_results_full.json.
-        
+
         KFP Compatibility: Reads from persistent storage configured in output_dir.
         In KFP environments, this MUST be mounted persistent volume (e.g., NFS).
-        
+
         Args:
             config: ConfigManager instance to get output directory
-            
+
         Returns:
             Dictionary mapping model names to VRAM usage in GB, empty if not found
         """
@@ -802,21 +810,21 @@ class ExtractionEvaluator:
             # Look for stored comparison results in output directory
             output_dir = Path(config.output_dir)
             results_file = output_dir / "comparison_results_full.json"
-            
+
             if not results_file.exists():
                 self.console.print(
                     f"📁 No stored results found at: {results_file}",
                     style="dim",
                 )
                 return {}
-            
+
             # Load and parse JSON file
             with results_file.open("r") as f:
                 stored_results = json.load(f)
-            
+
             # Extract memory data
             memory_data = stored_results.get("model_estimated_vram", {})
-            
+
             if memory_data:
                 self.console.print(
                     f"📁 Found stored memory data: {results_file}",
@@ -829,7 +837,7 @@ class ExtractionEvaluator:
                     style="yellow",
                 )
                 return {}
-                
+
         except Exception as e:
             self.console.print(
                 f"⚠️ Error loading stored memory data: {e}",
@@ -857,9 +865,12 @@ def main():
 
     # Create evaluator
     from ..config import ConfigManager
+
     config = ConfigManager()
     output_dir = "results"  # Default output directory
-    evaluator = ExtractionEvaluator(ground_truth_csv, images_dir, output_dir, config_manager=config)
+    evaluator = ExtractionEvaluator(
+        ground_truth_csv, images_dir, output_dir, config_manager=config
+    )
 
     try:
         # Run comparison using working extraction managers
