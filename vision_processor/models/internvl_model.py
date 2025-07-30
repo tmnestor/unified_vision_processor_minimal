@@ -17,6 +17,8 @@ from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
 from transformers import AutoModel, AutoTokenizer, BitsAndBytesConfig
 
+from ..constants import ModelNames
+from ..exceptions import ConfigurationError
 from .base_model import BaseVisionModel, DeviceConfig, ModelCapabilities, ModelResponse
 from .model_utils import DeviceManager
 
@@ -53,6 +55,17 @@ class InternVLModel(BaseVisionModel):
 
         # Extract config from kwargs and store as direct attribute
         self.config = kwargs.get("config")
+
+        # Initialize max_new_tokens_limit from config - fail fast if not available
+        if not hasattr(self.config, "get_model_config") or not self.config:
+            raise ConfigurationError(
+                "❌ FATAL: No ConfigManager found or get_model_config method missing\n"
+                "💡 Fix: Ensure ConfigManager is properly initialized\n"
+                "💡 Check: model_comparison.yaml has model_config section"
+            )
+
+        model_config = self.config.get_model_config(ModelNames.INTERNVL)
+        self.max_new_tokens_limit = model_config.max_new_tokens_limit
 
     def _get_capabilities(self) -> ModelCapabilities:
         """Return InternVL capabilities."""
@@ -121,11 +134,11 @@ class InternVLModel(BaseVisionModel):
             )
 
         device_config = self.config.device_config
-        device_map = device_config.get_device_map_for_model("internvl")
+        device_map = device_config.get_device_map_for_model(ModelNames.INTERNVL)
 
         if device_map is None:
             raise RuntimeError(
-                f"❌ FATAL: No device mapping found for internvl model\n"
+                f"❌ FATAL: No device mapping found for {ModelNames.INTERNVL} model\n"
                 f"💡 Expected: internvl entry in device_config.device_maps\n"
                 f"💡 Current device_maps: {list(device_config.device_maps.keys())}\n"
                 f"💡 Fix: Add internvl device mapping to model_comparison.yaml:\n"
@@ -198,14 +211,19 @@ class InternVLModel(BaseVisionModel):
 
     def _validate_v100_compliance(self, estimated_memory_gb: float) -> None:
         """Validate that estimated memory usage complies with V100 limits."""
-        # Get memory config from ConfigManager
-        if hasattr(self.config, "memory_config"):
-            v100_limit_gb = self.config.memory_config.v100_limit_gb
-            safety_margin = self.config.memory_config.safety_margin
-        else:
-            # Fallback for legacy config
-            v100_limit_gb = 16.0
-            safety_margin = 0.85
+        # Get memory config from ConfigManager - fail fast if not available
+        if not hasattr(self.config, "memory_config"):
+            raise ConfigurationError(
+                "❌ FATAL: No memory_config found in configuration\n"
+                "💡 Fix: Add memory_config section to model_comparison.yaml\n"
+                "💡 Example:\n"
+                "   memory_config:\n"
+                "     v100_limit_gb: 16.0\n"
+                "     safety_margin: 0.85"
+            )
+
+        v100_limit_gb = self.config.memory_config.v100_limit_gb
+        safety_margin = self.config.memory_config.safety_margin
         effective_limit = v100_limit_gb * safety_margin
 
         if estimated_memory_gb > effective_limit:
@@ -594,7 +612,7 @@ class InternVLModel(BaseVisionModel):
 
             # Run inference - fix generation config for deterministic output
             # Apply repetition control to token limit
-            max_tokens = kwargs.get("max_new_tokens", 1024)
+            max_tokens = kwargs.get("max_new_tokens", self.max_new_tokens_limit)
             max_tokens = self.repetition_controller.enforce_token_limit(max_tokens)
 
             generation_config = {
@@ -646,9 +664,12 @@ class InternVLModel(BaseVisionModel):
 
             processing_time = time.time() - start_time
 
+            # Get confidence score from ConfigManager
+            model_config = self.config.get_model_config(ModelNames.INTERNVL)
+
             return ModelResponse(
                 raw_text=cleaned_text,
-                confidence=0.95,  # InternVL doesn't provide confidence scores
+                confidence=model_config.confidence_score,
                 processing_time=processing_time,
                 device_used=str(self.device),
                 memory_usage=self.get_memory_usage(),

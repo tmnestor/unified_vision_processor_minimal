@@ -319,32 +319,3 @@ class GroundTruthGenerator:
                 key=lambda x: x[1],
             )[:5],
         }
-
-
-# Example usage:
-if __name__ == "__main__":
-    generator = GroundTruthGenerator()
-
-    # Example invoice data from synthetic generator
-    invoice_data = {
-        "document_type": "INVOICE",
-        "business_name": "Shell Australia",
-        "abn": "36 643 730 685",
-        "customer_name": "Emily Thompson",
-        "customer_address": "821 King Street, Hobart TAS 7000",
-        "customer_phone": "(71) 5765 9791",
-        "invoice_date": "28/06/2025",
-        "due_date": "21/08/2025",
-        "gst": 6.52,
-        "total": 71.67,
-        "subtotal": 65.15,
-        "quantities": ["2", "2", "2", "3", "3", "1"],
-        "prices": ["$4.20", "$15.00", "$1.75", "$4.50", "$1.75", "$4.50"],
-        "business_address": "724 Pitt Street, Darwin NT 0800",
-        "business_phone": "(66) 6115 5508",
-        "item_names": ["Energy Drink", "Car Wash", "Premium Unleaded", "Coffee Large"],
-    }
-
-    # Save ground truth
-    ground_truth = generator.save_ground_truth("shell_invoice.png", invoice_data)
-    print("Saved ground truth:", ground_truth)

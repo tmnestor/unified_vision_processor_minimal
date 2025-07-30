@@ -688,7 +688,7 @@ class DynamicModelVisualizer:
 
         # Extract memory data from comparison results
         memory_data = {}
-        v100_limit_gb = 16.0  # V100 VRAM limit
+        v100_limit_gb = self.config_manager.memory_config.v100_limit_gb
 
         # Check if we have memory data in the comparison results
         # Handle both dict and object formats for comparison_results
@@ -786,8 +786,8 @@ class DynamicModelVisualizer:
             label="V100 Limit (16GB)",
         )
 
-        # Add safety margin line (85% of 16GB)
-        safety_limit = v100_limit_gb * 0.85
+        # Add safety margin line
+        safety_limit = v100_limit_gb * self.config_manager.memory_config.safety_margin
         ax1.axhline(
             y=safety_limit,
             color="orange",
@@ -992,10 +992,12 @@ class DynamicModelVisualizer:
                 overall_accuracy = results["avg_accuracy"]
             elif "field_wise_accuracy" in results:
                 field_accs = list(results["field_wise_accuracy"].values())
-                overall_accuracy = sum(field_accs) / len(field_accs) if field_accs else 0.0
+                overall_accuracy = (
+                    sum(field_accs) / len(field_accs) if field_accs else 0.0
+                )
             else:
                 overall_accuracy = 0.0
-                
+
             html_content += f"""
             <div class="metric">
                 <h3>{model.upper()} Performance</h3>

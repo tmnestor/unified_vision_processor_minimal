@@ -226,6 +226,9 @@ class ConfigManager:
         self.system_prompts = self._yaml_config_data.get("system_prompts", {})
         self.extraction_prompt = self._yaml_config_data.get("extraction_prompt", "")
 
+        # Store post-processing configuration
+        self.post_processing = self._yaml_config_data.get("post_processing", {})
+
         # Runtime settings (can be overridden by CLI)
         self.current_model_type = None  # Must be explicitly set
         self.current_output_format = "yaml"  # Default
@@ -446,30 +449,6 @@ class ConfigManager:
             return model_strategy == "multi_gpu"
 
         return self.device_config.gpu_strategy == "multi_gpu"
-
-    def get_legacy_config_dict(self) -> Dict:
-        """Get configuration in legacy format for backward compatibility."""
-        return {
-            "model_type": self.current_model_type,
-            "model_path": self.get_model_path(self.current_model_type),
-            "device_config": self.device_config.original_device_config,
-            "enable_multi_gpu": self.is_multi_gpu_enabled(),
-            "gpu_memory_fraction": 0.9,  # Legacy default
-            "memory_limit_mb": self.processing.memory_limit_mb,
-            "enable_quantization": self.processing.quantization,
-            "enable_gradient_checkpointing": self.processing.enable_gradient_checkpointing,
-            "use_flash_attention": self.processing.use_flash_attention,
-            "trust_remote_code": self.defaults.trust_remote_code,
-            "offline_mode": True,
-            "repetition_control": {
-                "enabled": self.repetition_control.enabled,
-                "word_threshold": self.repetition_control.word_threshold,
-                "phrase_threshold": self.repetition_control.phrase_threshold,
-                "max_new_tokens_limit": self.get_model_config(
-                    self.current_model_type
-                ).max_new_tokens_limit,
-            },
-        }
 
     def print_configuration(self) -> None:
         """Print current configuration for debugging."""

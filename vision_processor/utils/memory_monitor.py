@@ -51,6 +51,7 @@ class MemoryMonitor:
             config: Configuration manager for logging (optional)
         """
         self.console = console or Console()
+        self.config = config
         self.logger = VisionProcessorLogger(config)
         self.snapshots: List[MemorySnapshot] = []
         self.start_time = time.time()
@@ -217,12 +218,17 @@ class MemoryMonitor:
                     f"   📊 GPU Allocated: {snapshot.gpu_memory_used_gb:.1f}GB (active tensors)"
                 )
 
-                # V100 Production Warning
-                if reserved_gb > 16.0:
-                    self.console.print(
-                        f"   ⚠️  WARNING: Reserved memory ({reserved_gb:.1f}GB) exceeds V100 limit (16GB)",
-                        style="bold red",
-                    )
+                # V100 Production Warning - fail fast if config not available
+                if not self.config or not hasattr(self.config, "memory_config"):
+                    # Skip V100 warning if no config - memory monitor is optional diagnostic tool
+                    pass
+                else:
+                    v100_limit = self.config.memory_config.v100_limit_gb
+                    if reserved_gb > v100_limit:
+                        self.console.print(
+                            f"   ⚠️  WARNING: Reserved memory ({reserved_gb:.1f}GB) exceeds V100 limit ({v100_limit}GB)",
+                            style="bold red",
+                        )
         else:
             # Compact format
             gpu_info = (

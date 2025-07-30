@@ -20,6 +20,9 @@ from transformers import (
     MllamaForConditionalGeneration,
 )
 
+from ..constants import ModelNames
+from ..exceptions import ConfigurationError
+
 # We'll suppress warnings during model loading using context managers
 from .base_model import BaseVisionModel, DeviceConfig, ModelCapabilities, ModelResponse
 from .model_utils import DeviceManager
@@ -51,16 +54,18 @@ class LlamaVisionModel(BaseVisionModel):
         self.repetition_enabled = self.repetition_controller.enabled
 
         # Read max_new_tokens_limit from ConfigManager
-        if hasattr(self.config, "get_model_config") and self.config:
-            # Use ConfigManager's structured config
-            model_config = self.config.get_model_config("llama")
-            self.max_new_tokens_limit = model_config.max_new_tokens_limit
-            # Update repetition controller with model-specific limit
-            self.repetition_controller.max_new_tokens_limit = self.max_new_tokens_limit
-        else:
-            # Fallback for legacy config
-            self.max_new_tokens_limit = 1024
-            self.repetition_controller.max_new_tokens_limit = self.max_new_tokens_limit
+        if not hasattr(self.config, "get_model_config") or not self.config:
+            raise ConfigurationError(
+                "❌ FATAL: No ConfigManager found or get_model_config method missing\n"
+                "💡 Fix: Ensure ConfigManager is properly initialized\n"
+                "💡 Check: model_comparison.yaml has model_config section"
+            )
+
+        # Use ConfigManager's structured config - fail fast if not available
+        model_config = self.config.get_model_config(ModelNames.LLAMA)
+        self.max_new_tokens_limit = model_config.max_new_tokens_limit
+        # Update repetition controller with model-specific limit
+        self.repetition_controller.max_new_tokens_limit = self.max_new_tokens_limit
 
         # Special tokens are now handled by RepetitionController
         # Keep this for legacy compatibility if needed
@@ -74,12 +79,24 @@ class LlamaVisionModel(BaseVisionModel):
 
     def _get_capabilities(self) -> ModelCapabilities:
         """Return Llama-3.2-Vision capabilities."""
+        # Get max image size from configuration - fail fast if not available
+        if not self.config or not hasattr(self.config, "image_processing"):
+            raise ConfigurationError(
+                "❌ FATAL: No image_processing config found for capability reporting\n"
+                "💡 Fix: Add image_processing section to model_comparison.yaml\n"
+                "💡 Example:\n"
+                "   image_processing:\n"
+                "     max_image_size: 1024"
+            )
+        
+        max_size = self.config.image_processing.max_image_size
+
         return ModelCapabilities(
             supports_multi_gpu=True,
             supports_quantization=True,
             supports_highlight_detection=False,  # Not available in Llama
             supports_batch_processing=True,
-            max_image_size=(1024, 1024),  # Llama has lower limits
+            max_image_size=(max_size, max_size),
             memory_efficient=True,
             cross_platform=True,
         )
@@ -199,14 +216,19 @@ class LlamaVisionModel(BaseVisionModel):
 
     def _validate_v100_compliance(self, estimated_memory_gb: float) -> None:
         """Validate that estimated memory usage complies with V100 limits."""
-        # Get memory config from ConfigManager
-        if hasattr(self.config, "memory_config"):
-            v100_limit_gb = self.config.memory_config.v100_limit_gb
-            safety_margin = self.config.memory_config.safety_margin
-        else:
-            # Fallback for legacy config
-            v100_limit_gb = 16.0
-            safety_margin = 0.85
+        # Get memory config from ConfigManager - fail fast if not available
+        if not hasattr(self.config, "memory_config"):
+            raise ConfigurationError(
+                "❌ FATAL: No memory_config found in configuration\n"
+                "💡 Fix: Add memory_config section to model_comparison.yaml\n"
+                "💡 Example:\n"
+                "   memory_config:\n"
+                "     v100_limit_gb: 16.0\n"
+                "     safety_margin: 0.85"
+            )
+
+        v100_limit_gb = self.config.memory_config.v100_limit_gb
+        safety_margin = self.config.memory_config.safety_margin
         effective_limit = v100_limit_gb * safety_margin
 
         if estimated_memory_gb > effective_limit:
@@ -273,11 +295,11 @@ class LlamaVisionModel(BaseVisionModel):
             )
 
         device_config = self.config.device_config
-        device_map = device_config.get_device_map_for_model("llama")
+        device_map = device_config.get_device_map_for_model(ModelNames.LLAMA)
 
         if device_map is None:
             raise RuntimeError(
-                f"❌ FATAL: No device mapping found for llama model\n"
+                f"❌ FATAL: No device mapping found for {ModelNames.LLAMA} model\n"
                 f"💡 Expected: llama entry in device_config.device_maps\n"
                 f"💡 Current device_maps: {list(device_config.device_maps.keys())}\n"
                 f"💡 Fix: Add llama device mapping to model_comparison.yaml:\n"
@@ -517,12 +539,14 @@ class LlamaVisionModel(BaseVisionModel):
         # Clean prompt of any existing image tokens - chat template will handle this
         clean_prompt = prompt.replace("<|image|>", "").strip()
 
-        # Get system prompt from ConfigManager
-        if hasattr(self.config, "get_system_prompt"):
-            system_prompt = self.config.get_system_prompt("llama")
-        else:
-            # Fallback for legacy config
-            system_prompt = "You are a helpful assistant."
+        # Get system prompt from ConfigManager - fail fast if not available
+        if not hasattr(self.config, "get_system_prompt"):
+            raise ConfigurationError(
+                "❌ FATAL: No get_system_prompt method in ConfigManager\n"
+                "💡 Fix: Ensure ConfigManager is properly initialized"
+            )
+
+        system_prompt = self.config.get_system_prompt(ModelNames.LLAMA)
 
         # Use official HuggingFace chat template format with configurable system prompt
         messages = [
@@ -610,13 +634,13 @@ class LlamaVisionModel(BaseVisionModel):
             # Generate with deterministic parameters to bypass safety mode
             # Use working implementation settings for OCR extraction
             # Apply token limit to prevent repetition using shared controller
-            max_tokens = kwargs.get("max_new_tokens", 1024)
+            max_tokens = kwargs.get("max_new_tokens", self.max_new_tokens_limit)
             max_tokens = self.repetition_controller.enforce_token_limit(max_tokens)
 
             # Only log generation parameters in debug mode
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(
-                    f"Generation parameters: max_new_tokens={kwargs.get('max_new_tokens', 1024)}, max_new_tokens_limit={self.max_new_tokens_limit}, final_max_tokens={max_tokens}"
+                    f"Generation parameters: max_new_tokens={kwargs.get('max_new_tokens', self.max_new_tokens_limit)}, max_new_tokens_limit={self.max_new_tokens_limit}, final_max_tokens={max_tokens}"
                 )
 
             generation_kwargs = {
@@ -645,13 +669,15 @@ class LlamaVisionModel(BaseVisionModel):
             processing_time = time.time() - start_time
             logger.info(f"Inference completed in {processing_time:.2f}s")
 
-            # Get confidence score from ConfigManager
-            if hasattr(self.config, "get_model_config"):
-                model_config = self.config.get_model_config("llama")
-                confidence_score = model_config.confidence_score
-            else:
-                # Fallback for legacy config
-                confidence_score = 0.85
+            # Get confidence score from ConfigManager - fail fast if not available
+            if not hasattr(self.config, "get_model_config"):
+                raise ConfigurationError(
+                    "❌ FATAL: No ConfigManager found for confidence score\n"
+                    "💡 Fix: Ensure ConfigManager is properly initialized"
+                )
+
+            model_config = self.config.get_model_config(ModelNames.LLAMA)
+            confidence_score = model_config.confidence_score
 
             return ModelResponse(
                 raw_text=response.strip(),
@@ -664,7 +690,7 @@ class LlamaVisionModel(BaseVisionModel):
                 metadata={
                     "graceful_degradation": True,
                     "processing_pipeline": "7step",
-                    "max_image_size": "1024x1024",
+                    "max_image_size": f"{self.config.image_processing.max_image_size}x{self.config.image_processing.max_image_size}",
                 },
             )
 
@@ -730,7 +756,7 @@ class LlamaVisionModel(BaseVisionModel):
 
             # Generate with CUDA-safe parameters (NO repetition_penalty)
             # Use optimized settings for receipt extraction with repetition control
-            max_tokens = 1024
+            max_tokens = self.max_new_tokens_limit
             max_tokens = self.repetition_controller.enforce_token_limit(max_tokens)
 
             generation_kwargs = {

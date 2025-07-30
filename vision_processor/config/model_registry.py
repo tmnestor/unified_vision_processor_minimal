@@ -12,6 +12,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 
+from ..constants import ModelNames
 from ..exceptions import ModelLoadError
 from ..models.base_model import (
     BaseVisionModel,
@@ -134,7 +135,7 @@ class ModelRegistry:
             from ..models.llama_model import LlamaVisionModel
 
             self.register_model(
-                name="llama",
+                name=ModelNames.LLAMA,
                 model_type=ModelType.LLAMA32_VISION,
                 model_class=LlamaVisionModel,
                 default_path=self.config_manager.model_paths.llama,
@@ -148,7 +149,7 @@ class ModelRegistry:
             from ..models.internvl_model import InternVLModel
 
             self.register_model(
-                name="internvl",
+                name=ModelNames.INTERNVL,
                 model_type=ModelType.INTERNVL3,
                 model_class=InternVLModel,
                 default_path=self.config_manager.model_paths.internvl,

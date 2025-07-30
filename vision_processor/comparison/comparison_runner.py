@@ -356,7 +356,7 @@ class ComparisonRunner:
             try:
                 # Set current model type for configuration access
                 self.config.set_model_type(model_name)
-                
+
                 model_path = getattr(self.config.model_paths, model_name)
                 model = self.model_registry.create_model(
                     model_name,
@@ -441,11 +441,7 @@ class ComparisonRunner:
 
                         # Check post-processing configuration with debug
                         try:
-                            post_processing_config = (
-                                self.config.get_legacy_config_dict().get(
-                                    "post_processing", {}
-                                )
-                            )
+                            post_processing_config = self.config.post_processing
                         except Exception as e:
                             self.console.print(
                                 f"❌ DEBUG: Error accessing post_processing config: {e}"
@@ -824,10 +820,12 @@ class ComparisonRunner:
             )
 
             # Show completion quality using YAML config thresholds
-            quality_thresholds = self.config.get_legacy_config_dict().get(
-                "quality_thresholds",
-                {"excellent": 24, "good": 20, "fair": 15, "poor": 0},
-            )
+            quality_thresholds = {
+                "excellent": self.config.quality_thresholds.excellent,
+                "good": self.config.quality_thresholds.good,
+                "fair": self.config.quality_thresholds.fair,
+                "poor": self.config.quality_thresholds.poor,
+            }
 
             if avg_fields_per_doc >= quality_thresholds["excellent"]:
                 quality = "Excellent - Near complete extraction"
@@ -894,9 +892,11 @@ class ComparisonRunner:
             processing_times[model_name] = avg_processing_time
 
             # Determine speed rating using YAML config thresholds
-            speed_thresholds = self.config.get_legacy_config_dict().get(
-                "speed_thresholds", {"very_fast": 2.0, "fast": 5.0, "moderate": 10.0}
-            )
+            speed_thresholds = {
+                "very_fast": self.config.speed_thresholds.very_fast,
+                "fast": self.config.speed_thresholds.fast,
+                "moderate": self.config.speed_thresholds.moderate,
+            }
 
             if avg_processing_time < speed_thresholds["very_fast"]:
                 speed_rating = "Very Fast"
@@ -1432,9 +1432,12 @@ class ComparisonRunner:
             )
 
             # Add performance rating based on field extraction
-            quality_thresholds = self.config.get_legacy_config_dict().get(
-                "quality_thresholds", {"excellent": 12, "good": 8, "fair": 5, "poor": 0}
-            )
+            quality_thresholds = {
+                "excellent": self.config.quality_thresholds.excellent,
+                "good": self.config.quality_thresholds.good,
+                "fair": self.config.quality_thresholds.fair,
+                "poor": self.config.quality_thresholds.poor,
+            }
 
             def get_quality_rating(field_count):
                 if field_count >= quality_thresholds["excellent"]:
