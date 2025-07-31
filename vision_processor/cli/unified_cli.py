@@ -97,6 +97,89 @@ def _display_clean_format(extracted_fields: dict) -> None:
         console.print(f"[cyan]{padded_field}[/cyan]: [green]{value}[/green]")
 
 
+def _display_comparison_summary(results, config) -> None:
+    """Display comprehensive comparison summary like old model_comparison.py."""
+    from rich.table import Table
+    
+    console.print("\n" + "=" * 80)
+    console.print("🏁 [bold green]COMPARISON COMPLETE[/bold green]")
+    console.print("=" * 80)
+    
+    # Extract key metrics from results
+    models_tested = getattr(results, 'models_tested', [])
+    total_execution_time = getattr(results, 'total_execution_time', 0)
+    dataset_info = getattr(results, 'dataset_info', None)
+    model_success_rates = getattr(results, 'model_success_rates', {})
+    model_execution_times = getattr(results, 'model_execution_times', {})
+    
+    # Overall summary
+    total_images = dataset_info.total_images if dataset_info else 0
+    verified_images = len(dataset_info.verified_images) if dataset_info else 0
+    overall_success_rate = sum(model_success_rates.values()) / len(model_success_rates) if model_success_rates else 0
+    
+    console.print(f"⏱️  Total execution time: [bold cyan]{total_execution_time:.1f}s[/bold cyan]")
+    console.print(f"✅ Overall success rate: [bold green]{overall_success_rate:.1%}[/bold green]")
+    console.print(f"🤖 Models compared: [bold blue]{len(models_tested)}[/bold blue]")
+    console.print(f"📸 Images processed: [bold blue]{verified_images}[/bold blue]")
+    
+    # Model Performance Summary
+    console.print("\n📊 [bold cyan]Model Performance Summary:[/bold cyan]")
+    
+    for model in models_tested:
+        success_rate = model_success_rates.get(model, 0)
+        exec_time = model_execution_times.get(model, 0)
+        time_per_image = exec_time / verified_images if verified_images > 0 else 0
+        
+        model_display = config.get_model_display_name(model) if hasattr(config, 'get_model_display_name') else model
+        
+        console.print(f"  {model}: [green]{success_rate:.1%}[/green] success, [yellow]{exec_time:.1f}s[/yellow] total, [cyan]{time_per_image:.1f}s[/cyan] per image")
+    
+    # Processing Speed Comparison
+    if len(models_tested) >= 2:
+        console.print("\n⚡ [bold cyan]Processing Speed Comparison:[/bold cyan]")
+        
+        # Sort models by speed (fastest first)
+        sorted_models = sorted(models_tested, key=lambda m: model_execution_times.get(m, float('inf')))
+        
+        for model in sorted_models:
+            exec_time = model_execution_times.get(model, 0)
+            time_per_image = exec_time / verified_images if verified_images > 0 else 0
+            console.print(f"  {model}: [yellow]{time_per_image:.1f}s[/yellow] per image")
+    
+    # Additional details table
+    if len(models_tested) >= 2:
+        table = Table(title="Detailed Model Comparison")
+        table.add_column("Model", style="cyan")
+        table.add_column("Success Rate", justify="center")
+        table.add_column("Total Time", justify="center") 
+        table.add_column("Time/Image", justify="center")
+        table.add_column("Status", justify="center")
+        
+        for model in models_tested:
+            success_rate = model_success_rates.get(model, 0)
+            exec_time = model_execution_times.get(model, 0)
+            time_per_image = exec_time / verified_images if verified_images > 0 else 0
+            
+            # Determine status
+            if success_rate >= 0.9:
+                status = "[green]Excellent[/green]"
+            elif success_rate >= 0.7:
+                status = "[yellow]Good[/yellow]"
+            else:
+                status = "[red]Needs Work[/red]"
+            
+            table.add_row(
+                model.upper(),
+                f"{success_rate:.1%}",
+                f"{exec_time:.1f}s",
+                f"{time_per_image:.1f}s", 
+                status
+            )
+        
+        console.print("\n")
+        console.print(table)
+
+
 # =============================================================================
 # CORE WORKFLOW COMMANDS
 # =============================================================================
@@ -276,13 +359,13 @@ def compare(
             result = run_comparison()
 
             if result and result.get("success"):
-                console.print(
-                    "✅ Comparison completed successfully!", style="bold green"
-                )
+                # Display comprehensive comparison summary like old model_comparison.py
+                _display_comparison_summary(result["results"], result["config"])
+                
                 execution_time = result.get("execution_time", 0)
                 if execution_time:
                     console.print(
-                        f"⏱️  Execution time: {execution_time:.1f}s", style="green"
+                        f"⏱️  Total execution time: {execution_time:.1f}s", style="bold green"
                     )
             else:
                 error_msg = (
