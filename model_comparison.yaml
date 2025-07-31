@@ -126,8 +126,8 @@ device_config:
 # Model paths
 model_paths:
   llama: "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision-Instruct"
-  internvl: "/home/jovyan/nfs_share/models/InternVL3-8B"
-
+  # internvl: "/home/jovyan/nfs_share/models/InternVL3-8B"
+  internvl: "/home/jovyan/nfs_share/models/InternVL3-2B"
 
 # System prompts for controlling model behavior
 system_prompts:
