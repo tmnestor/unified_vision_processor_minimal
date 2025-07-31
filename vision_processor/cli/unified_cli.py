@@ -242,21 +242,21 @@ def _display_fieldwise_extraction_table(results, config) -> None:
         field_rates = []
 
         for model in models_tested:
-            if model in field_analysis.model_stats:
-                model_stats = field_analysis.model_stats[model]
+            if model in field_analysis["model_stats"]:
+                model_stats = field_analysis["model_stats"][model]
 
                 # Try to get field extraction rate
                 rate = 0.0
                 if (
-                    hasattr(model_stats, "field_value_rates")
-                    and field in model_stats.field_value_rates
+                    "field_value_rates" in model_stats
+                    and field in model_stats["field_value_rates"]
                 ):
-                    rate = model_stats.field_value_rates[field]
+                    rate = model_stats["field_value_rates"][field]
                 elif (
-                    hasattr(model_stats, "field_extraction_rates")
-                    and field in model_stats.field_extraction_rates
+                    "field_extraction_rates" in model_stats
+                    and field in model_stats["field_extraction_rates"]
                 ):
-                    rate = model_stats.field_extraction_rates[field]
+                    rate = model_stats["field_extraction_rates"][field]
 
                 field_rates.append(rate)
 
