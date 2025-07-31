@@ -362,3 +362,13 @@ class MemoryMonitor:
             )
 
         return summary
+
+    def reset_snapshots(self) -> None:
+        """Reset memory snapshots for new model measurement.
+        
+        This should be called between model comparisons to ensure
+        each model gets independent memory measurements.
+        """
+        self.snapshots.clear()
+        self.start_time = time.time()
+        gc.collect()  # Clean up before starting fresh measurements

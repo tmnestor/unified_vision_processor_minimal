@@ -348,6 +348,9 @@ class ComparisonRunner:
                 f"🤖 PROCESSING WITH {model_name.upper()}", style="bold cyan"
             )
             self.console.print(f"{'=' * 50}")
+            
+            # Reset memory monitoring for independent measurements per model
+            self.memory_monitor.reset_snapshots()
 
             model_results = []
             model_start_time = time.time()
