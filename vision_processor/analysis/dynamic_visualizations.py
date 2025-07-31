@@ -914,6 +914,235 @@ class DynamicModelVisualizer:
         self.console.print(f"✅ VRAM comparison saved: {save_path}", style="green")
         return str(save_path)
 
+    def create_production_memory_requirements(
+        self, comparison_results: Dict[str, Any], save_path: Optional[str] = None
+    ) -> str:
+        """Create comprehensive memory requirements chart for production POD sizing.
+
+        This visualization is critical for Kubernetes POD resource allocation decisions.
+        Shows both CPU memory and GPU VRAM requirements side-by-side.
+        """
+        self.console.print(
+            "🏭 Creating production memory requirements chart...", style="blue"
+        )
+
+        # Extract memory data from comparison results
+        models_tested = comparison_results.get("models_tested", [])
+        model_vram = comparison_results.get("model_estimated_vram", {})
+        memory_summary = comparison_results.get("memory_summary", {})
+
+        # Get memory values
+        peak_cpu_memory = memory_summary.get("peak_process_memory_gb", 0)
+        avg_cpu_memory = memory_summary.get("avg_process_memory_gb", 0)
+        peak_system_memory = memory_summary.get("peak_system_memory_gb", 0)
+
+        # Create comprehensive memory chart
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+        fig.suptitle(
+            "Production Memory Requirements Analysis", fontsize=16, fontweight="bold"
+        )
+
+        # Chart 1: GPU VRAM Requirements
+        if model_vram:
+            models = [m.upper() for m in model_vram.keys()]
+            vram_usage = list(model_vram.values())
+
+            bars1 = ax1.bar(
+                models,
+                vram_usage,
+                color=[self.colors["primary"], self.colors["secondary"]][: len(models)],
+                alpha=0.8,
+            )
+            ax1.set_title("GPU VRAM Requirements", fontweight="bold")
+            ax1.set_ylabel("VRAM (GB)")
+
+            # Add V100 limit lines
+            v100_limit = 16.0
+            safety_limit = v100_limit * 0.85
+            ax1.axhline(
+                y=v100_limit,
+                color="red",
+                linestyle="--",
+                alpha=0.7,
+                label="V100 Limit (16GB)",
+            )
+            ax1.axhline(
+                y=safety_limit,
+                color="orange",
+                linestyle="--",
+                alpha=0.7,
+                label="Safety Limit (85%)",
+            )
+            ax1.legend()
+
+            # Add value labels and POD recommendations
+            for bar, vram in zip(bars1, vram_usage, strict=False):
+                ax1.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + 0.3,
+                    f"{vram:.1f}GB",
+                    ha="center",
+                    fontweight="bold",
+                )
+
+                # Add POD sizing recommendation
+                if vram <= safety_limit:
+                    pod_rec = "1x V100 OK"
+                    color = "green"
+                elif vram <= v100_limit:
+                    pod_rec = "V100 Tight"
+                    color = "orange"
+                else:
+                    pod_rec = "Need A100+"
+                    color = "red"
+
+                ax1.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    1.0,
+                    pod_rec,
+                    ha="center",
+                    va="bottom",
+                    color=color,
+                    fontweight="bold",
+                )
+
+        # Chart 2: CPU Memory Requirements
+        cpu_data = {
+            "Peak Process": peak_cpu_memory,
+            "Avg Process": avg_cpu_memory,
+            "Peak System": peak_system_memory,
+        }
+
+        bars2 = ax2.bar(
+            cpu_data.keys(),
+            cpu_data.values(),
+            color=["#ff6b6b", "#4ecdc4", "#45b7d1"],
+            alpha=0.8,
+        )
+        ax2.set_title("CPU Memory Usage", fontweight="bold")
+        ax2.set_ylabel("Memory (GB)")
+
+        # Add typical POD memory limits
+        pod_limits = [4, 8, 16, 32, 64]
+        for limit in pod_limits:
+            if limit <= max(cpu_data.values()) * 1.5:  # Show relevant limits
+                ax2.axhline(y=limit, color="gray", linestyle=":", alpha=0.5)
+                ax2.text(
+                    len(cpu_data) - 0.3,
+                    limit + 0.5,
+                    f"{limit}GB",
+                    fontsize=9,
+                    alpha=0.7,
+                )
+
+        for bar, mem in zip(bars2, cpu_data.values(), strict=False):
+            ax2.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 0.5,
+                f"{mem:.1f}GB",
+                ha="center",
+                fontweight="bold",
+            )
+
+        # Chart 3: POD Resource Recommendations
+        if model_vram:
+            ax3.axis("off")
+            ax3.set_title(
+                "Kubernetes POD Resource Recommendations", fontweight="bold", pad=20
+            )
+
+            y_pos = 0.9
+            for model, vram in model_vram.items():
+                # Calculate recommended POD resources
+                cpu_request = max(2, int(avg_cpu_memory * 1.2))  # 20% overhead
+                cpu_limit = max(4, int(peak_cpu_memory * 1.5))  # 50% overhead
+                mem_request = max(4, int(avg_cpu_memory * 1.5))  # 50% overhead
+                mem_limit = max(8, int(peak_cpu_memory * 2.0))  # 100% overhead
+
+                gpu_type = (
+                    "nvidia.com/gpu: 1" if vram <= 16 else "nvidia.com/gpu-a100: 1"
+                )
+
+                pod_spec = f"""
+{model.upper()} POD Specification:
+  resources:
+    requests:
+      cpu: {cpu_request}
+      memory: {mem_request}Gi
+      {gpu_type}
+    limits:  
+      cpu: {cpu_limit}
+      memory: {mem_limit}Gi
+      {gpu_type}
+                """
+
+                ax3.text(
+                    0.05,
+                    y_pos,
+                    pod_spec,
+                    fontsize=10,
+                    fontfamily="monospace",
+                    verticalalignment="top",
+                    bbox=dict(
+                        boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.5
+                    ),
+                )
+                y_pos -= 0.45
+
+        # Chart 4: Cost Comparison (if both models shown)
+        if len(model_vram) == 2:
+            models = list(model_vram.keys())
+
+            # Estimated hourly costs (example values - adjust based on your cloud provider)
+            v100_cost_hour = 2.50  # $/hour for V100 instance
+            a100_cost_hour = 4.00  # $/hour for A100 instance
+
+            costs = []
+            for _model, vram in model_vram.items():
+                if vram <= 16:
+                    cost = v100_cost_hour
+                    instance = "V100"
+                else:
+                    cost = a100_cost_hour
+                    instance = "A100"
+                costs.append(cost)
+
+            bars4 = ax4.bar(
+                [m.upper() for m in models],
+                costs,
+                color=[self.colors["primary"], self.colors["secondary"]][: len(models)],
+                alpha=0.8,
+            )
+            ax4.set_title("Estimated Hourly Compute Costs", fontweight="bold")
+            ax4.set_ylabel("Cost ($/hour)")
+
+            for bar, cost, model in zip(bars4, costs, models, strict=False):
+                vram = model_vram[model]
+                instance_type = "V100" if vram <= 16 else "A100"
+                ax4.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + 0.05,
+                    f"${cost:.2f}/hr\n({instance_type})",
+                    ha="center",
+                    fontweight="bold",
+                )
+
+        plt.tight_layout()
+
+        # Save chart
+        if save_path is None:
+            save_path = self.output_dir / "production_memory_requirements.png"
+        else:
+            save_path = Path(save_path)
+
+        plt.savefig(save_path, dpi=300, bbox_inches="tight", facecolor="white")
+        plt.close()
+
+        self.console.print(
+            f"✅ Production memory requirements saved: {save_path}", style="green"
+        )
+        return str(save_path)
+
     def create_composite_overview(
         self, comparison_results: Dict[str, Any], save_path: Optional[str] = None
     ) -> str:
@@ -1234,7 +1463,14 @@ class DynamicModelVisualizer:
             if vram_path:
                 saved_files.append(vram_path)
 
-            # 5. Composite overview (2x2 layout)
+            # 5. Production memory requirements (critical for POD sizing)
+            production_memory_path = self.create_production_memory_requirements(
+                comparison_results
+            )
+            if production_memory_path:
+                saved_files.append(production_memory_path)
+
+            # 6. Composite overview (2x2 layout)
             composite_path = self.create_composite_overview(comparison_results)
             if composite_path:
                 saved_files.append(composite_path)

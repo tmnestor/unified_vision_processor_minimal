@@ -16,13 +16,14 @@ Key requirements:
    - Executive Summary with correct winner analysis
    - Performance Comparison Dashboard 
    - Field-wise Extraction Analysis
-   - Resource Utilization Analysis
+   - Resource Utilization Analysis (including production memory requirements)
+   - Production POD Sizing Requirements (NEW - critical for deployment)
    - Detailed Performance Metrics
    - Composite Overview
    - Recommendations & Deployment Guide
    - Technical Specifications
 
-Ensure accuracy metrics show InternVL3 as the winner for data quality and Llama-3.2-Vision as the winner for processing speed. Include the methodology explanation that clarifies field accuracy measures useful data extraction vs "N/A" responses.
+Ensure analysis and visualizations accurately reflect the data in remote_results/comparison_results_full.json. Include the methodology explanation that clarifies field accuracy measures useful data extraction vs "N/A" responses.
 
 Replace the existing Vision_Model_Comparison_Report.md file and commit the changes with an appropriate git message.
 ```
@@ -33,7 +34,19 @@ Replace the existing Vision_Model_Comparison_Report.md file and commit the chang
 - **field_extraction_rates**: Always 100% - both models extract all 25 fields but this doesn't indicate data quality
 - **Processing Speed**: Always calculate per-image times for meaningful comparison
 - **Winner Analysis**: InternVL3 for accuracy (61.8% vs 59.0%), Llama-3.2-Vision for speed (35% faster)
+- **Memory Requirements**: Critical for POD sizing - include both CPU memory and GPU VRAM analysis
+- **Production Deployment**: Include Kubernetes POD resource specifications and cost analysis
 - **Image References**: All visualization files should use `remote_results/` path prefix
+
+## Generated Visualizations
+
+The system now generates these critical visualizations:
+- `model_performance_dashboard.png` - Overall performance comparison
+- `field_accuracy_heatmap_25fields.png` - Field-wise accuracy analysis
+- `field_category_analysis.png` - Performance by field categories
+- `v100_vram_usage_comparison.png` - GPU memory usage comparison
+- `production_memory_requirements.png` - **NEW: Critical for POD sizing decisions**
+- `composite_overview_2x2.png` - Summary dashboard
 
 ## Usage
 

@@ -46,7 +46,7 @@ env/
 output/
 results/
 logs/
-remote_results/
+# remote_results/
 
 # Log files
 *.log
