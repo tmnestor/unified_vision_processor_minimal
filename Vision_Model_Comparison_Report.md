@@ -112,6 +112,72 @@ No Data Extracted (0%): 1 field (Llama) vs 0 fields (InternVL)
 
 ---
 
+## 🏗️ Production POD Sizing Requirements
+
+![Production Memory Requirements](remote_results/production_memory_requirements.png)
+
+### Kubernetes POD Resource Specifications
+
+#### Llama-3.2-Vision POD Configuration
+```yaml
+resources:
+  requests:
+    memory: "16Gi"      # Base system + model requirements
+    nvidia.com/gpu: 1   # Single V100 GPU
+  limits:
+    memory: "20Gi"      # Safety buffer for peaks
+    nvidia.com/gpu: 1
+```
+
+#### InternVL3 POD Configuration  
+```yaml
+resources:
+  requests:
+    memory: "12Gi"      # Lower base requirements
+    nvidia.com/gpu: 1   # Single V100 GPU
+  limits:
+    memory: "16Gi"      # More conservative limits
+    nvidia.com/gpu: 1
+```
+
+### Memory Analysis for Production Deployment
+
+| Resource Component | Llama-3.2-Vision | InternVL3 | Production Impact |
+|-------------------|------------------|-----------|-------------------|
+| **GPU VRAM Required** | 13.3GB | 10.4GB | InternVL3 leaves 5.6GB headroom |
+| **CPU Memory Base** | 3.0GB | 2.5GB | Model loading + system overhead |
+| **Processing Peak** | 2.95GB | 2.95GB | Document processing overhead |
+| **Total Memory Need** | 16GB+ | 12GB+ | Kubernetes POD sizing |
+| **V100 VRAM Safety** | 83% utilization | 65% utilization | InternVL3 safer for production |
+
+### Cost Analysis
+
+#### Cloud GPU Instance Costs (Estimated Monthly)
+- **V100 Instance**: $1,200-1,800/month (AWS p3.2xlarge equivalent)
+- **Memory Overhead**: Additional $50-100/month per 4GB RAM
+- **InternVL3 Advantage**: ~25% lower memory requirements = $200-300/month savings
+
+#### Multi-Model Deployment Feasibility
+- **Llama-3.2-Vision**: Single model per V100 (tight memory)
+- **InternVL3**: Potential for 1.5x density due to memory efficiency
+- **Hybrid Deployment**: InternVL3 enables mixed workload PODs
+
+### Production Recommendations
+
+#### Memory-Constrained Environments
+**Recommended: InternVL3**
+- 22% lower VRAM usage enables safer production deployment
+- Comfortable headroom for system processes and monitoring
+- Better suited for cost-sensitive cloud deployments
+
+#### High-Throughput Requirements
+**Recommended: Multiple Llama-3.2-Vision PODs**
+- Deploy multiple smaller PODs for parallel processing
+- Accept higher per-POD memory requirements for speed gains
+- Scale horizontally rather than vertically
+
+---
+
 ## 📈 Detailed Performance Metrics
 
 ### Processing Speed Breakdown
