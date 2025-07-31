@@ -1037,7 +1037,7 @@ class DynamicModelVisualizer:
             ax.legend()
             
             # Add value labels
-            for bar, usage in zip(bars, vram_usage):
+            for bar, usage in zip(bars, vram_usage, strict=False):
                 ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.2,
                        f"{usage:.1f}GB", ha="center", va="bottom", fontsize=8)
         else:
