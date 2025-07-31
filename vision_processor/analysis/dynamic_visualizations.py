@@ -75,7 +75,6 @@ class DynamicModelVisualizer:
             style="green",
         )
 
-
     def _setup_plotting_style(self) -> None:
         """Set up consistent plotting style for professional charts."""
         # Use a clean, professional style
@@ -165,7 +164,17 @@ class DynamicModelVisualizer:
         # Use discovered fields (not hardcoded)
         available_fields = set()
         for _, results in working_models:
-            available_fields.update(results["field_wise_accuracy"].keys())
+            field_accuracies = results["field_wise_accuracy"]
+            # Handle case where field_wise_accuracy is a float instead of dict
+            if isinstance(field_accuracies, dict):
+                available_fields.update(field_accuracies.keys())
+            else:
+                # Log the issue for debugging
+                self.console.print(
+                    f"⚠️  Warning: field_wise_accuracy is {type(field_accuracies).__name__} instead of dict. "
+                    f"Value: {field_accuracies}",
+                    style="yellow",
+                )
 
         # Filter to fields that exist in results and configuration
         display_fields = [f for f in self.extraction_fields if f in available_fields]
@@ -175,7 +184,12 @@ class DynamicModelVisualizer:
         for field in display_fields:
             row = []
             for _, results in working_models:
-                accuracy = results["field_wise_accuracy"].get(field, 0.0)
+                field_accuracies = results["field_wise_accuracy"]
+                if isinstance(field_accuracies, dict):
+                    accuracy = field_accuracies.get(field, 0.0)
+                else:
+                    # If field_wise_accuracy is not a dict, use 0.0 as fallback
+                    accuracy = 0.0
                 row.append(accuracy * 100)  # Convert to percentage
             accuracy_matrix.append(row)
 
@@ -308,9 +322,18 @@ class DynamicModelVisualizer:
                 accuracies.append(results["avg_accuracy"] * 100)
             elif "field_wise_accuracy" in results:
                 # Calculate average from field-wise accuracies
-                field_accs = list(results["field_wise_accuracy"].values())
-                avg_acc = sum(field_accs) / len(field_accs) if field_accs else 0.0
-                accuracies.append(avg_acc * 100)
+                field_accuracies = results["field_wise_accuracy"]
+                if isinstance(field_accuracies, dict):
+                    field_accs = list(field_accuracies.values())
+                    avg_acc = sum(field_accs) / len(field_accs) if field_accs else 0.0
+                    accuracies.append(avg_acc * 100)
+                else:
+                    # If field_wise_accuracy is a single float, use it directly
+                    accuracies.append(
+                        field_accuracies * 100
+                        if isinstance(field_accuracies, (int, float))
+                        else 0.0
+                    )
             else:
                 accuracies.append(0.0)
         bars1 = ax1.bar(
@@ -491,9 +514,20 @@ class DynamicModelVisualizer:
             for model, results in working_models:
                 # Calculate average accuracy for this category
                 field_accs = []
-                for field in fields:
-                    if field in results["field_wise_accuracy"]:
-                        field_accs.append(results["field_wise_accuracy"][field])
+                field_accuracies = results["field_wise_accuracy"]
+
+                if isinstance(field_accuracies, dict):
+                    for field in fields:
+                        if field in field_accuracies:
+                            field_accs.append(field_accuracies[field])
+                else:
+                    # If field_wise_accuracy is not a dict, we can't compute field-specific accuracy
+                    # Use the single value divided by number of fields as approximation
+                    if (
+                        isinstance(field_accuracies, (int, float))
+                        and field_accuracies > 0
+                    ):
+                        field_accs = [field_accuracies / len(fields)] * len(fields)
 
                 avg_acc = np.mean(field_accs) if field_accs else 0.0
                 category_performance[category][model.upper()] = avg_acc * 100
@@ -900,10 +934,19 @@ class DynamicModelVisualizer:
             if "avg_accuracy" in results:
                 overall_accuracy = results["avg_accuracy"]
             elif "field_wise_accuracy" in results:
-                field_accs = list(results["field_wise_accuracy"].values())
-                overall_accuracy = (
-                    sum(field_accs) / len(field_accs) if field_accs else 0.0
-                )
+                field_accuracies = results["field_wise_accuracy"]
+                if isinstance(field_accuracies, dict):
+                    field_accs = list(field_accuracies.values())
+                    overall_accuracy = (
+                        sum(field_accs) / len(field_accs) if field_accs else 0.0
+                    )
+                else:
+                    # If field_wise_accuracy is a single float, use it directly
+                    overall_accuracy = (
+                        field_accuracies
+                        if isinstance(field_accuracies, (int, float))
+                        else 0.0
+                    )
             else:
                 overall_accuracy = 0.0
 
