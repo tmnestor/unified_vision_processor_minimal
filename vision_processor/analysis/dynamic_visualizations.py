@@ -1053,11 +1053,11 @@ class DynamicModelVisualizer:
 
             y_pos = 0.9
             for model, vram in model_vram.items():
-                # Calculate recommended POD resources (4GB maximum pod constraint)
+                # Calculate recommended POD resources based on actual peak memory needs
                 cpu_request = max(2, int(avg_cpu_memory * 1.2))  # 20% overhead
                 cpu_limit = max(4, int(peak_cpu_memory * 1.5))  # 50% overhead
-                mem_request = min(4, max(3, int(peak_cpu_memory * 0.8)))  # Reduced for 4GB pod limit
-                mem_limit = 4  # Hard 4GB pod limit
+                mem_request = max(4, int(peak_cpu_memory * 1.1))  # Peak + 10% buffer (minimum viable)
+                mem_limit = max(mem_request + 1, int(peak_cpu_memory * 1.3))  # Peak + 30% buffer
 
                 gpu_type = (
                     "nvidia.com/gpu: 1" if vram <= 16 else "nvidia.com/gpu-a100: 1"
