@@ -178,6 +178,96 @@ def _display_comparison_summary(results, config) -> None:
         
         console.print("\n")
         console.print(table)
+    
+    # Field-wise extraction analysis
+    _display_fieldwise_extraction_table(results, config)
+
+
+def _display_fieldwise_extraction_table(results, config) -> None:
+    """Display field-wise extraction performance table like old model_comparison.py."""
+    from rich.table import Table
+    
+    console.print("\n📋 [bold cyan]Field-wise Extraction Performance:[/bold cyan]")
+    
+    # Extract field analysis data
+    field_analysis = getattr(results, 'field_analysis', None)
+    models_tested = getattr(results, 'models_tested', [])
+    
+    if not field_analysis or not hasattr(field_analysis, 'model_stats'):
+        console.print("  ⚠️ No field-wise data available", style="yellow")
+        return
+    
+    # Get expected fields from config
+    expected_fields = config.get_expected_fields() if hasattr(config, 'get_expected_fields') else []
+    
+    if not expected_fields:
+        console.print("  ⚠️ No expected fields found in configuration", style="yellow")
+        return
+    
+    # Create field-wise table
+    table = Table(title="Field Extraction Rates by Model")
+    table.add_column("Field", style="cyan", width=20)
+    
+    for model in models_tested:
+        model_display = config.get_model_display_name(model) if hasattr(config, 'get_model_display_name') else model.upper()
+        table.add_column(model_display, justify="center", width=12)
+    
+    # Add average column
+    table.add_column("Average", justify="center", style="bold", width=12)
+    
+    # Process each field
+    for field in expected_fields:
+        row_data = [field]
+        field_rates = []
+        
+        for model in models_tested:
+            if model in field_analysis.model_stats:
+                model_stats = field_analysis.model_stats[model]
+                
+                # Try to get field extraction rate
+                rate = 0.0
+                if hasattr(model_stats, 'field_value_rates') and field in model_stats.field_value_rates:
+                    rate = model_stats.field_value_rates[field]
+                elif hasattr(model_stats, 'field_extraction_rates') and field in model_stats.field_extraction_rates:
+                    rate = model_stats.field_extraction_rates[field]
+                
+                field_rates.append(rate)
+                
+                # Color code based on performance
+                if rate >= 0.9:
+                    rate_str = f"[green]{rate:.1%}[/green]"
+                elif rate >= 0.7:
+                    rate_str = f"[yellow]{rate:.1%}[/yellow]"
+                elif rate >= 0.5:
+                    rate_str = f"[orange1]{rate:.1%}[/orange1]"
+                else:
+                    rate_str = f"[red]{rate:.1%}[/red]"
+                
+                row_data.append(rate_str)
+            else:
+                row_data.append("[dim]N/A[/dim]")
+                field_rates.append(0.0)
+        
+        # Calculate and add average
+        avg_rate = sum(field_rates) / len(field_rates) if field_rates else 0.0
+        if avg_rate >= 0.9:
+            avg_str = f"[bold green]{avg_rate:.1%}[/bold green]"
+        elif avg_rate >= 0.7:
+            avg_str = f"[bold yellow]{avg_rate:.1%}[/bold yellow]"
+        elif avg_rate >= 0.5:
+            avg_str = f"[bold orange1]{avg_rate:.1%}[/bold orange1]"
+        else:
+            avg_str = f"[bold red]{avg_rate:.1%}[/bold red]"
+        
+        row_data.append(avg_str)
+        table.add_row(*row_data)
+    
+    console.print("\n")
+    console.print(table)
+    
+    # Add legend
+    console.print("\n📊 [bold]Performance Legend:[/bold]")
+    console.print("  [green]■[/green] Excellent (≥90%)  [yellow]■[/yellow] Good (70-89%)  [orange1]■[/orange1] Fair (50-69%)  [red]■[/red] Poor (<50%)")
 
 
 # =============================================================================
