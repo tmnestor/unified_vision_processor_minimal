@@ -12,7 +12,12 @@ Key requirements:
 2. Ignore field_extraction_rates (always 100%, provides no useful differentiation)
 3. Calculate per-image processing times by dividing total execution time by number of images
 4. Reference all visualization images with remote_results/ prefix
-5. Maintain the current report structure with these sections:
+5. **CRITICAL: Use specific model names and correct specifications throughout the report**:
+   - "Llama-3.2-11B-Vision-Instruct" (11B parameters, by Meta)
+   - "InternVL3-2B" (2B parameters, by OpenGVLab) - NOT 8B parameters
+   - Include these full model names prominently in the title and executive summary
+6. Fix dashboard visualization heading corruption if present
+7. Maintain the current report structure with these sections:
    - Executive Summary with correct winner analysis
    - Performance Comparison Dashboard 
    - Field-wise Extraction Analysis
@@ -33,7 +38,7 @@ Replace the existing Vision_Model_Comparison_Report.md file and commit the chang
 - **field_value_rates**: The meaningful metric showing percentage of documents where each field contains actual data (not "N/A")
 - **field_extraction_rates**: Always 100% - both models extract all 25 fields but this doesn't indicate data quality
 - **Processing Speed**: Always calculate per-image times for meaningful comparison
-- **Winner Analysis**: InternVL3 for accuracy (61.8% vs 59.0%), Llama-3.2-Vision for speed (35% faster)
+- **Winner Analysis**: Use current data-driven winner analysis with specific model names (Llama-3.2-11B-Vision-Instruct vs InternVL3-2B)
 - **Memory Requirements**: Critical for POD sizing - include both CPU memory and GPU VRAM analysis
 - **Production Deployment**: Include Kubernetes POD resource specifications and cost analysis
 - **Image References**: All visualization files should use `remote_results/` path prefix
