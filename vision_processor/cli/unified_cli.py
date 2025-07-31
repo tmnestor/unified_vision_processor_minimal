@@ -100,66 +100,84 @@ def _display_clean_format(extracted_fields: dict) -> None:
 def _display_comparison_summary(results, config) -> None:
     """Display comprehensive comparison summary like old model_comparison.py."""
     from rich.table import Table
-    
+
     console.print("\n" + "=" * 80)
     console.print("🏁 [bold green]COMPARISON COMPLETE[/bold green]")
     console.print("=" * 80)
-    
+
     # Extract key metrics from results
-    models_tested = getattr(results, 'models_tested', [])
-    total_execution_time = getattr(results, 'total_execution_time', 0)
-    dataset_info = getattr(results, 'dataset_info', None)
-    model_success_rates = getattr(results, 'model_success_rates', {})
-    model_execution_times = getattr(results, 'model_execution_times', {})
-    
+    models_tested = getattr(results, "models_tested", [])
+    total_execution_time = getattr(results, "total_execution_time", 0)
+    dataset_info = getattr(results, "dataset_info", None)
+    model_success_rates = getattr(results, "model_success_rates", {})
+    model_execution_times = getattr(results, "model_execution_times", {})
+
     # Overall summary
     total_images = dataset_info.total_images if dataset_info else 0
     verified_images = len(dataset_info.verified_images) if dataset_info else 0
-    overall_success_rate = sum(model_success_rates.values()) / len(model_success_rates) if model_success_rates else 0
-    
-    console.print(f"⏱️  Total execution time: [bold cyan]{total_execution_time:.1f}s[/bold cyan]")
-    console.print(f"✅ Overall success rate: [bold green]{overall_success_rate:.1%}[/bold green]")
+    overall_success_rate = (
+        sum(model_success_rates.values()) / len(model_success_rates)
+        if model_success_rates
+        else 0
+    )
+
+    console.print(
+        f"⏱️  Total execution time: [bold cyan]{total_execution_time:.1f}s[/bold cyan]"
+    )
+    console.print(
+        f"✅ Overall success rate: [bold green]{overall_success_rate:.1%}[/bold green]"
+    )
     console.print(f"🤖 Models compared: [bold blue]{len(models_tested)}[/bold blue]")
     console.print(f"📸 Images processed: [bold blue]{verified_images}[/bold blue]")
-    
+
     # Model Performance Summary
     console.print("\n📊 [bold cyan]Model Performance Summary:[/bold cyan]")
-    
+
     for model in models_tested:
         success_rate = model_success_rates.get(model, 0)
         exec_time = model_execution_times.get(model, 0)
         time_per_image = exec_time / verified_images if verified_images > 0 else 0
-        
-        model_display = config.get_model_display_name(model) if hasattr(config, 'get_model_display_name') else model
-        
-        console.print(f"  {model}: [green]{success_rate:.1%}[/green] success, [yellow]{exec_time:.1f}s[/yellow] total, [cyan]{time_per_image:.1f}s[/cyan] per image")
-    
+
+        model_display = (
+            config.get_model_display_name(model)
+            if hasattr(config, "get_model_display_name")
+            else model
+        )
+
+        console.print(
+            f"  {model}: [green]{success_rate:.1%}[/green] success, [yellow]{exec_time:.1f}s[/yellow] total, [cyan]{time_per_image:.1f}s[/cyan] per image"
+        )
+
     # Processing Speed Comparison
     if len(models_tested) >= 2:
         console.print("\n⚡ [bold cyan]Processing Speed Comparison:[/bold cyan]")
-        
+
         # Sort models by speed (fastest first)
-        sorted_models = sorted(models_tested, key=lambda m: model_execution_times.get(m, float('inf')))
-        
+        sorted_models = sorted(
+            models_tested, key=lambda m: model_execution_times.get(m, float("inf"))
+        )
+
         for model in sorted_models:
             exec_time = model_execution_times.get(model, 0)
             time_per_image = exec_time / verified_images if verified_images > 0 else 0
-            console.print(f"  {model}: [yellow]{time_per_image:.1f}s[/yellow] per image")
-    
+            console.print(
+                f"  {model}: [yellow]{time_per_image:.1f}s[/yellow] per image"
+            )
+
     # Additional details table
     if len(models_tested) >= 2:
         table = Table(title="Detailed Model Comparison")
         table.add_column("Model", style="cyan")
         table.add_column("Success Rate", justify="center")
-        table.add_column("Total Time", justify="center") 
+        table.add_column("Total Time", justify="center")
         table.add_column("Time/Image", justify="center")
         table.add_column("Status", justify="center")
-        
+
         for model in models_tested:
             success_rate = model_success_rates.get(model, 0)
             exec_time = model_execution_times.get(model, 0)
             time_per_image = exec_time / verified_images if verified_images > 0 else 0
-            
+
             # Determine status
             if success_rate >= 0.9:
                 status = "[green]Excellent[/green]"
@@ -167,18 +185,18 @@ def _display_comparison_summary(results, config) -> None:
                 status = "[yellow]Good[/yellow]"
             else:
                 status = "[red]Needs Work[/red]"
-            
+
             table.add_row(
                 model.upper(),
                 f"{success_rate:.1%}",
                 f"{exec_time:.1f}s",
-                f"{time_per_image:.1f}s", 
-                status
+                f"{time_per_image:.1f}s",
+                status,
             )
-        
+
         console.print("\n")
         console.print(table)
-    
+
     # Field-wise extraction analysis
     _display_fieldwise_extraction_table(results, config)
 
@@ -186,51 +204,62 @@ def _display_comparison_summary(results, config) -> None:
 def _display_fieldwise_extraction_table(results, config) -> None:
     """Display field-wise extraction performance table like old model_comparison.py."""
     from rich.table import Table
-    
+
     console.print("\n📋 [bold cyan]Field-wise Extraction Performance:[/bold cyan]")
-    
+
     # Extract field analysis data
-    field_analysis = getattr(results, 'field_analysis', None)
-    models_tested = getattr(results, 'models_tested', [])
-    
-    if not field_analysis or not hasattr(field_analysis, 'model_stats'):
+    field_analysis = getattr(results, "field_analysis", None)
+    models_tested = getattr(results, "models_tested", [])
+
+    if not field_analysis or not hasattr(field_analysis, "model_stats"):
         console.print("  ⚠️ No field-wise data available", style="yellow")
         return
-    
+
     # Get expected fields from config
-    expected_fields = config.get_expected_fields() if hasattr(config, 'get_expected_fields') else []
-    
+    expected_fields = (
+        config.get_expected_fields() if hasattr(config, "get_expected_fields") else []
+    )
+
     if not expected_fields:
         console.print("  ⚠️ No expected fields found in configuration", style="yellow")
         return
-    
+
     # Create field-wise table
     table = Table(title="Field Extraction Rates by Model")
     table.add_column("Field", style="cyan", width=20)
-    
+
     for model in models_tested:
-        model_display = config.get_model_display_name(model) if hasattr(config, 'get_model_display_name') else model.upper()
+        model_display = (
+            config.get_model_display_name(model)
+            if hasattr(config, "get_model_display_name")
+            else model.upper()
+        )
         table.add_column(model_display, justify="center", width=12)
-    
-    
+
     # Process each field
     for field in expected_fields:
         row_data = [field]
         field_rates = []
-        
+
         for model in models_tested:
             if model in field_analysis.model_stats:
                 model_stats = field_analysis.model_stats[model]
-                
+
                 # Try to get field extraction rate
                 rate = 0.0
-                if hasattr(model_stats, 'field_value_rates') and field in model_stats.field_value_rates:
+                if (
+                    hasattr(model_stats, "field_value_rates")
+                    and field in model_stats.field_value_rates
+                ):
                     rate = model_stats.field_value_rates[field]
-                elif hasattr(model_stats, 'field_extraction_rates') and field in model_stats.field_extraction_rates:
+                elif (
+                    hasattr(model_stats, "field_extraction_rates")
+                    and field in model_stats.field_extraction_rates
+                ):
                     rate = model_stats.field_extraction_rates[field]
-                
+
                 field_rates.append(rate)
-                
+
                 # Color code based on performance
                 if rate >= 0.9:
                     rate_str = f"[green]{rate:.1%}[/green]"
@@ -240,20 +269,22 @@ def _display_fieldwise_extraction_table(results, config) -> None:
                     rate_str = f"[orange1]{rate:.1%}[/orange1]"
                 else:
                     rate_str = f"[red]{rate:.1%}[/red]"
-                
+
                 row_data.append(rate_str)
             else:
                 row_data.append("[dim]N/A[/dim]")
                 field_rates.append(0.0)
-        
+
         table.add_row(*row_data)
-    
+
     console.print("\n")
     console.print(table)
-    
+
     # Add legend
     console.print("\n📊 [bold]Performance Legend:[/bold]")
-    console.print("  [green]■[/green] Excellent (≥90%)  [yellow]■[/yellow] Good (70-89%)  [orange1]■[/orange1] Fair (50-69%)  [red]■[/red] Poor (<50%)")
+    console.print(
+        "  [green]■[/green] Excellent (≥90%)  [yellow]■[/yellow] Good (70-89%)  [orange1]■[/orange1] Fair (50-69%)  [red]■[/red] Poor (<50%)"
+    )
 
 
 # =============================================================================
@@ -437,11 +468,12 @@ def compare(
             if result and result.get("success"):
                 # Display comprehensive comparison summary like old model_comparison.py
                 _display_comparison_summary(result["results"], result["config"])
-                
+
                 execution_time = result.get("execution_time", 0)
                 if execution_time:
                     console.print(
-                        f"⏱️  Total execution time: {execution_time:.1f}s", style="bold green"
+                        f"⏱️  Total execution time: {execution_time:.1f}s",
+                        style="bold green",
                     )
             else:
                 error_msg = (

@@ -4,7 +4,7 @@
 
 
 # Success criteria and quality thresholds
-min_fields_for_success: 1  # Document is successful if it extracts at least 1 fields
+min_fields_for_success: 5  # Document is successful if it extracts at least 5 fields (20% of total)
 
 # Quality rating thresholds for field extraction (realistic for business documents)
 quality_thresholds:
@@ -22,21 +22,27 @@ speed_thresholds:
 
 # Memory and hardware configuration
 memory_config:
-  v100_limit_gb: 16.0      # V100 GPU memory limit
+  v100_limit_gb: 16.0      # V100 GPU memory limit (16GB VRAM)
   safety_margin: 0.85      # Use 85% of available memory for safety
+  # Note: v100_limit_gb is used by both memory monitoring and device configuration
   
 # Image processing configuration  
 image_processing:
   max_image_size: 1024     # Maximum image dimension for resizing
-  timeout_seconds: 10      # Processing timeout per image
+  timeout_seconds: 30      # Processing timeout per image (30s for complex documents)
 
-# Note: Fields are defined in the prompts section below
-# The system parses expected fields dynamically from the prompt text
+# Token limits configuration - single source of truth
+token_limits:
+  max_tokens: 2048          # Maximum tokens for generation (used by all models)
+  # Note: This value is used for max_tokens, max_new_tokens_limit, and fallback_max_tokens
+
+# Field extraction configuration
+# Fields are parsed dynamically from the extraction_prompt using regex pattern matching
 
 # CLI defaults
 defaults:
   datasets_path: "/home/jovyan/nfs_share/tod/datasets"  # Absolute path for all environments
-  max_tokens: 2048  # Ensure all 25 key-value pairs are generated with safety margin
+  max_tokens: 2048  # Inherited from token_limits.max_tokens above
   quantization: true  # Enable 8-bit quantization for V100
   output_dir: "/home/jovyan/nfs_share/tod/output"  # Absolute path for all environments
   models: "llama,internvl"  # Default models to compare
@@ -49,10 +55,10 @@ defaults:
 # Model-specific configurations
 model_config:
   llama:
-    max_new_tokens_limit: 2048  # Consistent with other token limits
+    max_new_tokens_limit: 2048  # Uses token_limits.max_tokens value
     confidence_score: 0.85      # Default confidence for Llama responses
   internvl:
-    max_new_tokens_limit: 2048  # Consistent with other token limits
+    max_new_tokens_limit: 2048  # Uses token_limits.max_tokens value
     confidence_score: 0.95      # Default confidence for InternVL responses
 
 # Post-processing configuration
@@ -62,41 +68,18 @@ post_processing:
   force_parsing: false        # Force field parsing even with clean output
 
 # Field importance weights for analysis and metrics
-# All fields have equal importance weight of 1.0 (objective evaluation)
-field_weights:
-  # All fields treated equally - no subjective importance weighting
-  DOCUMENT_TYPE: 1.0
-  SUPPLIER: 1.0
-  ABN: 1.0
-  PAYER_NAME: 1.0
-  PAYER_ADDRESS: 1.0
-  PAYER_PHONE: 1.0
-  PAYER_EMAIL: 1.0
-  INVOICE_DATE: 1.0
-  DUE_DATE: 1.0
-  GST: 1.0
-  TOTAL: 1.0
-  SUBTOTAL: 1.0
-  SUPPLIER_WEBSITE: 1.0
-  QUANTITIES: 1.0
-  PRICES: 1.0
-  BUSINESS_ADDRESS: 1.0
-  BUSINESS_PHONE: 1.0
-  BANK_NAME: 1.0
-  BSB_NUMBER: 1.0
-  BANK_ACCOUNT_NUMBER: 1.0
-  ACCOUNT_HOLDER: 1.0
-  STATEMENT_PERIOD: 1.0
-  OPENING_BALANCE: 1.0
-  CLOSING_BALANCE: 1.0
-  DESCRIPTIONS: 1.0
+# All fields discovered from extraction_prompt automatically get weight 1.0
+# To override specific field weights, uncomment and modify:
+# field_weights:
+#   DOCUMENT_TYPE: 2.0  # Example: Make document type twice as important
+#   TOTAL: 1.5         # Example: Make total amount 50% more important
   
 # Repetition control configuration  
 repetition_control:
   enabled: true               # Default: ON for both models
   word_threshold: 0.15        # Word repetition threshold
   phrase_threshold: 2         # Phrase repetition threshold
-  fallback_max_tokens: 2048   # Consistent with other token limits
+  fallback_max_tokens: 2048   # Uses token_limits.max_tokens value
 
 # Logging configuration
 logging:
@@ -114,7 +97,7 @@ device_config:
   
   # V100 production constraints (16GB VRAM, 64GB RAM)
   v100_mode: true  # Enable V100 production optimizations
-  memory_limit_gb: 16  # GPU memory limit for V100
+  # Note: Memory limit is defined in memory_config.v100_limit_gb above
   
   # Device mapping configurations per model
   device_maps:

@@ -75,26 +75,31 @@ class DynamicModelVisualizer:
             style="green",
         )
 
-    def _extract_working_models_from_comparison_runner(self, comparison_results: Dict[str, Any]) -> List[tuple]:
+    def _extract_working_models_from_comparison_runner(
+        self, comparison_results: Dict[str, Any]
+    ) -> List[tuple]:
         """Extract working models from comparison_runner format and convert to visualization format.
-        
+
         Args:
             comparison_results: Results from comparison_runner.py
-            
+
         Returns:
             List of (model_name, model_results) tuples in visualization format
         """
         working_models = []
-        
+
         # Check if this is comparison_runner format
-        if "models_tested" in comparison_results and "field_analysis" in comparison_results:
+        if (
+            "models_tested" in comparison_results
+            and "field_analysis" in comparison_results
+        ):
             # Extract data from comparison_runner format
             models_tested = comparison_results.get("models_tested", [])
             field_analysis = comparison_results.get("field_analysis", {})
             model_execution_times = comparison_results.get("model_execution_times", {})
             model_success_rates = comparison_results.get("model_success_rates", {})
             extraction_results = comparison_results.get("extraction_results", {})
-            
+
             for model in models_tested:
                 # Convert comparison_runner format to visualization format
                 model_results = {
@@ -103,49 +108,68 @@ class DynamicModelVisualizer:
                     "avg_processing_time": model_execution_times.get(model, 0.0),
                     "success_rate": model_success_rates.get(model, 0.0),
                     "avg_fields_extracted": 0.0,
-                    "total_processing_time": model_execution_times.get(model, 0.0)
+                    "total_processing_time": model_execution_times.get(model, 0.0),
                 }
-                
+
                 # Extract field-wise accuracy from field_analysis
-                if "model_stats" in field_analysis and model in field_analysis["model_stats"]:
+                if (
+                    "model_stats" in field_analysis
+                    and model in field_analysis["model_stats"]
+                ):
                     model_stats = field_analysis["model_stats"][model]
-                    
+
                     # Use field_value_rates as field_wise_accuracy
                     if "field_value_rates" in model_stats:
-                        model_results["field_wise_accuracy"] = model_stats["field_value_rates"]
+                        model_results["field_wise_accuracy"] = model_stats[
+                            "field_value_rates"
+                        ]
                     elif "field_extraction_rates" in model_stats:
                         # Fallback to extraction rates
-                        model_results["field_wise_accuracy"] = model_stats["field_extraction_rates"]
-                
+                        model_results["field_wise_accuracy"] = model_stats[
+                            "field_extraction_rates"
+                        ]
+
                 # Ensure all expected fields are represented (fill missing fields with 0.0)
                 for expected_field in self.extraction_fields:
                     if expected_field not in model_results["field_wise_accuracy"]:
                         model_results["field_wise_accuracy"][expected_field] = 0.0
-                
+
                 # Get avg_fields_extracted if available
-                if "model_stats" in field_analysis and model in field_analysis["model_stats"]:
+                if (
+                    "model_stats" in field_analysis
+                    and model in field_analysis["model_stats"]
+                ):
                     model_stats = field_analysis["model_stats"][model]
                     if "avg_fields_extracted" in model_stats:
-                        model_results["avg_fields_extracted"] = model_stats["avg_fields_extracted"]
-                
+                        model_results["avg_fields_extracted"] = model_stats[
+                            "avg_fields_extracted"
+                        ]
+
                 # Calculate avg_accuracy from field_wise_accuracy
                 if model_results["field_wise_accuracy"]:
-                    field_accuracies = list(model_results["field_wise_accuracy"].values())
-                    model_results["avg_accuracy"] = sum(field_accuracies) / len(field_accuracies)
-                    model_results["avg_fields_extracted"] = sum(1 for acc in field_accuracies if acc > 0)
-                
+                    field_accuracies = list(
+                        model_results["field_wise_accuracy"].values()
+                    )
+                    model_results["avg_accuracy"] = sum(field_accuracies) / len(
+                        field_accuracies
+                    )
+                    model_results["avg_fields_extracted"] = sum(
+                        1 for acc in field_accuracies if acc > 0
+                    )
+
                 working_models.append((model, model_results))
-        
+
         else:
             # Assume this is already in evaluator format
             working_models = [
                 (model, results)
                 for model, results in comparison_results.items()
-                if isinstance(results, dict) and "error" not in results and "field_wise_accuracy" in results
+                if isinstance(results, dict)
+                and "error" not in results
+                and "field_wise_accuracy" in results
             ]
-        
-        return working_models
 
+        return working_models
 
     def _setup_plotting_style(self) -> None:
         """Set up consistent plotting style for professional charts."""
@@ -220,7 +244,9 @@ class DynamicModelVisualizer:
         )
 
         # Extract working models from comparison_runner format
-        working_models = self._extract_working_models_from_comparison_runner(comparison_results)
+        working_models = self._extract_working_models_from_comparison_runner(
+            comparison_results
+        )
 
         if not working_models:
             self.console.print("❌ No valid model results for heatmap", style="red")
@@ -236,10 +262,10 @@ class DynamicModelVisualizer:
 
         # Filter to fields that exist in results and configuration
         display_fields = [f for f in self.extraction_fields if f in available_fields]
-        
+
         self.console.print(
             f"🔍 Processing {len(display_fields)} of {len(self.extraction_fields)} expected fields",
-            style="dim"
+            style="dim",
         )
 
         # Create accuracy matrix
@@ -352,7 +378,9 @@ class DynamicModelVisualizer:
         self.console.print("🎨 Creating model performance dashboard...", style="blue")
 
         # Extract working models from comparison_runner format
-        working_models = self._extract_working_models_from_comparison_runner(comparison_results)
+        working_models = self._extract_working_models_from_comparison_runner(
+            comparison_results
+        )
 
         if not working_models:
             self.console.print("❌ No valid model results for dashboard", style="red")
@@ -537,7 +565,9 @@ class DynamicModelVisualizer:
         categories = self._categorize_fields_by_weight()
 
         # Extract working models from comparison_runner format
-        working_models = self._extract_working_models_from_comparison_runner(comparison_results)
+        working_models = self._extract_working_models_from_comparison_runner(
+            comparison_results
+        )
 
         if not working_models:
             self.console.print(
@@ -876,7 +906,9 @@ class DynamicModelVisualizer:
         Returns:
             Path to saved composite chart file
         """
-        self.console.print("🎨 Creating composite overview (2x2 layout)...", style="blue")
+        self.console.print(
+            "🎨 Creating composite overview (2x2 layout)...", style="blue"
+        )
 
         # Create a large figure with 2x2 subplots
         fig = plt.figure(figsize=(20, 16))
@@ -888,7 +920,9 @@ class DynamicModelVisualizer:
         )
 
         # Extract working models for reuse
-        working_models = self._extract_working_models_from_comparison_runner(comparison_results)
+        working_models = self._extract_working_models_from_comparison_runner(
+            comparison_results
+        )
 
         if not working_models:
             self.console.print("❌ No valid model results for composite", style="red")
@@ -943,18 +977,22 @@ class DynamicModelVisualizer:
                     if field in results["field_wise_accuracy"]:
                         accuracies.append(results["field_wise_accuracy"][field])
                 field_avg_accuracy[field] = np.mean(accuracies) if accuracies else 0.0
-            
+
             # Sort by average accuracy and take top 12 for readability
-            sorted_fields = sorted(field_avg_accuracy.items(), key=lambda x: x[1], reverse=True)
+            sorted_fields = sorted(
+                field_avg_accuracy.items(), key=lambda x: x[1], reverse=True
+            )
             display_fields = [field for field, _ in sorted_fields[:12]]
-            
+
             self.console.print(
                 f"📊 Showing top 12 performing fields out of {len(available_fields)} total",
-                style="dim"
+                style="dim",
             )
         else:
             # Use all available fields if <= 12
-            display_fields = [f for f in self.extraction_fields if f in available_fields]
+            display_fields = [
+                f for f in self.extraction_fields if f in available_fields
+            ]
         models = [model.upper() for model, _ in working_models]
 
         # Create accuracy matrix
@@ -968,11 +1006,13 @@ class DynamicModelVisualizer:
 
         # Create mini heatmap
         if accuracy_matrix:
-            accuracy_df = pd.DataFrame(accuracy_matrix, index=display_fields, columns=models)
-            
+            accuracy_df = pd.DataFrame(
+                accuracy_matrix, index=display_fields, columns=models
+            )
+
             # Adjust annotation size based on number of fields
             annot_size = max(6, min(8, 200 // len(display_fields)))
-            
+
             sns.heatmap(
                 accuracy_df,
                 annot=True,
@@ -982,11 +1022,17 @@ class DynamicModelVisualizer:
                 cbar=False,
                 annot_kws={"size": annot_size},
             )
-            ax.set_title(f"Field Accuracy ({len(display_fields)} fields)", fontweight="bold", fontsize=12)
+            ax.set_title(
+                f"Field Accuracy ({len(display_fields)} fields)",
+                fontweight="bold",
+                fontsize=12,
+            )
             ax.set_xlabel("")
             ax.set_ylabel("")
             # Adjust label sizes for many fields
-            ax.tick_params(axis='y', labelsize=max(6, min(8, 150 // len(display_fields))))
+            ax.tick_params(
+                axis="y", labelsize=max(6, min(8, 150 // len(display_fields)))
+            )
 
     def _create_mini_performance_bars(self, ax, working_models):
         """Create mini performance comparison bars."""
@@ -999,23 +1045,40 @@ class DynamicModelVisualizer:
             speeds.append(results["avg_processing_time"])
 
         # Create simple side-by-side bars for accuracy only (most important metric)
-        bars = ax.bar(models, accuracies, 
-                     color=[self.colors["primary"], self.colors["secondary"]][:len(models)],
-                     alpha=0.8)
-        
+        bars = ax.bar(
+            models,
+            accuracies,
+            color=[self.colors["primary"], self.colors["secondary"]][: len(models)],
+            alpha=0.8,
+        )
+
         ax.set_ylabel("Accuracy (%)")
         ax.set_title("Model Accuracy Comparison", fontweight="bold", fontsize=12)
         ax.set_ylim(0, 100)
-        
+
         # Add value labels on bars
         for bar, acc, speed in zip(bars, accuracies, speeds, strict=False):
-            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
-                   f"{acc:.1f}%", ha="center", va="bottom", fontweight="bold", fontsize=8)
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 1,
+                f"{acc:.1f}%",
+                ha="center",
+                va="bottom",
+                fontweight="bold",
+                fontsize=8,
+            )
             # Add speed as subtitle below bar
-            ax.text(bar.get_x() + bar.get_width()/2, -8,
-                   f"{speed:.1f}s", ha="center", va="top", fontsize=7, style="italic")
-        
-        ax.tick_params(axis='x', rotation=0)
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                -8,
+                f"{speed:.1f}s",
+                ha="center",
+                va="top",
+                fontsize=7,
+                style="italic",
+            )
+
+        ax.tick_params(axis="x", rotation=0)
 
     def _create_mini_category_analysis(self, ax, working_models):
         """Create mini field category analysis."""
@@ -1027,25 +1090,33 @@ class DynamicModelVisualizer:
         for category, fields in categories.items():
             if not fields:
                 continue
-            
+
             category_performance[category] = {}
             for model, results in working_models:
                 field_accs = []
                 for field in fields:
                     if field in results["field_wise_accuracy"]:
                         field_accs.append(results["field_wise_accuracy"][field])
-                
+
                 avg_acc = np.mean(field_accs) if field_accs else 0.0
                 category_performance[category][model.upper()] = avg_acc * 100
 
         # Create grouped bar chart
         x_pos = np.arange(len(category_performance))
         width = 0.35
-        
+
         for i, model in enumerate(models):
-            values = [category_performance[cat].get(model, 0) for cat in category_performance.keys()]
-            ax.bar(x_pos + i * width, values, width, 
-                  label=model, color=[self.colors["primary"], self.colors["secondary"]][i])
+            values = [
+                category_performance[cat].get(model, 0)
+                for cat in category_performance.keys()
+            ]
+            ax.bar(
+                x_pos + i * width,
+                values,
+                width,
+                label=model,
+                color=[self.colors["primary"], self.colors["secondary"]][i],
+            )
 
         ax.set_title("Category Performance", fontweight="bold", fontsize=12)
         ax.set_xticks(x_pos + width / 2)
@@ -1059,31 +1130,50 @@ class DynamicModelVisualizer:
         memory_data = {}
         if "model_estimated_vram" in comparison_results:
             memory_data = comparison_results["model_estimated_vram"]
-        
+
         if memory_data:
             models = list(memory_data.keys())
             vram_usage = list(memory_data.values())
-            
-            bars = ax.bar([m.upper() for m in models], vram_usage,
-                         color=[self.colors["primary"], self.colors["secondary"]][:len(models)])
-            
+
+            bars = ax.bar(
+                [m.upper() for m in models],
+                vram_usage,
+                color=[self.colors["primary"], self.colors["secondary"]][: len(models)],
+            )
+
             # Add V100 limit line
             v100_limit = self.config_manager.memory_config.v100_limit_gb
-            ax.axhline(y=v100_limit, color="red", linestyle="--", alpha=0.7, label="V100 Limit")
-            
+            ax.axhline(
+                y=v100_limit, color="red", linestyle="--", alpha=0.7, label="V100 Limit"
+            )
+
             ax.set_title("V100 VRAM Usage", fontweight="bold", fontsize=12)
             ax.set_ylabel("VRAM (GB)")
             ax.legend()
-            
+
             # Add value labels
             for bar, usage in zip(bars, vram_usage, strict=False):
-                ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.2,
-                       f"{usage:.1f}GB", ha="center", va="bottom", fontsize=8)
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + 0.2,
+                    f"{usage:.1f}GB",
+                    ha="center",
+                    va="bottom",
+                    fontsize=8,
+                )
         else:
             # No memory data available
-            ax.text(0.5, 0.5, "VRAM Data\nNot Available", 
-                   ha="center", va="center", transform=ax.transAxes,
-                   fontsize=12, style="italic", color="gray")
+            ax.text(
+                0.5,
+                0.5,
+                "VRAM Data\nNot Available",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+                fontsize=12,
+                style="italic",
+                color="gray",
+            )
             ax.set_title("V100 VRAM Usage", fontweight="bold", fontsize=12)
 
     def generate_all_visualizations(
@@ -1180,7 +1270,9 @@ class DynamicModelVisualizer:
         """
 
         # Add model performance summary
-        working_models = self._extract_working_models_from_comparison_runner(comparison_results)
+        working_models = self._extract_working_models_from_comparison_runner(
+            comparison_results
+        )
 
         for model, results in working_models:
             # Calculate overall accuracy
