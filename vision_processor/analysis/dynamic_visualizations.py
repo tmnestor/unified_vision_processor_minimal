@@ -75,6 +75,70 @@ class DynamicModelVisualizer:
             style="green",
         )
 
+    def _extract_working_models_from_comparison_runner(self, comparison_results: Dict[str, Any]) -> List[tuple]:
+        """Extract working models from comparison_runner format and convert to visualization format.
+        
+        Args:
+            comparison_results: Results from comparison_runner.py
+            
+        Returns:
+            List of (model_name, model_results) tuples in visualization format
+        """
+        working_models = []
+        
+        # Check if this is comparison_runner format
+        if "models_tested" in comparison_results and "field_analysis" in comparison_results:
+            # Extract data from comparison_runner format
+            models_tested = comparison_results.get("models_tested", [])
+            field_analysis = comparison_results.get("field_analysis", {})
+            model_execution_times = comparison_results.get("model_execution_times", {})
+            model_success_rates = comparison_results.get("model_success_rates", {})
+            extraction_results = comparison_results.get("extraction_results", {})
+            
+            for model in models_tested:
+                # Convert comparison_runner format to visualization format
+                model_results = {
+                    "field_wise_accuracy": {},
+                    "avg_accuracy": 0.0,
+                    "avg_processing_time": model_execution_times.get(model, 0.0),
+                    "success_rate": model_success_rates.get(model, 0.0),
+                    "avg_fields_extracted": 0.0,
+                    "total_processing_time": model_execution_times.get(model, 0.0)
+                }
+                
+                # Extract field-wise accuracy from field_analysis
+                if "model_stats" in field_analysis and model in field_analysis["model_stats"]:
+                    model_stats = field_analysis["model_stats"][model]
+                    
+                    # Use field_value_rates as field_wise_accuracy
+                    if "field_value_rates" in model_stats:
+                        model_results["field_wise_accuracy"] = model_stats["field_value_rates"]
+                    elif "field_extraction_rates" in model_stats:
+                        # Fallback to extraction rates
+                        model_results["field_wise_accuracy"] = model_stats["field_extraction_rates"]
+                    
+                    # Get avg_fields_extracted if available
+                    if "avg_fields_extracted" in model_stats:
+                        model_results["avg_fields_extracted"] = model_stats["avg_fields_extracted"]
+                
+                # Calculate avg_accuracy from field_wise_accuracy
+                if model_results["field_wise_accuracy"]:
+                    field_accuracies = list(model_results["field_wise_accuracy"].values())
+                    model_results["avg_accuracy"] = sum(field_accuracies) / len(field_accuracies)
+                    model_results["avg_fields_extracted"] = sum(1 for acc in field_accuracies if acc > 0)
+                
+                working_models.append((model, model_results))
+        
+        else:
+            # Assume this is already in evaluator format
+            working_models = [
+                (model, results)
+                for model, results in comparison_results.items()
+                if isinstance(results, dict) and "error" not in results and "field_wise_accuracy" in results
+            ]
+        
+        return working_models
+
 
     def _setup_plotting_style(self) -> None:
         """Set up consistent plotting style for professional charts."""
@@ -148,12 +212,8 @@ class DynamicModelVisualizer:
             "🎨 Creating dynamic field accuracy heatmap...", style="blue"
         )
 
-        # Extract working models and their field accuracies
-        working_models = [
-            (model, results)
-            for model, results in comparison_results.items()
-            if "error" not in results and "field_wise_accuracy" in results
-        ]
+        # Extract working models from comparison_runner format
+        working_models = self._extract_working_models_from_comparison_runner(comparison_results)
 
         if not working_models:
             self.console.print("❌ No valid model results for heatmap", style="red")
@@ -279,12 +339,8 @@ class DynamicModelVisualizer:
         """
         self.console.print("🎨 Creating model performance dashboard...", style="blue")
 
-        # Extract working models
-        working_models = [
-            (model, results)
-            for model, results in comparison_results.items()
-            if "error" not in results
-        ]
+        # Extract working models from comparison_runner format
+        working_models = self._extract_working_models_from_comparison_runner(comparison_results)
 
         if not working_models:
             self.console.print("❌ No valid model results for dashboard", style="red")
@@ -468,12 +524,8 @@ class DynamicModelVisualizer:
         # Get field categories based on weights
         categories = self._categorize_fields_by_weight()
 
-        # Extract working models
-        working_models = [
-            (model, results)
-            for model, results in comparison_results.items()
-            if "error" not in results and "field_wise_accuracy" in results
-        ]
+        # Extract working models from comparison_runner format
+        working_models = self._extract_working_models_from_comparison_runner(comparison_results)
 
         if not working_models:
             self.console.print(
@@ -889,11 +941,7 @@ class DynamicModelVisualizer:
         """
 
         # Add model performance summary
-        working_models = [
-            (model, results)
-            for model, results in comparison_results.items()
-            if "error" not in results
-        ]
+        working_models = self._extract_working_models_from_comparison_runner(comparison_results)
 
         for model, results in working_models:
             # Calculate overall accuracy
