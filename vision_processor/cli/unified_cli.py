@@ -38,7 +38,6 @@ Single entry point for all vision processing functionality.
 
 [bold cyan]Core Workflows:[/bold cyan]
   [green]compare[/green]     - Model comparison with auto ground truth detection
-  [green]visualize[/green]   - Generate charts/reports from results  
   [green]extract[/green]     - Single image extraction
   [green]batch[/green]       - Batch process directory
 
@@ -318,7 +317,7 @@ def visualize(
         "model_comparison.yaml", help="Path to configuration file"
     ),
     open_browser: bool = typer.Option(
-        True, "--browser/--no-browser", help="Auto-open visualizations"
+        False, "--browser/--no-browser", help="Auto-open visualizations"
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
     debug: bool = typer.Option(False, "--debug", help="Debug output"),
@@ -429,15 +428,23 @@ def visualize(
             console.print("🎯 Generating ground truth analysis visualizations...")
 
             # Import and use evaluation visualization logic
-            from ..analysis.dynamic_visualizations import DynamicVisualizationManager
+            from ..analysis.dynamic_visualizations import DynamicModelVisualizer
 
-            # Create visualization manager
-            viz_manager = DynamicVisualizationManager(
-                config_path=config_path, output_dir=str(output_path)
+            # Create visualization manager with ConfigManager
+            viz_manager = DynamicModelVisualizer(
+                config_manager=config, output_dir=str(output_path)
             )
 
-            # Generate ground truth analysis
-            results = viz_manager.create_ground_truth_analysis(str(detected_file))
+            # For now, create dummy results structure since the correct method needs comparison_results
+            # TODO: This needs to be implemented properly for ground truth analysis
+            console.print(
+                "⚠️  Ground truth visualization not fully implemented yet",
+                style="yellow",
+            )
+            results = {
+                "success": False,
+                "error": "Ground truth analysis not implemented",
+            }
 
             if results.get("success"):
                 console.print(
@@ -475,15 +482,24 @@ def visualize(
             console.print("📊 Generating comparison results visualizations...")
 
             # Import visualization logic
-            from ..analysis.dynamic_visualizations import DynamicVisualizationManager
+            import json
 
-            # Create visualization manager
-            viz_manager = DynamicVisualizationManager(
-                config_path=config_path, output_dir=str(output_path)
+            from ..analysis.dynamic_visualizations import DynamicModelVisualizer
+
+            # Load comparison results from JSON file
+            with Path(detected_file).open("r") as f:
+                comparison_results = json.load(f)
+
+            # Create visualization manager with ConfigManager
+            viz_manager = DynamicModelVisualizer(
+                config_manager=config, output_dir=str(output_path)
             )
 
-            # Generate comparison visualizations
-            results = viz_manager.create_comparison_visualizations(str(detected_file))
+            # Generate all visualizations using the correct method
+            viz_files = viz_manager.generate_all_visualizations(comparison_results)
+
+            # Create results structure that matches expected format
+            results = {"success": True if viz_files else False, "files": viz_files}
 
             if results.get("success"):
                 console.print(
@@ -977,16 +993,22 @@ def evaluate(
                 console.print("\n📊 Generating visualizations...")
                 try:
                     from ..analysis.dynamic_visualizations import (
-                        DynamicVisualizationManager,
+                        DynamicModelVisualizer,
                     )
 
-                    viz_manager = DynamicVisualizationManager(
-                        config_path=config_path, output_dir=effective_output_dir
+                    viz_manager = DynamicModelVisualizer(
+                        config_manager=config, output_dir=effective_output_dir
                     )
 
-                    viz_results = viz_manager.create_ground_truth_analysis(
-                        ground_truth_csv
+                    # Ground truth analysis not implemented yet
+                    console.print(
+                        "⚠️  Ground truth visualization not fully implemented yet",
+                        style="yellow",
                     )
+                    viz_results = {
+                        "success": False,
+                        "error": "Ground truth analysis not implemented",
+                    }
 
                     if viz_results.get("success"):
                         console.print(
