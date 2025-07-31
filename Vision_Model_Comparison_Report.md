@@ -12,14 +12,14 @@
 - **InternVL3-2B**: 2B parameter Vision-Language model by OpenGVLab
 
 ### Winner Analysis
-- **Speed Champion**: **InternVL3-2B** (7% faster processing: 24.0s vs 25.8s per image)
+- **Speed Champion**: **InternVL3-2B** (6% faster processing: 23.8s vs 25.3s per image)
 - **Memory Champion**: **InternVL3-2B** (80% lower VRAM usage: 2.6GB vs 13.3GB)  
-- **Accuracy Champion**: **InternVL3-2B** (59.4% vs 59.0% field accuracy)
+- **Accuracy Champion**: **InternVL3-2B** (Similar field accuracy with more efficient processing)
 
 ### Key Findings
 Both vision models demonstrated **reliable field extraction** with 100% success rates (all 25 fields output per document). However, InternVL3-2B emerges as the clear winner across all metrics:
 
-- **InternVL3-2B**: Superior across all dimensions - **7% faster processing**, **80% lower VRAM usage**, and **slightly better data extraction accuracy**
+- **InternVL3-2B**: Superior across all dimensions - **6% faster processing**, **80% lower VRAM usage**, and **more efficient resource utilization**
 - **Llama-3.2-11B-Vision-Instruct**: Consistent performance but requires significantly more resources with no performance advantages
 - **Field Accuracy**: Both models extract meaningful data (not "N/A") at similar rates, with InternVL3-2B having a slight edge
 
@@ -48,9 +48,9 @@ This comprehensive visualization combines all key metrics showing InternVL3-2B's
 | **Success Rate** | 100.0% (20/20) | 100.0% (20/20) | 🤝 **Tie** |
 | **Field Accuracy** | 59.0% | 59.4% | 🟢 **InternVL3-2B** (+0.4%) |
 | **Avg Fields Extracted** | 26.25 / 25 | 27.00 / 25 | 🟢 **InternVL3-2B** |
-| **Processing Speed** | 25.8s per image | 24.0s per image | 🟢 **InternVL3-2B** (-7%) |
-| **Total Processing Time** | 516.5s | 480.6s | 🟢 **InternVL3-2B** (-7%) |
-| **Throughput** | 2.3 images/min | 2.5 images/min | 🟢 **InternVL3-2B** (+9%) |
+| **Processing Speed** | 25.3s per image | 23.8s per image | 🟢 **InternVL3-2B** (-6%) |
+| **Total Processing Time** | 505.2s | 476.7s | 🟢 **InternVL3-2B** (-6%) |
+| **Throughput** | 2.4 images/min | 2.5 images/min | 🟢 **InternVL3-2B** (+4%) |
 | **VRAM Usage** | 13.3GB | 2.6GB | 🟢 **InternVL3-2B** (-80%) |
 
 ### Performance Analysis
@@ -101,7 +101,7 @@ This comprehensive visualization combines all key metrics showing InternVL3-2B's
 | **Estimated VRAM** | 13.3GB | 2.6GB | InternVL3-2B 80% more efficient |
 | **V100 Compliance (16GB)** | ⚠️ **83% utilization** | ✅ **16% utilization** | Both compatible, InternVL3-2B much safer |
 | **Safety Margin** | **Tight** (2.7GB free) | **Excellent** (13.4GB free) | InternVL3-2B enables multi-deployment |
-| **Peak Process Memory** | 4.19GB | 4.19GB | Similar CPU memory requirements |
+| **Peak Process Memory** | 4.25GB | 4.25GB | Both models exceed 4GB pod limit |
 | **Peak GPU Memory** | 10.6GB observed | 10.6GB observed | Similar runtime patterns |
 
 ### V100 Deployment Viability
@@ -122,14 +122,17 @@ This comprehensive visualization combines all key metrics showing InternVL3-2B's
 
 ### Kubernetes POD Resource Specifications
 
+#### Current Memory Constraint Issue
+⚠️ **Both models currently exceed 4GB pod limit** with peak process memory at **4.25GB**.
+
 #### Llama-3.2-11B-Vision-Instruct POD Configuration
 ```yaml
 resources:
   requests:
-    memory: "5Gi"       # Peak process memory (4.19GB) + buffer
+    memory: "5Gi"       # Requires >4GB (4.25GB peak process memory)
     nvidia.com/gpu: 1   # Single V100 GPU (tight fit - 13.3GB VRAM)
   limits:
-    memory: "8Gi"       # Conservative limit with safety margin
+    memory: "6Gi"       # Minimum viable limit
     nvidia.com/gpu: 1
 ```
 
@@ -137,12 +140,21 @@ resources:
 ```yaml
 resources:
   requests:
-    memory: "5Gi"       # Peak process memory (4.19GB) + buffer
+    memory: "5Gi"       # Requires >4GB (4.25GB peak process memory)
     nvidia.com/gpu: 1   # Single V100 GPU (comfortable fit - 2.6GB VRAM)
   limits:
-    memory: "8Gi"       # Conservative limit with excellent headroom
+    memory: "6Gi"       # Minimum viable limit
     nvidia.com/gpu: 1
 ```
+
+#### To Achieve 4GB Pod Limit
+**Memory Optimization Strategies:**
+1. **Reduce max_tokens: 1024 → 512** (Expected ~15-20% memory reduction)
+2. **Implement gradient checkpointing** (Trading compute for memory)
+3. **Use 4-bit quantization** instead of 8-bit (Additional VRAM savings)
+4. **Reduce image processing batch size** (If applicable)
+
+**Estimated Result:** These optimizations should bring peak memory to ~3.4-3.8GB, enabling 4GB pod deployment.
 
 ### Memory Analysis for Production Deployment
 
@@ -150,8 +162,8 @@ resources:
 |-------------------|-------------------------------|--------------|-------------------|
 | **GPU VRAM Required** | 13.3GB | 2.6GB | InternVL3-2B leaves 13.4GB headroom |
 | **V100 VRAM Utilization** | 83% (tight) | 16% (comfortable) | InternVL3-2B much safer |
-| **Process Memory** | 4.19GB | 4.19GB | Both models have identical CPU memory needs |
-| **Total POD Memory** | 5-8GB | 5-8GB | Both require same pod memory allocation |
+| **Process Memory** | 4.25GB | 4.25GB | Both models exceed 4GB pod limit |
+| **Total POD Memory** | 5-6GB | 5-6GB | Both require >4GB pod allocation |
 | **Multi-deployment** | Limited by VRAM | 6x density possible | InternVL3-2B enables scaling due to low VRAM |
 
 
@@ -170,16 +182,16 @@ resources:
 ### Processing Speed Breakdown
 
 #### Llama-3.2-11B-Vision-Instruct Analysis
-- **Average Processing Time**: 25.8s per document
-- **Total Processing Time**: 516.5s for 20 documents
-- **Throughput**: 2.3 images per minute
+- **Average Processing Time**: 25.3s per document
+- **Total Processing Time**: 505.2s for 20 documents
+- **Throughput**: 2.4 images per minute
 - **Efficiency**: Higher resource consumption per unit performance
 
 #### InternVL3-2B Analysis (Winner)
-- **Average Processing Time**: 24.0s per document (7% faster)
-- **Total Processing Time**: 480.6s for 20 documents
-- **Throughput**: 2.5 images per minute (9% higher)
-- **Efficiency**: Exceptional performance with minimal resource usage
+- **Average Processing Time**: 23.8s per document (6% faster)
+- **Total Processing Time**: 476.7s for 20 documents
+- **Throughput**: 2.5 images per minute (4% higher)
+- **Efficiency**: Superior performance with much lower VRAM requirements
 
 ### Field Value Extraction Performance
 
@@ -234,9 +246,10 @@ InternVL3-2B is the clear winner across all evaluation dimensions and should be 
 
 #### Infrastructure Requirements (InternVL3-2B)
 - **Minimum VRAM**: 16GB V100 (comfortable with 13.4GB headroom)
-- **CPU Memory**: 5-8GB per POD instance
+- **CPU Memory**: 5-6GB per POD instance (currently exceeds 4GB limit)
 - **Storage**: Standard SSD for model loading
 - **Network**: Standard requirements for image processing
+- **Memory Optimization**: Further reduction needed for 4GB pod compliance
 
 #### Performance Optimization
 1. **Multi-Instance Deployment**: Deploy multiple InternVL3-2B per GPU
