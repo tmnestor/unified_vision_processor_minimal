@@ -31,9 +31,15 @@ Both vision models demonstrated **reliable field extraction** with 100% success 
 
 ---
 
-## 📊 Performance Comparison Dashboard
+## 🔄 Composite Overview
 
-![Model Performance Dashboard](remote_results/model_performance_dashboard.png)
+![Composite Overview](remote_results/composite_overview_2x2.png)
+
+This comprehensive visualization combines all key metrics showing InternVL3-2B's clear advantages:
+- **Performance superiority** across speed and accuracy
+- **Resource efficiency** with dramatic VRAM savings  
+- **Production readiness** with excellent safety margins
+- **Economic advantages** enabling higher deployment density
 
 ### Overall Performance Metrics
 
@@ -188,17 +194,6 @@ resources:
 - **Reliability**: Both models achieve 100% field extraction rates
 - **Quality Edge**: InternVL3-2B provides marginally but consistently better data quality
 
----
-
-## 🔄 Composite Overview
-
-![Composite Overview](remote_results/composite_overview_2x2.png)
-
-This comprehensive visualization combines all key metrics showing InternVL3-2B's clear advantages:
-- **Performance superiority** across speed and accuracy
-- **Resource efficiency** with dramatic VRAM savings  
-- **Production readiness** with excellent safety margins
-- **Economic advantages** enabling higher deployment density
 
 ---
 
