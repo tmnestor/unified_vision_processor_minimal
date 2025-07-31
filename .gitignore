@@ -101,3 +101,5 @@ synthetic_invoice.json
 .gitignore
 .env
 standard_labels.txt
+
+docs/report_regeneration_prompt.md

@@ -148,19 +148,6 @@ resources:
 | **Total POD Memory** | 16-20GB | 8-12GB | InternVL3-2B requires 50% less |
 | **Multi-deployment** | Not feasible | 6x density possible | InternVL3-2B enables scaling |
 
-### Cost Analysis
-
-#### Cloud GPU Instance Economics
-- **V100 Instance Cost**: $1,200-1,800/month (AWS p3.2xlarge equivalent)
-- **Memory Cost Impact**: $50-100/month per 4GB additional RAM
-- **InternVL3-2B Advantage**: 50% lower memory requirements = $400-600/month savings per instance
-
-#### Deployment Density Analysis
-- **Llama-3.2-11B-Vision-Instruct**: One model per V100 (resource-constrained)
-- **InternVL3-2B**: Up to 6 models per V100 (resource-efficient)
-- **ROI Impact**: InternVL3-2B enables 6x throughput per GPU investment
-
-### Production Recommendations
 
 #### For All Production Scenarios: InternVL3-2B
 **Rationale**: Superior performance with dramatically lower resource requirements
@@ -302,7 +289,7 @@ InternVL3-2B is the clear winner across all evaluation dimensions and should be 
 
 ---
 
-*Report generated automatically from unified vision processor comparison results*  
+*Report generated from unified vision processor comparison results*  
 *Analysis Period: July 2025*  
 *Framework: Unified Vision Processor v1.0*  
 *Data Source: remote_results/comparison_results_full.json*
