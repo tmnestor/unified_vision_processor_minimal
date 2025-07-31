@@ -157,7 +157,6 @@ extraction_prompt: |
   TOTAL: [total amount in dollars or N/A]
   SUBTOTAL: [subtotal amount in dollars or N/A]
   SUPPLIER_WEBSITE: [value or N/A]
-  # ITEMS: [value or N/A]
   QUANTITIES: [list of quantities or N/A]
   PRICES: [individual prices in dollars or N/A]
   BUSINESS_ADDRESS: [value or N/A]
@@ -170,8 +169,6 @@ extraction_prompt: |
   OPENING_BALANCE: [opening balance amount in dollars or N/A]
   CLOSING_BALANCE: [closing balance amount in dollars or N/A]
   DESCRIPTIONS: [list of transaction descriptions or N/A]
-
-  # TRANSACTIONS: [list of transactions with dates and amounts or N/A]
 
   CRITICAL: Output in PLAIN TEXT format only. Do NOT use markdown formatting.
   
