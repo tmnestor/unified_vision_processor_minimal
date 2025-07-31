@@ -998,23 +998,24 @@ class DynamicModelVisualizer:
             accuracies.append(results["avg_accuracy"] * 100)
             speeds.append(results["avg_processing_time"])
 
-        # Create dual-axis bar chart
-        ax2 = ax.twinx()
-
-        # Accuracy bars
-        bars1 = ax.bar([m + " (Acc)" for m in models], accuracies, 
-                      color=self.colors["primary"], alpha=0.7, width=0.4)
-        ax.set_ylabel("Accuracy (%)", color=self.colors["primary"])
-        ax.tick_params(axis='y', labelcolor=self.colors["primary"])
-
-        # Speed bars (on secondary axis)
-        bars2 = ax2.bar([m + " (Speed)" for m in models], speeds, 
-                       color=self.colors["warning"], alpha=0.7, width=0.4)
-        ax2.set_ylabel("Processing Time (s)", color=self.colors["warning"])
-        ax2.tick_params(axis='y', labelcolor=self.colors["warning"])
-
-        ax.set_title("Performance Overview", fontweight="bold", fontsize=12)
-        ax.tick_params(axis='x', rotation=45)
+        # Create simple side-by-side bars for accuracy only (most important metric)
+        bars = ax.bar(models, accuracies, 
+                     color=[self.colors["primary"], self.colors["secondary"]][:len(models)],
+                     alpha=0.8)
+        
+        ax.set_ylabel("Accuracy (%)")
+        ax.set_title("Model Accuracy Comparison", fontweight="bold", fontsize=12)
+        ax.set_ylim(0, 100)
+        
+        # Add value labels on bars
+        for bar, acc, speed in zip(bars, accuracies, speeds):
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
+                   f"{acc:.1f}%", ha="center", va="bottom", fontweight="bold", fontsize=8)
+            # Add speed as subtitle below bar
+            ax.text(bar.get_x() + bar.get_width()/2, -8,
+                   f"{speed:.1f}s", ha="center", va="top", fontsize=7, style="italic")
+        
+        ax.tick_params(axis='x', rotation=0)
 
     def _create_mini_category_analysis(self, ax, working_models):
         """Create mini field category analysis."""
