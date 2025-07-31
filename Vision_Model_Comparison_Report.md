@@ -126,10 +126,10 @@ This comprehensive visualization combines all key metrics showing InternVL3-2B's
 ```yaml
 resources:
   requests:
-    memory: "16Gi"      # High memory requirements
-    nvidia.com/gpu: 1   # Single V100 GPU (tight fit)
+    memory: "5Gi"       # Peak process memory (4.19GB) + buffer
+    nvidia.com/gpu: 1   # Single V100 GPU (tight fit - 13.3GB VRAM)
   limits:
-    memory: "20Gi"      # Safety buffer for peaks
+    memory: "8Gi"       # Conservative limit with safety margin
     nvidia.com/gpu: 1
 ```
 
@@ -137,10 +137,10 @@ resources:
 ```yaml
 resources:
   requests:
-    memory: "8Gi"       # Low memory requirements
-    nvidia.com/gpu: 1   # Single V100 GPU (comfortable fit)
+    memory: "5Gi"       # Peak process memory (4.19GB) + buffer
+    nvidia.com/gpu: 1   # Single V100 GPU (comfortable fit - 2.6GB VRAM)
   limits:
-    memory: "12Gi"      # Conservative limits with excellent headroom
+    memory: "8Gi"       # Conservative limit with excellent headroom
     nvidia.com/gpu: 1
 ```
 
@@ -150,18 +150,18 @@ resources:
 |-------------------|-------------------------------|--------------|-------------------|
 | **GPU VRAM Required** | 13.3GB | 2.6GB | InternVL3-2B leaves 13.4GB headroom |
 | **V100 VRAM Utilization** | 83% (tight) | 16% (comfortable) | InternVL3-2B much safer |
-| **CPU Memory** | 4.19GB | 4.19GB | Similar system overhead |
-| **Total POD Memory** | 16-20GB | 8-12GB | InternVL3-2B requires 50% less |
-| **Multi-deployment** | Not feasible | 6x density possible | InternVL3-2B enables scaling |
+| **Process Memory** | 4.19GB | 4.19GB | Both models have identical CPU memory needs |
+| **Total POD Memory** | 5-8GB | 5-8GB | Both require same pod memory allocation |
+| **Multi-deployment** | Limited by VRAM | 6x density possible | InternVL3-2B enables scaling due to low VRAM |
 
 
 #### For All Production Scenarios: InternVL3-2B
-**Rationale**: Superior performance with dramatically lower resource requirements
+**Rationale**: Superior performance with dramatically lower GPU resource requirements
 - **Better speed**: 7% faster processing
 - **Better accuracy**: 0.4% higher field value rates  
-- **Better efficiency**: 80% lower VRAM usage
-- **Better economics**: 50% lower POD memory requirements
-- **Better scaling**: 6x deployment density potential
+- **Better efficiency**: 80% lower VRAM usage (2.6GB vs 13.3GB)
+- **Better economics**: Same POD memory but much better GPU utilization
+- **Better scaling**: 6x deployment density potential due to low VRAM needs
 
 ---
 
@@ -207,8 +207,8 @@ InternVL3-2B is the clear winner across all evaluation dimensions and should be 
 1. **Better Performance**: 7% faster processing (24.0s vs 25.8s)
 2. **Better Accuracy**: 59.4% vs 59.0% field value rates
 3. **Better Efficiency**: 80% lower VRAM usage (2.6GB vs 13.3GB)
-4. **Better Economics**: 50% lower POD memory requirements
-5. **Better Scaling**: Enables 6x deployment density per GPU
+4. **Better Economics**: Same POD memory needs but much better GPU resource utilization
+5. **Better Scaling**: Enables 6x deployment density per GPU due to low VRAM requirements
 
 #### Deployment Scenarios
 
@@ -226,7 +226,7 @@ InternVL3-2B is the clear winner across all evaluation dimensions and should be 
 
 ##### Cost-Sensitive Deployments
 **Recommended: InternVL3-2B**
-- 50% lower memory requirements reduce operational costs
+- 80% lower VRAM requirements enable multiple deployments per GPU
 - Higher deployment density improves hardware ROI
 - Better performance per dollar invested
 
@@ -234,7 +234,7 @@ InternVL3-2B is the clear winner across all evaluation dimensions and should be 
 
 #### Infrastructure Requirements (InternVL3-2B)
 - **Minimum VRAM**: 16GB V100 (comfortable with 13.4GB headroom)
-- **CPU Memory**: 8-12GB per POD instance
+- **CPU Memory**: 5-8GB per POD instance
 - **Storage**: Standard SSD for model loading
 - **Network**: Standard requirements for image processing
 

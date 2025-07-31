@@ -28,12 +28,12 @@ memory_config:
   
 # Image processing configuration  
 image_processing:
-  max_image_size: 1024     # Maximum image dimension for resizing
+  max_image_size: 512      # Maximum image dimension for resizing (reduced for 4GB pod limit)
   timeout_seconds: 30      # Processing timeout per image (30s for complex documents)
 
 # Token limits configuration - single source of truth
 token_limits:
-  max_tokens: 2048          # Maximum tokens for generation (used by all models)
+  max_tokens: 1024          # Maximum tokens for generation (reduced for 4GB pod limit)
   # Note: This value is used for max_tokens, max_new_tokens_limit, and fallback_max_tokens
 
 # Field extraction configuration
@@ -42,7 +42,7 @@ token_limits:
 # CLI defaults
 defaults:
   datasets_path: "/home/jovyan/nfs_share/tod/datasets"  # Absolute path for all environments
-  max_tokens: 2048  # Inherited from token_limits.max_tokens above
+  max_tokens: 1024  # Inherited from token_limits.max_tokens above
   quantization: true  # Enable 8-bit quantization for V100
   output_dir: "/home/jovyan/nfs_share/tod/output"  # Absolute path for all environments
   models: "llama,internvl"  # Default models to compare
@@ -55,10 +55,10 @@ defaults:
 # Model-specific configurations
 model_config:
   llama:
-    max_new_tokens_limit: 2048  # Uses token_limits.max_tokens value
+    max_new_tokens_limit: 1024  # Uses token_limits.max_tokens value
     confidence_score: 0.85      # Default confidence for Llama responses
   internvl:
-    max_new_tokens_limit: 2048  # Uses token_limits.max_tokens value
+    max_new_tokens_limit: 1024  # Uses token_limits.max_tokens value
     confidence_score: 0.95      # Default confidence for InternVL responses
 
 # Post-processing configuration
@@ -79,7 +79,7 @@ repetition_control:
   enabled: true               # Default: ON for both models
   word_threshold: 0.15        # Word repetition threshold
   phrase_threshold: 2         # Phrase repetition threshold
-  fallback_max_tokens: 2048   # Uses token_limits.max_tokens value
+  fallback_max_tokens: 1024   # Uses token_limits.max_tokens value
 
 # Logging configuration
 logging:
