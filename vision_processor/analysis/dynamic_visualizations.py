@@ -50,8 +50,8 @@ class DynamicModelVisualizer:
 
     def _load_dynamic_config(self) -> None:
         """Load all configuration dynamically from yaml files."""
-        # Load fields using same mechanism as evaluator
-        self.extraction_fields = self._load_extraction_fields()
+        # Load fields using unified ConfigManager (single source of truth)
+        self.extraction_fields = self.config_manager.get_expected_fields()
 
         # Load weights and thresholds from config manager
         self.field_weights = self.config_manager.get_field_weights()
@@ -75,62 +75,6 @@ class DynamicModelVisualizer:
             style="green",
         )
 
-    def _load_extraction_fields(self) -> List[str]:
-        """Load extraction fields dynamically from model_comparison.yaml (same as evaluator)."""
-        try:
-            # Look for model_comparison.yaml in current directory and parent directories
-            config_path = Path("model_comparison.yaml")
-            if not config_path.exists():
-                config_path = Path("..") / "model_comparison.yaml"
-            if not config_path.exists():
-                config_path = Path("../../model_comparison.yaml")
-
-            if not config_path.exists():
-                self.console.print(
-                    "⚠️ model_comparison.yaml not found, using fallback fields",
-                    style="yellow",
-                )
-                # Basic fallback - should match evaluator fallback
-                return [
-                    "DOCUMENT_TYPE",
-                    "SUPPLIER",
-                    "ABN",
-                    "PAYER_NAME",
-                    "PAYER_ADDRESS",
-                    "PAYER_PHONE",
-                    "PAYER_EMAIL",
-                    "INVOICE_DATE",
-                    "DUE_DATE",
-                    "GST",
-                    "TOTAL",
-                    "SUBTOTAL",
-                    "SUPPLIER_WEBSITE",
-                    "QUANTITIES",
-                    "PRICES",
-                    "BUSINESS_ADDRESS",
-                    "BUSINESS_PHONE",
-                    "BANK_NAME",
-                    "BSB_NUMBER",
-                    "BANK_ACCOUNT_NUMBER",
-                    "ACCOUNT_HOLDER",
-                    "STATEMENT_PERIOD",
-                    "OPENING_BALANCE",
-                    "CLOSING_BALANCE",
-                    "DESCRIPTIONS",
-                ]
-
-            # Use unified config loading - no more raw YAML!
-            from ..config import ConfigManager
-
-            config_manager = ConfigManager.get_global_instance(str(config_path))
-
-            # Get fields from single source of truth (extraction_prompt)
-            return config_manager.get_expected_fields()
-
-        except Exception as e:
-            self.console.print(f"❌ Error loading extraction fields: {e}", style="red")
-            # Return basic fallback
-            return ["DOCUMENT_TYPE", "SUPPLIER", "ABN", "GST", "TOTAL"]
 
     def _setup_plotting_style(self) -> None:
         """Set up consistent plotting style for professional charts."""
