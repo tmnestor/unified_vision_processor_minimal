@@ -821,11 +821,11 @@ class DynamicModelVisualizer:
                 else "red"
             )
             status = (
-                "✅ Safe"
+                "SAFE"
                 if usage <= safety_limit
-                else "⚠️  Margin"
+                else "MARGIN"
                 if usage <= v100_limit_gb
-                else "❌ Over"
+                else "OVER"
             )
             ax1.text(
                 bar.get_x() + bar.get_width() / 2,
