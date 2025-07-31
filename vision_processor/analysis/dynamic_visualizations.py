@@ -100,15 +100,26 @@ class DynamicModelVisualizer:
             model_success_rates = comparison_results.get("model_success_rates", {})
             extraction_results = comparison_results.get("extraction_results", {})
 
+            # Get total images for per-image calculation
+            total_images = comparison_results.get("dataset_info", {}).get(
+                "total_images", 1
+            )
+
             for model in models_tested:
+                # Calculate per-image processing time
+                total_time = model_execution_times.get(model, 0.0)
+                avg_time_per_image = (
+                    total_time / total_images if total_images > 0 else 0.0
+                )
+
                 # Convert comparison_runner format to visualization format
                 model_results = {
                     "field_wise_accuracy": {},
                     "avg_accuracy": 0.0,
-                    "avg_processing_time": model_execution_times.get(model, 0.0),
+                    "avg_processing_time": avg_time_per_image,
                     "success_rate": model_success_rates.get(model, 0.0),
                     "avg_fields_extracted": 0.0,
-                    "total_processing_time": model_execution_times.get(model, 0.0),
+                    "total_processing_time": total_time,
                 }
 
                 # Extract field-wise accuracy from field_analysis
@@ -453,7 +464,7 @@ class DynamicModelVisualizer:
             color=[self.colors["warning"], self.colors["info"]][: len(models)],
         )
         ax2.set_title("Processing Speed", fontweight="bold")
-        ax2.set_ylabel("Time (seconds)")
+        ax2.set_ylabel("Time per Image (seconds)")
 
         # Add value labels
         for bar, speed in zip(bars2, speeds, strict=False):
