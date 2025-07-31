@@ -116,8 +116,15 @@ class DynamicModelVisualizer:
                     elif "field_extraction_rates" in model_stats:
                         # Fallback to extraction rates
                         model_results["field_wise_accuracy"] = model_stats["field_extraction_rates"]
-                    
-                    # Get avg_fields_extracted if available
+                
+                # Ensure all expected fields are represented (fill missing fields with 0.0)
+                for expected_field in self.extraction_fields:
+                    if expected_field not in model_results["field_wise_accuracy"]:
+                        model_results["field_wise_accuracy"][expected_field] = 0.0
+                
+                # Get avg_fields_extracted if available
+                if "model_stats" in field_analysis and model in field_analysis["model_stats"]:
+                    model_stats = field_analysis["model_stats"][model]
                     if "avg_fields_extracted" in model_stats:
                         model_results["avg_fields_extracted"] = model_stats["avg_fields_extracted"]
                 
@@ -229,6 +236,11 @@ class DynamicModelVisualizer:
 
         # Filter to fields that exist in results and configuration
         display_fields = [f for f in self.extraction_fields if f in available_fields]
+        
+        self.console.print(
+            f"🔍 Processing {len(display_fields)} of {len(self.extraction_fields)} expected fields",
+            style="dim"
+        )
 
         # Create accuracy matrix
         accuracy_matrix = []
@@ -921,8 +933,28 @@ class DynamicModelVisualizer:
         for _, results in working_models:
             available_fields.update(results["field_wise_accuracy"].keys())
 
-        # Limit to top 10 fields for readability in mini format
-        display_fields = list(available_fields)[:10]
+        # For composite view, show top performing fields for readability
+        if len(available_fields) > 12:
+            # Calculate average accuracy per field across models
+            field_avg_accuracy = {}
+            for field in available_fields:
+                accuracies = []
+                for _, results in working_models:
+                    if field in results["field_wise_accuracy"]:
+                        accuracies.append(results["field_wise_accuracy"][field])
+                field_avg_accuracy[field] = np.mean(accuracies) if accuracies else 0.0
+            
+            # Sort by average accuracy and take top 12 for readability
+            sorted_fields = sorted(field_avg_accuracy.items(), key=lambda x: x[1], reverse=True)
+            display_fields = [field for field, _ in sorted_fields[:12]]
+            
+            self.console.print(
+                f"📊 Showing top 12 performing fields out of {len(available_fields)} total",
+                style="dim"
+            )
+        else:
+            # Use all available fields if <= 12
+            display_fields = [f for f in self.extraction_fields if f in available_fields]
         models = [model.upper() for model, _ in working_models]
 
         # Create accuracy matrix
@@ -937,6 +969,10 @@ class DynamicModelVisualizer:
         # Create mini heatmap
         if accuracy_matrix:
             accuracy_df = pd.DataFrame(accuracy_matrix, index=display_fields, columns=models)
+            
+            # Adjust annotation size based on number of fields
+            annot_size = max(6, min(8, 200 // len(display_fields)))
+            
             sns.heatmap(
                 accuracy_df,
                 annot=True,
@@ -944,11 +980,13 @@ class DynamicModelVisualizer:
                 cmap="RdYlGn",
                 ax=ax,
                 cbar=False,
-                annot_kws={"size": 8},
+                annot_kws={"size": annot_size},
             )
-            ax.set_title("Field Accuracy Heatmap", fontweight="bold", fontsize=12)
+            ax.set_title(f"Field Accuracy ({len(display_fields)} fields)", fontweight="bold", fontsize=12)
             ax.set_xlabel("")
             ax.set_ylabel("")
+            # Adjust label sizes for many fields
+            ax.tick_params(axis='y', labelsize=max(6, min(8, 150 // len(display_fields))))
 
     def _create_mini_performance_bars(self, ax, working_models):
         """Create mini performance comparison bars."""
