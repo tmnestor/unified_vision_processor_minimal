@@ -852,6 +852,201 @@ class DynamicModelVisualizer:
         self.console.print(f"✅ VRAM comparison saved: {save_path}", style="green")
         return str(save_path)
 
+    def create_composite_overview(
+        self, comparison_results: Dict[str, Any], save_path: Optional[str] = None
+    ) -> str:
+        """Create a 2x2 composite overview of all visualizations.
+
+        Args:
+            comparison_results: Model comparison results from evaluator
+            save_path: Optional path to save chart
+
+        Returns:
+            Path to saved composite chart file
+        """
+        self.console.print("🎨 Creating composite overview (2x2 layout)...", style="blue")
+
+        # Create a large figure with 2x2 subplots
+        fig = plt.figure(figsize=(20, 16))
+        fig.suptitle(
+            "Model Comparison Overview Dashboard",
+            fontsize=20,
+            fontweight="bold",
+            y=0.95,
+        )
+
+        # Extract working models for reuse
+        working_models = self._extract_working_models_from_comparison_runner(comparison_results)
+
+        if not working_models:
+            self.console.print("❌ No valid model results for composite", style="red")
+            return ""
+
+        models = [model.upper() for model, _ in working_models]
+
+        # Subplot 1: Field Accuracy Heatmap (top-left)
+        ax1 = plt.subplot(2, 2, 1)
+        self._create_mini_heatmap(ax1, working_models)
+
+        # Subplot 2: Performance Dashboard (top-right)
+        ax2 = plt.subplot(2, 2, 2)
+        self._create_mini_performance_bars(ax2, working_models)
+
+        # Subplot 3: Field Category Analysis (bottom-left)
+        ax3 = plt.subplot(2, 2, 3)
+        self._create_mini_category_analysis(ax3, working_models)
+
+        # Subplot 4: VRAM Usage (bottom-right)
+        ax4 = plt.subplot(2, 2, 4)
+        self._create_mini_vram_chart(ax4, comparison_results, working_models)
+
+        plt.tight_layout(rect=[0, 0.03, 1, 0.92])
+
+        # Save composite chart
+        if save_path is None:
+            save_path = self.output_dir / "composite_overview_2x2.png"
+        else:
+            save_path = Path(save_path)
+
+        plt.savefig(save_path, dpi=300, bbox_inches="tight", facecolor="white")
+        plt.close()
+
+        self.console.print(f"✅ Composite overview saved: {save_path}", style="green")
+        return str(save_path)
+
+    def _create_mini_heatmap(self, ax, working_models):
+        """Create a mini version of the field accuracy heatmap."""
+        # Get available fields
+        available_fields = set()
+        for _, results in working_models:
+            available_fields.update(results["field_wise_accuracy"].keys())
+
+        # Limit to top 10 fields for readability in mini format
+        display_fields = list(available_fields)[:10]
+        models = [model.upper() for model, _ in working_models]
+
+        # Create accuracy matrix
+        accuracy_matrix = []
+        for field in display_fields:
+            row = []
+            for _, results in working_models:
+                accuracy = results["field_wise_accuracy"].get(field, 0.0)
+                row.append(accuracy * 100)
+            accuracy_matrix.append(row)
+
+        # Create mini heatmap
+        if accuracy_matrix:
+            accuracy_df = pd.DataFrame(accuracy_matrix, index=display_fields, columns=models)
+            sns.heatmap(
+                accuracy_df,
+                annot=True,
+                fmt=".0f",
+                cmap="RdYlGn",
+                ax=ax,
+                cbar=False,
+                annot_kws={"size": 8},
+            )
+            ax.set_title("Field Accuracy Heatmap", fontweight="bold", fontsize=12)
+            ax.set_xlabel("")
+            ax.set_ylabel("")
+
+    def _create_mini_performance_bars(self, ax, working_models):
+        """Create mini performance comparison bars."""
+        models = [model.upper() for model, _ in working_models]
+        accuracies = []
+        speeds = []
+
+        for _, results in working_models:
+            accuracies.append(results["avg_accuracy"] * 100)
+            speeds.append(results["avg_processing_time"])
+
+        # Create dual-axis bar chart
+        ax2 = ax.twinx()
+
+        # Accuracy bars
+        bars1 = ax.bar([m + " (Acc)" for m in models], accuracies, 
+                      color=self.colors["primary"], alpha=0.7, width=0.4)
+        ax.set_ylabel("Accuracy (%)", color=self.colors["primary"])
+        ax.tick_params(axis='y', labelcolor=self.colors["primary"])
+
+        # Speed bars (on secondary axis)
+        bars2 = ax2.bar([m + " (Speed)" for m in models], speeds, 
+                       color=self.colors["warning"], alpha=0.7, width=0.4)
+        ax2.set_ylabel("Processing Time (s)", color=self.colors["warning"])
+        ax2.tick_params(axis='y', labelcolor=self.colors["warning"])
+
+        ax.set_title("Performance Overview", fontweight="bold", fontsize=12)
+        ax.tick_params(axis='x', rotation=45)
+
+    def _create_mini_category_analysis(self, ax, working_models):
+        """Create mini field category analysis."""
+        categories = self._categorize_fields_by_weight()
+        models = [model.upper() for model, _ in working_models]
+
+        # Calculate category performance
+        category_performance = {}
+        for category, fields in categories.items():
+            if not fields:
+                continue
+            
+            category_performance[category] = {}
+            for model, results in working_models:
+                field_accs = []
+                for field in fields:
+                    if field in results["field_wise_accuracy"]:
+                        field_accs.append(results["field_wise_accuracy"][field])
+                
+                avg_acc = np.mean(field_accs) if field_accs else 0.0
+                category_performance[category][model.upper()] = avg_acc * 100
+
+        # Create grouped bar chart
+        x_pos = np.arange(len(category_performance))
+        width = 0.35
+        
+        for i, model in enumerate(models):
+            values = [category_performance[cat].get(model, 0) for cat in category_performance.keys()]
+            ax.bar(x_pos + i * width, values, width, 
+                  label=model, color=[self.colors["primary"], self.colors["secondary"]][i])
+
+        ax.set_title("Category Performance", fontweight="bold", fontsize=12)
+        ax.set_xticks(x_pos + width / 2)
+        ax.set_xticklabels(list(category_performance.keys()), rotation=45)
+        ax.set_ylabel("Accuracy (%)")
+        ax.legend(fontsize=8)
+
+    def _create_mini_vram_chart(self, ax, comparison_results, working_models):
+        """Create mini V100 VRAM usage chart."""
+        # Try to get memory data
+        memory_data = {}
+        if "model_estimated_vram" in comparison_results:
+            memory_data = comparison_results["model_estimated_vram"]
+        
+        if memory_data:
+            models = list(memory_data.keys())
+            vram_usage = list(memory_data.values())
+            
+            bars = ax.bar([m.upper() for m in models], vram_usage,
+                         color=[self.colors["primary"], self.colors["secondary"]][:len(models)])
+            
+            # Add V100 limit line
+            v100_limit = self.config_manager.memory_config.v100_limit_gb
+            ax.axhline(y=v100_limit, color="red", linestyle="--", alpha=0.7, label="V100 Limit")
+            
+            ax.set_title("V100 VRAM Usage", fontweight="bold", fontsize=12)
+            ax.set_ylabel("VRAM (GB)")
+            ax.legend()
+            
+            # Add value labels
+            for bar, usage in zip(bars, vram_usage):
+                ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.2,
+                       f"{usage:.1f}GB", ha="center", va="bottom", fontsize=8)
+        else:
+            # No memory data available
+            ax.text(0.5, 0.5, "VRAM Data\nNot Available", 
+                   ha="center", va="center", transform=ax.transAxes,
+                   fontsize=12, style="italic", color="gray")
+            ax.set_title("V100 VRAM Usage", fontweight="bold", fontsize=12)
+
     def generate_all_visualizations(
         self, comparison_results: Dict[str, Any]
     ) -> List[str]:
@@ -889,6 +1084,11 @@ class DynamicModelVisualizer:
             vram_path = self.create_vram_usage_comparison(comparison_results)
             if vram_path:
                 saved_files.append(vram_path)
+
+            # 5. Composite overview (2x2 layout)
+            composite_path = self.create_composite_overview(comparison_results)
+            if composite_path:
+                saved_files.append(composite_path)
 
             self.console.print(
                 f"✅ Generated {len(saved_files)} visualizations", style="bold green"
