@@ -153,7 +153,9 @@ class DynamicModelVisualizer:
                     model_results["avg_accuracy"] = sum(field_accuracies) / len(
                         field_accuracies
                     )
-                    model_results["avg_fields_extracted"] = sum(
+
+                    # Calculate fields with useful data (for dashboard display)
+                    model_results["fields_with_data"] = sum(
                         1 for acc in field_accuracies if acc > 0
                     )
 
@@ -496,13 +498,14 @@ class DynamicModelVisualizer:
                 fontweight="bold",
             )
 
-        # 4. Fields Extracted Comparison
-        fields_extracted = [
-            results["avg_fields_extracted"] for _, results in working_models
+        # 4. Fields with Useful Data Comparison
+        fields_with_data = [
+            results.get("fields_with_data", results["avg_fields_extracted"])
+            for _, results in working_models
         ]
         bars4 = ax4.bar(
             models,
-            fields_extracted,
+            fields_with_data,
             color=[self.colors["primary"], self.colors["secondary"]][: len(models)],
         )
         ax4.set_title(
@@ -513,7 +516,7 @@ class DynamicModelVisualizer:
         ax4.set_ylim(0, len(self.extraction_fields))
 
         # Add value labels
-        for bar, fields in zip(bars4, fields_extracted, strict=False):
+        for bar, fields in zip(bars4, fields_with_data, strict=False):
             ax4.text(
                 bar.get_x() + bar.get_width() / 2,
                 bar.get_height() + 0.2,

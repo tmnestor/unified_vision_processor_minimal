@@ -9,20 +9,20 @@
 
 ### Winner Analysis
 - **Speed Champion**: **Llama-3.2-Vision** (35% faster processing)
-- **Efficiency Champion**: **InternVL3** (22% lower VRAM usage)
-- **Accuracy**: **Tie** (both models: 100% success rate, ~26.2 fields extracted)
+- **Efficiency Champion**: **InternVL3** (22% lower VRAM usage)  
+- **Accuracy Champion**: **InternVL3** (61.8% vs 59.0% field accuracy)
 
 ### Key Findings
-Both vision models demonstrated **excellent performance** on business document extraction with 100% success rates. However, they exhibit distinct characteristics that make them suitable for different deployment scenarios:
+Both vision models demonstrated **reliable field extraction** with 100% success rates (all 25 fields output per document). However, they exhibit distinct characteristics in data quality and performance:
 
 - **Llama-3.2-Vision**: Optimized for **speed-critical applications** with 25.5s per document vs InternVL3's 39.4s
-- **InternVL3**: Optimized for **resource-constrained environments** with 10.4GB VRAM vs Llama's 13.3GB
-- **Field Extraction Quality**: Both models excel at different field types, creating complementary strengths
+- **InternVL3**: Superior at **extracting meaningful data** (61.8% field accuracy vs 59.0%) and **resource efficiency** (10.4GB VRAM vs 13.3GB)
+- **Data Quality Trade-off**: InternVL3 provides more actual values vs "N/A" responses, making it better for data-rich applications
 
 ### Deployment Recommendation
-- **High-throughput production**: Choose **Llama-3.2-Vision**
-- **Resource-limited deployments**: Choose **InternVL3**
-- **Maximum accuracy**: Consider ensemble approach leveraging both models' strengths
+- **High-throughput production**: Choose **Llama-3.2-Vision** for speed
+- **Data quality focused**: Choose **InternVL3** for better field accuracy and resource efficiency
+- **Maximum performance**: Consider ensemble approach leveraging both models' strengths
 
 ---
 
@@ -35,11 +35,11 @@ Both vision models demonstrated **excellent performance** on business document e
 | Metric | Llama-3.2-Vision | InternVL3 | Winner |
 |--------|------------------|-----------|---------|
 | **Success Rate** | 100.0% (20/20) | 100.0% (20/20) | 🤝 **Tie** |
-| **Avg Fields Extracted** | 26.25 / 25 | 26.15 / 25 | 🟡 **Llama** (+0.4%) |
+| **Field Accuracy** | 59.0% | 61.8% | 🟢 **InternVL** (+2.8%) |
+| **Fields with Data** | 24 / 25 | 25 / 25 | 🟢 **InternVL** |
 | **Processing Speed** | 25.5s per image | 39.4s per image | 🟢 **Llama** (-35%) |
 | **Total Processing Time** | 509.8s | 788.6s | 🟢 **Llama** (-35%) |
 | **VRAM Usage** | 13.3GB | 10.4GB | 🟢 **InternVL** (-22%) |
-| **Quality Rating** | Excellent | Excellent | 🤝 **Tie** |
 
 ### Speed Analysis
 - **Llama advantage**: Processes documents **35% faster** than InternVL3
@@ -69,15 +69,19 @@ Both vision models demonstrated **excellent performance** on business document e
 - **Business Data**: More reliable business address extraction (75% vs Llama's 70%)
 
 #### Common Challenges (Both Models)
-- **Email Addresses**: Both struggle with PAYER_EMAIL (40% extraction rate)
-- **Due Dates**: Low extraction rates for DUE_DATE (35% both models)
+- **Email Addresses**: Both struggle with PAYER_EMAIL (40% accuracy rate)
+- **Due Dates**: Low accuracy rates for DUE_DATE (35% both models)
 - **Bank Statement Fields**: Variable performance on banking-specific fields
 
-### Field Extraction Distribution
+#### Methodology Note
+**Field Accuracy** measures the percentage of documents where each field contains actual data (not "N/A"). Both models successfully extract all 25 fields from every document (100% extraction rate), but field accuracy measures the quality and usefulness of the extracted data.
+
+### Field Accuracy Distribution
 ```
-High Performance (>75%): 12 fields (Llama) vs 11 fields (InternVL)
-Medium Performance (50-75%): 8 fields (Llama) vs 9 fields (InternVL)  
-Low Performance (<50%): 5 fields (both models)
+High Performance (>75%): 12 fields (Llama) vs 13 fields (InternVL)
+Medium Performance (50-75%): 8 fields (Llama) vs 7 fields (InternVL)  
+Low Performance (<50%): 5 fields (Llama) vs 5 fields (InternVL)
+No Data Extracted (0%): 1 field (Llama) vs 0 fields (InternVL)
 ```
 
 ---
@@ -161,16 +165,16 @@ This comprehensive visualization combines all key metrics into a single dashboar
 #### High-Volume Document Processing
 **Recommended: Llama-3.2-Vision**
 - **Rationale**: 35% faster processing enables higher throughput
+- **Trade-off**: Accept 2.8% lower field accuracy for significant speed gains
 - **Deployment**: Multiple V100 instances for parallel processing
 - **Expected Throughput**: 141 documents/hour per GPU
-- **Cost Efficiency**: Lower operational costs despite higher VRAM usage
 
-#### Resource-Constrained Environments  
+#### Data Quality Focused Applications
 **Recommended: InternVL3**
-- **Rationale**: 22% lower VRAM usage enables broader deployment
+- **Rationale**: 2.8% higher field accuracy and 22% lower VRAM usage
 - **Deployment**: Single V100 with comfortable headroom
-- **Multi-tenancy**: Possible to run other processes alongside
-- **Edge Deployment**: Better suited for limited GPU environments
+- **Data-rich scenarios**: Better at extracting actual values vs "N/A" responses
+- **Resource efficiency**: Optimal for limited GPU environments
 
 #### Maximum Accuracy Applications
 **Recommended: Ensemble Approach**
