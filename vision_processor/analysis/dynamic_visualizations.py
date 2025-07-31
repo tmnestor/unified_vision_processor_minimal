@@ -456,34 +456,40 @@ class DynamicModelVisualizer:
             )
             ax1.legend()
 
-        # 2. Processing Speed Comparison
-        speeds = [results["avg_processing_time"] for _, results in working_models]
+        # 2. Processing Throughput Comparison (images per minute)
+        throughputs = [
+            60.0 / results["avg_processing_time"]
+            if results["avg_processing_time"] > 0
+            else 0.0
+            for _, results in working_models
+        ]
         bars2 = ax2.bar(
             models,
-            speeds,
+            throughputs,
             color=[self.colors["warning"], self.colors["info"]][: len(models)],
         )
-        ax2.set_title("Processing Speed", fontweight="bold")
-        ax2.set_ylabel("Time per Image (seconds)")
+        ax2.set_title("Processing Throughput", fontweight="bold")
+        ax2.set_ylabel("Images per Minute")
 
         # Add value labels
-        for bar, speed in zip(bars2, speeds, strict=False):
+        for bar, throughput in zip(bars2, throughputs, strict=False):
             ax2.text(
                 bar.get_x() + bar.get_width() / 2,
-                bar.get_height() + 0.5,
-                f"{speed:.1f}s",
+                bar.get_height() + 0.1,
+                f"{throughput:.1f}",
                 ha="center",
                 va="bottom",
                 fontweight="bold",
             )
 
-        # Add speed threshold lines from config
-        for label, threshold in self.speed_thresholds.items():
+        # Add throughput threshold lines (convert from time thresholds)
+        for label, time_threshold in self.speed_thresholds.items():
+            throughput_threshold = 60.0 / time_threshold if time_threshold > 0 else 0.0
             ax2.axhline(
-                y=threshold,
+                y=throughput_threshold,
                 linestyle="--",
                 alpha=0.7,
-                label=f"{label.title()} ({threshold}s)",
+                label=f"{label.title()} ({throughput_threshold:.1f} img/min)",
             )
         ax2.legend()
 
