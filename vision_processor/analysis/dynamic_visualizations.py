@@ -1008,7 +1008,7 @@ class DynamicModelVisualizer:
         ax.set_ylim(0, 100)
         
         # Add value labels on bars
-        for bar, acc, speed in zip(bars, accuracies, speeds):
+        for bar, acc, speed in zip(bars, accuracies, speeds, strict=False):
             ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
                    f"{acc:.1f}%", ha="center", va="bottom", fontweight="bold", fontsize=8)
             # Add speed as subtitle below bar
