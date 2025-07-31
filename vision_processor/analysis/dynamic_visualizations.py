@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import yaml
 from matplotlib.patches import Rectangle
 from rich.console import Console
 
@@ -120,47 +119,13 @@ class DynamicModelVisualizer:
                     "DESCRIPTIONS",
                 ]
 
-            with config_path.open("r") as f:
-                config = yaml.safe_load(f)
+            # Use unified config loading - no more raw YAML!
+            from ..config import ConfigManager
 
-            # Extract fields from extraction_prompt (same logic as evaluator)
-            extraction_prompt = config.get("extraction_prompt", "")
-            fields = []
+            config_manager = ConfigManager.get_global_instance(str(config_path))
 
-            # Parse lines that match field pattern: "FIELD_NAME: [description]"
-            for line in extraction_prompt.split("\n"):
-                line = line.strip()
-                if ":" in line and not line.startswith("#"):
-                    # Extract field name before the colon
-                    field_name = line.split(":")[0].strip()
-                    # Check if it's a valid field (same validation as evaluator)
-                    if (
-                        field_name.isupper()
-                        and len(field_name) <= 25
-                        and not any(
-                            word in field_name.lower()
-                            for word in [
-                                "required",
-                                "correct",
-                                "wrong",
-                                "critical",
-                                "use",
-                                "never",
-                                "absolutely",
-                            ]
-                        )
-                    ):
-                        fields.append(field_name)
-
-            # Remove duplicates while preserving order
-            seen = set()
-            unique_fields = []
-            for field in fields:
-                if field not in seen:
-                    seen.add(field)
-                    unique_fields.append(field)
-
-            return unique_fields
+            # Get fields from single source of truth (extraction_prompt)
+            return config_manager.get_expected_fields()
 
         except Exception as e:
             self.console.print(f"❌ Error loading extraction fields: {e}", style="red")

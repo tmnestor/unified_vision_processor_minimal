@@ -200,7 +200,7 @@ def compare(
         models_list = [m.strip() for m in effective_models.split(",")]
 
         # Create and configure ConfigManager
-        config = ConfigManager(yaml_file=config_path)
+        config = ConfigManager.get_global_instance(config_path)
 
         # Apply CLI logging overrides
         if debug:
@@ -251,7 +251,7 @@ def compare(
 
             # Run comparison using the existing comparison runner
             def run_comparison():
-                config = ConfigManager(yaml_file=config_path)
+                config = ConfigManager.get_global_instance(config_path)
 
                 # Apply CLI overrides to configuration
                 if effective_datasets_path:
@@ -334,7 +334,7 @@ def visualize(
 
     try:
         # Load configuration
-        config = ConfigManager(config_path)
+        config = ConfigManager.get_global_instance(config_path)
 
         # Apply CLI overrides
         if output_dir:
@@ -558,7 +558,7 @@ def extract(
         from ..utils.path_resolver import PathResolver
 
         # Load configuration from YAML
-        config = ConfigManager(config_path)
+        config = ConfigManager.get_global_instance(config_path)
         path_resolver = PathResolver(config)
 
         # Resolve image path using utility
@@ -675,7 +675,7 @@ def batch(
         from ..utils.path_resolver import PathResolver
 
         # Load configuration from YAML
-        config = ConfigManager(config_path)
+        config = ConfigManager.get_global_instance(config_path)
         path_resolver = PathResolver(config)
 
         # Validate input directory
@@ -880,7 +880,7 @@ def evaluate(
             raise typer.Exit(1) from None
 
         # Load configuration
-        config = ConfigManager(config_path)
+        config = ConfigManager.get_global_instance(config_path)
 
         # Apply CLI overrides
         effective_images_dir = images_dir or config.defaults.datasets_path
@@ -1066,7 +1066,7 @@ def benchmark(
             raise typer.Exit(1) from None
 
         # Load configuration
-        config = ConfigManager(config_path)
+        config = ConfigManager.get_global_instance(config_path)
 
         # Apply CLI overrides
         effective_models = models or config.defaults.models
@@ -1339,7 +1339,7 @@ def validate_ground_truth(
             raise typer.Exit(1) from None
 
         # Load configuration
-        config = ConfigManager(config_path)
+        config = ConfigManager.get_global_instance(config_path)
 
         # Apply CLI overrides
         effective_images_dir = images_dir or config.defaults.datasets_path
@@ -1621,7 +1621,7 @@ def check(
         import torch
 
         # Load configuration
-        config = ConfigManager(config_path)
+        config = ConfigManager.get_global_instance(config_path)
 
         # Apply CLI overrides
         effective_datasets_path = datasets_path or config.defaults.datasets_path
@@ -1923,7 +1923,7 @@ def models(
 
     try:
         # Load configuration
-        config = ConfigManager(config_path)
+        config = ConfigManager.get_global_instance(config_path)
 
         # Apply logging overrides
         if debug:
@@ -2221,7 +2221,7 @@ def config(
 
         # Load configuration through ConfigManager
         try:
-            config = ConfigManager(config_path)
+            config = ConfigManager.get_global_instance(config_path)
             console.print("✅ Configuration loaded successfully")
         except Exception as e:
             console.print(f"❌ Configuration loading failed: {e}", style="bold red")
@@ -2454,41 +2454,20 @@ def schema(
     console.print("🏷️ [bold blue]Field Schema[/bold blue]")
 
     try:
-        import yaml
+        # Import required dependencies
+        from ..config import ConfigManager
 
-        # Load configuration to get expected fields
-        config_file = Path(config_path)
-        if not config_file.exists():
-            console.print(
-                f"❌ Configuration file not found: {config_path}", style="bold red"
-            )
-            console.print("💡 Using default field schema...", style="yellow")
-            expected_fields = []
-        else:
-            try:
-                with config_file.open("r") as f:
-                    yaml_content = yaml.safe_load(f)
-                expected_fields = yaml_content.get("expected_fields", [])
-            except Exception as e:
-                console.print(f"⚠️  Could not load configuration: {e}", style="yellow")
-                expected_fields = []
+        # Use unified config loading - no more raw YAML!
+        config = ConfigManager.get_global_instance(config_path)
+
+        # Parse expected fields from extraction prompt (single source of truth)
+        expected_fields = config.get_expected_fields()
 
         if not expected_fields:
-            # Fallback to a basic schema if no configuration is available
-            expected_fields = [
-                "DOCUMENT_TYPE",
-                "SUPPLIER",
-                "ABN",
-                "INVOICE_NUMBER",
-                "DATE",
-                "TOTAL_AMOUNT",
-                "GST_AMOUNT",
-                "DESCRIPTION",
-                "QUANTITY",
-                "UNIT_PRICE",
-            ]
+            console.print("⚠️  No fields found in extraction prompt", style="yellow")
             console.print(
-                "⚠️  Using fallback schema (configuration not available)", style="yellow"
+                "💡 Check extraction_prompt section in model_comparison.yaml",
+                style="yellow",
             )
 
         console.print(f"📋 Configuration source: {config_path}")
@@ -2675,12 +2654,18 @@ def schema(
             console.print("   # Detailed view")
             console.print("   python -m vision_processor schema --verbose")
 
+    except ConfigurationError as e:
+        console.print(f"❌ Configuration error: {e.message}", style="bold red")
+        if verbose and hasattr(e, "details") and e.details:
+            console.print(f"💡 Details: {e.details}", style="yellow")
+        raise typer.Exit(1) from None
     except Exception as e:
         console.print(f"❌ Schema display failed: {e}", style="bold red")
-        import traceback
+        if verbose:
+            import traceback
 
-        console.print("🔍 Full traceback:", style="red")
-        console.print(traceback.format_exc(), style="red")
+            console.print("🔍 Full traceback:", style="red")
+            console.print(traceback.format_exc(), style="red")
         raise typer.Exit(1) from None
 
 
@@ -2728,7 +2713,7 @@ def convert(
 
         # Load configuration (used for default model info if needed)
         try:
-            config = ConfigManager(config_path)
+            config = ConfigManager.get_global_instance(config_path)
         except Exception as e:
             console.print(f"⚠️  Could not load configuration: {e}", style="yellow")
             config = None

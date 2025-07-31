@@ -11,7 +11,6 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import yaml
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
@@ -132,45 +131,13 @@ class ExtractionEvaluator:
                     "DESCRIPTIONS",
                 ]
 
-            with config_path.open("r") as f:
-                config = yaml.safe_load(f)
+            # Use unified config loading - no more raw YAML!
+            from ..config import ConfigManager
 
-            # Extract fields from extraction_prompt
-            extraction_prompt = config.get("extraction_prompt", "")
-            fields = []
+            config_manager = ConfigManager.get_global_instance(str(config_path))
 
-            # Parse lines that match field pattern: "FIELD_NAME: [description]"
-            for line in extraction_prompt.split("\n"):
-                line = line.strip()  # Strip whitespace
-                if ":" in line and not line.startswith("#"):
-                    # Extract field name before the colon
-                    field_name = line.split(":")[0].strip()
-                    # Check if it's a valid field (uppercase, reasonable length, not explanatory text)
-                    if (
-                        field_name.isupper()
-                        and len(field_name) <= 25  # Reasonable field name length
-                        and not any(
-                            word in field_name.lower()
-                            for word in [
-                                "required",
-                                "correct",
-                                "wrong",
-                                "critical",
-                                "use",
-                                "never",
-                                "absolutely",
-                            ]
-                        )
-                    ):
-                        fields.append(field_name)
-
-            # Remove duplicates while preserving order
-            seen = set()
-            unique_fields = []
-            for field in fields:
-                if field not in seen:
-                    seen.add(field)
-                    unique_fields.append(field)
+            # Get fields from single source of truth (extraction_prompt)
+            unique_fields = config_manager.get_expected_fields()
 
             self.console.print(
                 f"✅ Loaded {len(unique_fields)} extraction fields from model_comparison.yaml"
