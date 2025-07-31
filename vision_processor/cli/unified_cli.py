@@ -212,8 +212,6 @@ def _display_fieldwise_extraction_table(results, config) -> None:
         model_display = config.get_model_display_name(model) if hasattr(config, 'get_model_display_name') else model.upper()
         table.add_column(model_display, justify="center", width=12)
     
-    # Add average column
-    table.add_column("Average", justify="center", style="bold", width=12)
     
     # Process each field
     for field in expected_fields:
@@ -248,18 +246,6 @@ def _display_fieldwise_extraction_table(results, config) -> None:
                 row_data.append("[dim]N/A[/dim]")
                 field_rates.append(0.0)
         
-        # Calculate and add average
-        avg_rate = sum(field_rates) / len(field_rates) if field_rates else 0.0
-        if avg_rate >= 0.9:
-            avg_str = f"[bold green]{avg_rate:.1%}[/bold green]"
-        elif avg_rate >= 0.7:
-            avg_str = f"[bold yellow]{avg_rate:.1%}[/bold yellow]"
-        elif avg_rate >= 0.5:
-            avg_str = f"[bold orange1]{avg_rate:.1%}[/bold orange1]"
-        else:
-            avg_str = f"[bold red]{avg_rate:.1%}[/bold red]"
-        
-        row_data.append(avg_str)
         table.add_row(*row_data)
     
     console.print("\n")
