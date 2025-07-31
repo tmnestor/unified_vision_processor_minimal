@@ -28,7 +28,7 @@ Both vision models demonstrated **excellent performance** on business document e
 
 ## 📊 Performance Comparison Dashboard
 
-![Model Performance Dashboard](model_performance_dashboard.png)
+![Model Performance Dashboard](remote_results/model_performance_dashboard.png)
 
 ### Overall Performance Metrics
 
@@ -50,11 +50,11 @@ Both vision models demonstrated **excellent performance** on business document e
 
 ## 🎯 Field-wise Extraction Analysis
 
-![Field Accuracy Heatmap](field_accuracy_heatmap_25fields.png)
+![Field Accuracy Heatmap](remote_results/field_accuracy_heatmap_25fields.png)
 
 ### Field Category Performance
 
-![Field Category Analysis](field_category_analysis.png)
+![Field Category Analysis](remote_results/field_category_analysis.png)
 
 ### Key Field-wise Insights
 
@@ -84,7 +84,7 @@ Low Performance (<50%): 5 fields (both models)
 
 ## 💾 Resource Utilization Analysis
 
-![VRAM Usage Comparison](v100_vram_usage_comparison.png)
+![VRAM Usage Comparison](remote_results/v100_vram_usage_comparison.png)
 
 ### Memory Efficiency
 
@@ -144,7 +144,7 @@ Low Performance (<50%): 5 fields (both models)
 
 ## 🔄 Composite Overview
 
-![Composite Overview](composite_overview_2x2.png)
+![Composite Overview](remote_results/composite_overview_2x2.png)
 
 This comprehensive visualization combines all key metrics into a single dashboard showing:
 - **Performance comparison matrix**
