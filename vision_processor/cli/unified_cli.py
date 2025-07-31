@@ -211,7 +211,7 @@ def _display_fieldwise_extraction_table(results, config) -> None:
     field_analysis = getattr(results, "field_analysis", None)
     models_tested = getattr(results, "models_tested", [])
 
-    if not field_analysis or not hasattr(field_analysis, "model_stats"):
+    if not field_analysis or "model_stats" not in field_analysis:
         console.print("  ⚠️ No field-wise data available", style="yellow")
         return
 
