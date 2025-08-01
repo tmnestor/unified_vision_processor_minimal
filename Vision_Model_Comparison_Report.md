@@ -139,74 +139,65 @@ This comprehensive visualization combines all key metrics showing InternVL3-2B's
 #### Memory Monitoring Still Needs Fix
 ❌ **MONITORING INCOMPLETE**: Current system captures model loading memory, not inference peak memory usage.
 
-#### Llama-3.2-11B-Vision-Instruct POD Configuration (4GB Compliant)
+#### POD Configuration - Based on Unreliable Data
+⚠️ **WARNING**: POD configurations below are based on questionable memory measurements and should not be used for production deployment.
+
+#### Placeholder POD Configuration (Data Quality Issues)
 ```yaml
+# ❌ DO NOT USE - Based on incomplete memory monitoring
 resources:
   requests:
-    memory: "3Gi"       # Peak 2.05GB * 1.1 = 2.3GB → 3Gi (comfortable margin)
-    nvidia.com/gpu: 1   # Single V100 GPU (tight fit - 10.57GB VRAM)
+    memory: "TBD"       # Requires accurate peak memory measurements
+    nvidia.com/gpu: 1   # GPU requirements appear accurate
   limits:
-    memory: "4Gi"       # Peak 2.05GB * 1.3 = 2.7GB → 4Gi (within limit!)
+    memory: "TBD"       # Cannot calculate without reliable process memory data
     nvidia.com/gpu: 1
 ```
 
-#### InternVL3-2B POD Configuration (Above 4GB Limit)
-```yaml
-resources:
-  requests:
-    memory: "5Gi"       # Peak 4.25GB * 1.1 = 4.7GB → 5Gi
-    nvidia.com/gpu: 1   # Single V100 GPU (excellent fit - 2.27GB VRAM)
-  limits:
-    memory: "6Gi"       # Peak 4.25GB * 1.3 = 5.5GB → 6Gi
-    nvidia.com/gpu: 1
-```
+#### 4GB Pod Compliance Analysis - INVALID
+❌ **CANNOT DETERMINE**: Memory measurements are unreliable and cannot be used for pod sizing decisions.
 
-#### 4GB Pod Compliance Analysis
-✅ **LLAMA-3.2-11B ACHIEVES 4GB COMPLIANCE**: Peak process memory of 2.05GB allows comfortable 4GB pod deployment.
+**Data Quality Problems:**
+1. **Illogical size correlation**: 11B model showing less memory than 2B model
+2. **Missing peak measurements**: Only 1 snapshot per model with 0.0s duration  
+3. **No inference monitoring**: Appears to capture only model loading, not processing peaks
 
-❌ **INTERNVL3-2B EXCEEDS 4GB LIMIT**: Peak process memory of 4.25GB requires 5-6GB pod allocation.
+**Required Fix:**
+- Memory monitoring needs to capture snapshots **during** image processing inference
+- Multiple snapshots throughout the processing pipeline to identify true peak usage
+- Validate that larger models show higher memory consumption as expected
 
-**Applied Optimizations That Worked:**
-- ✅ **Reduced max_tokens: 2048 → 512** (Significant memory reduction achieved)
-- ✅ **Fixed memory monitoring** (Revealed true memory consumption patterns)
-- ✅ **Model-specific measurements** (Exposed architectural differences)
-
-**For InternVL3-2B to Achieve 4GB Compliance:**
-1. **Further reduce max_tokens: 512 → 256** (May reduce by ~10-15%)
-2. **Implement gradient checkpointing** (Trade compute for memory)
-3. **Use 4-bit quantization** instead of 8-bit (Additional VRAM/memory savings)
-4. **Reduce image size: 512 → 384px** (Reduce input processing memory)
-
-**Target:** Reduce InternVL3-2B memory from 4.25GB to <3.8GB for 4GB pod compliance.
+**Status**: POD sizing requirements **cannot be determined** until memory monitoring captures actual inference peaks.
 
 ### Memory Analysis for Production Deployment
 
-| Resource Component | Llama-3.2-11B-Vision-Instruct | InternVL3-2B | Production Impact |
+| Resource Component | Llama-3.2-11B-Vision-Instruct | InternVL3-2B | Data Quality Assessment |
 |-------------------|-------------------------------|--------------|-------------------|
-| **GPU VRAM Required** | 10.57GB | 2.27GB | InternVL3-2B uses 78% less VRAM |
-| **V100 VRAM Utilization** | 66% (manageable) | 14% (excellent) | Both V100 compatible, InternVL3-2B much safer |
-| **Process Memory** | 2.05GB | 4.25GB | Llama-3.2-11B uses 52% less process memory |
-| **4GB Pod Compliance** | ✅ **Compliant** (3-4GB pod) | ❌ **Exceeds** (5-6GB pod) | Llama-3.2-11B achieves deployment goal |
-| **Multi-deployment** | Limited by VRAM (1-2 per V100) | Excellent VRAM efficiency (7+ per V100) | InternVL3-2B enables much higher density |
+| **GPU VRAM Required** | 10.57GB | 2.27GB | ✅ **Credible** - Larger model uses more VRAM |
+| **V100 VRAM Utilization** | 66% (manageable) | 14% (excellent) | ✅ **Logical** - Both V100 compatible |
+| **Process Memory** | 2.05GB | 4.25GB | ❌ **ILLOGICAL** - 11B model less than 2B model |
+| **4GB Pod Compliance** | ❓ **Unknown** | ❓ **Unknown** | ❌ **Cannot determine** - unreliable data |
+| **Memory Monitoring Quality** | ⚠️ **1 snapshot, 0.0s** | ⚠️ **1 snapshot, 0.0s** | ❌ **Insufficient** - no peak capture |
 
 
-#### Production Deployment Recommendations by Use Case
+#### Production Deployment Recommendations - SUSPENDED
 
-**For 4GB Pod Environments (KFP/Constrained Resources):**
-- **Winner: Llama-3.2-11B-Vision-Instruct** 
-- **Rationale**: Only model achieving 4GB pod compliance (2.05GB peak memory)
-- **Trade-offs**: Higher VRAM usage (10.57GB) but fits within V100 capacity
-- **POD Config**: 3-4GB memory allocation with single V100 GPU
+❌ **RECOMMENDATIONS SUSPENDED**: Cannot provide reliable deployment guidance due to memory monitoring data quality issues.
 
-**For High-Throughput/Multi-Deployment Scenarios:**
-- **Winner: InternVL3-2B**
-- **Rationale**: Exceptional VRAM efficiency enables 7+ deployments per V100
-- **Trade-offs**: Requires 5-6GB pod memory allocation
-- **Scaling**: Up to 7x deployment density due to low VRAM (2.27GB per instance)
+**GPU VRAM Requirements (Credible Data):**
+- **Llama-3.2-11B-Vision-Instruct**: 10.57GB VRAM (66% V100 utilization)
+- **InternVL3-2B**: 2.27GB VRAM (14% V100 utilization) 
 
-**Overall Best Practice:**
-- **4GB pod limit**: Choose Llama-3.2-11B-Vision-Instruct
-- **Unlimited pod memory**: Choose InternVL3-2B for better scaling economics
+**Process Memory Requirements (Unreliable Data):**
+- **Cannot determine**: Current measurements show illogical patterns
+- **Required**: Fix memory monitoring to capture inference peaks
+- **POD sizing**: Suspended until reliable memory data available
+
+**Next Steps:**
+1. **Fix memory monitoring** to capture snapshots during model inference
+2. **Validate measurements** ensure larger models show higher memory usage
+3. **Re-run comparison** with corrected monitoring system
+4. **Update recommendations** based on reliable memory data
 
 ---
 

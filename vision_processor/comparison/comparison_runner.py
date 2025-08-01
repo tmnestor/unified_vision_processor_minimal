@@ -83,6 +83,7 @@ class ComparisonResults:
     model_memory_summaries: dict[str, dict[str, float]] | None = (
         None  # Individual model memory summaries
     )
+    memory_validation_results: dict[str, dict] | None = None  # Memory validation data
 
     def __post_init__(self):
         if self.model_execution_times is None:
@@ -95,6 +96,8 @@ class ComparisonResults:
             self.model_estimated_vram = {}
         if self.model_memory_summaries is None:
             self.model_memory_summaries = {}
+        if self.memory_validation_results is None:
+            self.memory_validation_results = {}
 
     def to_dict(self) -> dict[str, Any]:
         """Convert ComparisonResults to JSON-serializable dictionary.
@@ -115,6 +118,7 @@ class ComparisonResults:
             "memory_summary": self.memory_summary,
             "model_estimated_vram": self.model_estimated_vram,
             "model_memory_summaries": self.model_memory_summaries,
+            "memory_validation_results": self.memory_validation_results,
             "dataset_info": {
                 "total_images": self.dataset_info.total_images,
                 "verified_images": len(self.dataset_info.verified_images),
@@ -220,6 +224,7 @@ class ComparisonRunner:
             memory_summary=memory_summary,
             model_estimated_vram=model_estimated_vram,
             model_memory_summaries=model_memory_summaries,
+            memory_validation_results=model_memory_summaries,  # Contains validation data
         )
 
         # Step 8: Save complete results to JSON for visualization and analysis
@@ -399,6 +404,21 @@ class ComparisonRunner:
                             prompt,
                             max_new_tokens=self.config.processing.max_tokens,
                         )
+
+                        # CRITICAL: Capture peak memory immediately after first inference
+                        if i == 0:
+                            self.memory_monitor.take_snapshot(
+                                f"{model_name} - First Inference Peak"
+                            )
+                            self.console.print(
+                                f"🔥 Captured first inference peak for {model_name}"
+                            )
+
+                        # Monitor memory every 3 images during processing (without cleanup)
+                        if (i + 1) % 3 == 0:
+                            self.memory_monitor.take_snapshot(
+                                f"{model_name} - Processing Image {i + 1}"
+                            )
 
                         # Show debug output based on YAML configuration
                         debug_mode = self.config.defaults.debug_mode
@@ -690,14 +710,14 @@ class ComparisonRunner:
                             f"   {i + 1:2d}. {image_path.name:<15} {status} {time_str} | {keys_str} | {response_str}"
                         )
 
-                        # Cleanup and memory check every few images
+                        # Optional light cleanup every 5 images (but don't affect memory measurements)
                         if (i + 1) % 5 == 0:
+                            # Take memory snapshot BEFORE any cleanup to capture working memory
+                            self.memory_monitor.take_snapshot(
+                                f"{model_name} - Working Memory Check {i + 1}"
+                            )
+                            # Light cleanup after measurement
                             gc.collect()
-                            # Take memory snapshot periodically
-                            if (i + 1) % 10 == 0:  # Every 10 images
-                                self.memory_monitor.take_snapshot(
-                                    f"{model_name} - Image {i + 1}"
-                                )
 
                     except (ImageProcessingError, ModelInferenceError) as e:
                         self.console.print(
@@ -732,9 +752,23 @@ class ComparisonRunner:
                 continue
 
             finally:
+                # CRITICAL: Take final snapshot before any cleanup to capture working memory
+                self.memory_monitor.take_snapshot(f"{model_name} - Pre-Cleanup Final")
+
                 # Capture model-specific memory summary before cleanup
                 model_memory_summary = self.memory_monitor.get_memory_summary()
                 model_memory_summaries[model_name] = model_memory_summary
+
+                # Validate memory measurements for quality
+                validation_results = self.memory_monitor.validate_memory_measurements(
+                    model_name
+                )
+                self.console.print(
+                    f"📊 {model_name} Memory Summary - Snapshots: {model_memory_summary.get('total_snapshots', 0)}, Peak: {model_memory_summary.get('peak_process_memory_gb', 0):.2f}GB"
+                )
+                self.console.print(
+                    f"🔍 Validation: {validation_results['validation_summary']}"
+                )
 
                 # Explicit model cleanup for V100 compatibility (matching original script)
                 if "model" in locals() and model is not None:
@@ -774,6 +808,34 @@ class ComparisonRunner:
             self.console.print(f"   📊 Avg fields: {avg_fields:.1f}")
 
             extraction_results[model_name] = model_results
+
+        # PHASE 3: Cross-model memory validation
+        if len(model_memory_summaries) >= 2:
+            cross_validation = self.memory_monitor.compare_model_memory_logic(
+                model_memory_summaries
+            )
+            self.console.print("\n🔬 CROSS-MODEL MEMORY VALIDATION")
+            self.console.print(f"{'=' * 50}")
+
+            if "size_correlation_summary" in cross_validation:
+                self.console.print(
+                    f"Model Size Logic: {cross_validation['size_correlation_summary']}"
+                )
+
+            if "adequate_monitoring" in cross_validation:
+                self.console.print(
+                    f"Monitoring Quality: {cross_validation['adequate_monitoring']}"
+                )
+            elif "inadequate_monitoring" in cross_validation:
+                self.console.print(
+                    f"⚠️ Inadequate Monitoring: {cross_validation['inadequate_monitoring']}"
+                )
+
+            # Store validation results for reporting
+            for model_name in model_memory_summaries:
+                model_memory_summaries[model_name]["cross_validation"] = (
+                    cross_validation
+                )
 
         return extraction_results, model_memory_summaries
 

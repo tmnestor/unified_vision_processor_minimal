@@ -372,3 +372,154 @@ class MemoryMonitor:
         self.snapshots.clear()
         self.start_time = time.time()
         gc.collect()  # Clean up before starting fresh measurements
+
+    def validate_memory_measurements(
+        self, model_name: str, model_size_gb: float = None
+    ) -> dict[str, bool]:
+        """Validate memory measurements for logical consistency.
+
+        Args:
+            model_name: Name of the model being validated
+            model_size_gb: Expected model size in GB (optional)
+
+        Returns:
+            Dictionary with validation results and flags
+        """
+        if not self.snapshots:
+            return {
+                "sufficient_snapshots": False,
+                "has_peak_measurements": False,
+                "logical_memory_progression": False,
+                "adequate_monitoring_duration": False,
+                "validation_summary": "No snapshots available for validation",
+            }
+
+        summary = self.get_memory_summary()
+
+        # Check if we have sufficient snapshots
+        sufficient_snapshots = summary.get("total_snapshots", 0) >= 3
+
+        # Check if monitoring duration is adequate
+        adequate_duration = summary.get("monitoring_duration_s", 0) > 10.0
+
+        # Check if we captured peak measurements (peak > first measurement)
+        if len(self.snapshots) >= 2:
+            first_memory = self.snapshots[0].process_memory_gb
+            peak_memory = summary.get("peak_process_memory_gb", 0)
+            has_peak_measurements = (
+                peak_memory > first_memory * 1.1
+            )  # At least 10% increase
+        else:
+            has_peak_measurements = False
+
+        # Check logical memory progression (should increase during processing)
+        logical_progression = True
+        if len(self.snapshots) >= 3:
+            memory_values = [s.process_memory_gb for s in self.snapshots]
+            # Memory should generally increase or stay stable, not decrease significantly
+            for i in range(1, len(memory_values)):
+                if memory_values[i] < memory_values[0] * 0.8:  # More than 20% decrease
+                    logical_progression = False
+                    break
+
+        validation_flags = {
+            "sufficient_snapshots": sufficient_snapshots,
+            "has_peak_measurements": has_peak_measurements,
+            "logical_memory_progression": logical_progression,
+            "adequate_monitoring_duration": adequate_duration,
+        }
+
+        # Generate validation summary
+        issues = []
+        if not sufficient_snapshots:
+            issues.append(
+                f"Insufficient snapshots ({summary.get('total_snapshots', 0)}/3+ required)"
+            )
+        if not adequate_duration:
+            issues.append(
+                f"Short monitoring duration ({summary.get('monitoring_duration_s', 0):.1f}s)"
+            )
+        if not has_peak_measurements:
+            issues.append("No inference peak captured")
+        if not logical_progression:
+            issues.append("Illogical memory progression detected")
+
+        if issues:
+            validation_flags["validation_summary"] = f"⚠️ Issues: {'; '.join(issues)}"
+        else:
+            validation_flags["validation_summary"] = (
+                f"✅ {model_name} memory measurements validated"
+            )
+
+        return validation_flags
+
+    def compare_model_memory_logic(
+        self, model_summaries: dict[str, dict]
+    ) -> dict[str, any]:
+        """Compare memory measurements across models for logical consistency.
+
+        Args:
+            model_summaries: Dictionary of model_name -> memory_summary
+
+        Returns:
+            Dictionary with cross-model validation results
+        """
+        if len(model_summaries) < 2:
+            return {"cross_model_validation": "Need at least 2 models for comparison"}
+
+        # Extract model names and their memory usage
+        model_data = []
+        for model_name, summary in model_summaries.items():
+            model_data.append(
+                {
+                    "name": model_name,
+                    "peak_memory": summary.get("peak_process_memory_gb", 0),
+                    "peak_gpu": summary.get("peak_gpu_memory_gb", 0),
+                    "snapshots": summary.get("total_snapshots", 0),
+                }
+            )
+
+        # Sort by model name to get consistent ordering
+        model_data.sort(key=lambda x: x["name"])
+
+        validation_results = {}
+
+        # Check if larger models use more memory (based on naming convention)
+        if len(model_data) == 2:
+            # Assume models with "11b" or larger numbers should use more memory
+            llama_model = next(
+                (m for m in model_data if "llama" in m["name"].lower()), None
+            )
+            internvl_model = next(
+                (m for m in model_data if "internvl" in m["name"].lower()), None
+            )
+
+            if llama_model and internvl_model:
+                # Llama (11B) should use more process memory than InternVL (2B)
+                llama_peak = llama_model["peak_memory"]
+                internvl_peak = internvl_model["peak_memory"]
+
+                logical_size_correlation = llama_peak > internvl_peak
+                validation_results["logical_size_correlation"] = (
+                    logical_size_correlation
+                )
+
+                if logical_size_correlation:
+                    validation_results["size_correlation_summary"] = (
+                        f"✅ Logical: Llama-11B ({llama_peak:.2f}GB) > InternVL-2B ({internvl_peak:.2f}GB)"
+                    )
+                else:
+                    validation_results["size_correlation_summary"] = (
+                        f"❌ ILLOGICAL: Llama-11B ({llama_peak:.2f}GB) < InternVL-2B ({internvl_peak:.2f}GB)"
+                    )
+
+        # Check that all models have adequate monitoring
+        inadequate_models = [m["name"] for m in model_data if m["snapshots"] < 3]
+        if inadequate_models:
+            validation_results["inadequate_monitoring"] = inadequate_models
+        else:
+            validation_results["adequate_monitoring"] = (
+                "✅ All models have sufficient snapshots"
+            )
+
+        return validation_results
