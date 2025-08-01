@@ -23,7 +23,7 @@
 4. **Case Study**: Replacing LayoutLM in Production (10 min)
 5. **Q&A Session** (10 min)
 
-**Notes**: We'll start by understanding why LayoutLM needs replacement, then explore how Vision Transformers provide a superior solution.
+**Notes**: We'll start by understanding why LayoutLM needs replacement, then explore whether Vision Transformers provide a superior solution.
 
 ---
 
