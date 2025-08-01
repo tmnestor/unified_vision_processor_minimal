@@ -80,6 +80,9 @@ class ComparisonResults:
     # Memory usage metrics
     memory_summary: dict[str, float] | None = None
     model_estimated_vram: dict[str, float] | None = None  # Estimated VRAM per model
+    model_memory_summaries: dict[str, dict[str, float]] | None = (
+        None  # Individual model memory summaries
+    )
 
     def __post_init__(self):
         if self.model_execution_times is None:
@@ -90,6 +93,8 @@ class ComparisonResults:
             self.memory_summary = {}
         if self.model_estimated_vram is None:
             self.model_estimated_vram = {}
+        if self.model_memory_summaries is None:
+            self.model_memory_summaries = {}
 
     def to_dict(self) -> dict[str, Any]:
         """Convert ComparisonResults to JSON-serializable dictionary.
@@ -109,6 +114,7 @@ class ComparisonResults:
             "model_success_rates": self.model_success_rates,
             "memory_summary": self.memory_summary,
             "model_estimated_vram": self.model_estimated_vram,
+            "model_memory_summaries": self.model_memory_summaries,
             "dataset_info": {
                 "total_images": self.dataset_info.total_images,
                 "verified_images": len(self.dataset_info.verified_images),
@@ -180,7 +186,7 @@ class ComparisonRunner:
             raise RuntimeError("No valid models found for comparison")
 
         # Step 4: Run extraction for each model
-        extraction_results = self._run_extractions(
+        extraction_results, model_memory_summaries = self._run_extractions(
             valid_models, dataset_info.verified_images
         )
         self.memory_monitor.cleanup_and_measure("All Models Processed")
@@ -194,7 +200,8 @@ class ComparisonRunner:
         success_metrics = self._calculate_success_metrics(extraction_results)
 
         # Step 7: Collect memory usage data
-        memory_summary = self.memory_monitor.get_memory_summary()
+        # Use individual model memory summaries instead of global summary
+        memory_summary = self._combine_model_memory_summaries(model_memory_summaries)
         model_estimated_vram = self._get_model_vram_estimates(valid_models)
 
         # Create results object
@@ -212,6 +219,7 @@ class ComparisonRunner:
             model_success_rates=success_metrics["model_success_rates"],
             memory_summary=memory_summary,
             model_estimated_vram=model_estimated_vram,
+            model_memory_summaries=model_memory_summaries,
         )
 
         # Step 8: Save complete results to JSON for visualization and analysis
@@ -336,11 +344,12 @@ class ComparisonRunner:
 
     def _run_extractions(
         self, model_names: list[str], image_paths: list[Path]
-    ) -> dict[str, list[dict[str, Any]]]:
+    ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, dict[str, float]]]:
         """Run extractions for all models on all images."""
         self.console.print("\n🔥 EXTRACTION PIPELINE", style="bold yellow")
 
         extraction_results = {}
+        model_memory_summaries = {}  # Store individual model memory summaries
 
         for model_name in model_names:
             self.console.print(f"\n{'=' * 50}")
@@ -348,7 +357,7 @@ class ComparisonRunner:
                 f"🤖 PROCESSING WITH {model_name.upper()}", style="bold cyan"
             )
             self.console.print(f"{'=' * 50}")
-            
+
             # Reset memory monitoring for independent measurements per model
             self.memory_monitor.reset_snapshots()
 
@@ -723,6 +732,10 @@ class ComparisonRunner:
                 continue
 
             finally:
+                # Capture model-specific memory summary before cleanup
+                model_memory_summary = self.memory_monitor.get_memory_summary()
+                model_memory_summaries[model_name] = model_memory_summary
+
                 # Explicit model cleanup for V100 compatibility (matching original script)
                 if "model" in locals() and model is not None:
                     try:
@@ -762,7 +775,7 @@ class ComparisonRunner:
 
             extraction_results[model_name] = model_results
 
-        return extraction_results
+        return extraction_results, model_memory_summaries
 
     def _run_analysis(
         self, extraction_results: dict[str, list[dict[str, Any]]]
@@ -1557,3 +1570,68 @@ class ComparisonRunner:
         # For other paths, assume they might be persistent
         # (Better to be permissive than block valid use cases)
         return True
+
+    def _combine_model_memory_summaries(
+        self, model_memory_summaries: dict[str, dict[str, float]]
+    ) -> dict[str, float]:
+        """Combine individual model memory summaries into overall summary.
+
+        Args:
+            model_memory_summaries: Dictionary of model_name -> memory_summary mappings
+
+        Returns:
+            Combined memory summary with peak values and aggregated statistics
+        """
+        if not model_memory_summaries:
+            return {}
+
+        # Collect all memory values for aggregation
+        all_peak_process_memory = []
+        all_avg_process_memory = []
+        all_peak_gpu_memory = []
+        all_avg_gpu_memory = []
+        all_snapshots = 0
+        total_duration = 0.0
+        gpu_total_memory = 0.0
+
+        for _model_name, summary in model_memory_summaries.items():
+            if "peak_process_memory_gb" in summary:
+                all_peak_process_memory.append(summary["peak_process_memory_gb"])
+            if "avg_process_memory_gb" in summary:
+                all_avg_process_memory.append(summary["avg_process_memory_gb"])
+            if "peak_gpu_memory_gb" in summary:
+                all_peak_gpu_memory.append(summary["peak_gpu_memory_gb"])
+            if "avg_gpu_memory_gb" in summary:
+                all_avg_gpu_memory.append(summary["avg_gpu_memory_gb"])
+            if "total_snapshots" in summary:
+                all_snapshots += summary["total_snapshots"]
+            if "monitoring_duration_s" in summary:
+                total_duration += summary["monitoring_duration_s"]
+            if "gpu_total_memory_gb" in summary and summary["gpu_total_memory_gb"] > 0:
+                gpu_total_memory = summary[
+                    "gpu_total_memory_gb"
+                ]  # Should be same for all models
+
+        # Create combined summary
+        combined_summary = {
+            "total_snapshots": all_snapshots,
+            "monitoring_duration_s": total_duration,
+        }
+
+        # Peak values (maximum across all models)
+        if all_peak_process_memory:
+            combined_summary["peak_process_memory_gb"] = max(all_peak_process_memory)
+        if all_avg_process_memory:
+            combined_summary["avg_process_memory_gb"] = sum(
+                all_avg_process_memory
+            ) / len(all_avg_process_memory)
+        if all_peak_gpu_memory:
+            combined_summary["peak_gpu_memory_gb"] = max(all_peak_gpu_memory)
+        if all_avg_gpu_memory:
+            combined_summary["avg_gpu_memory_gb"] = sum(all_avg_gpu_memory) / len(
+                all_avg_gpu_memory
+            )
+        if gpu_total_memory > 0:
+            combined_summary["gpu_total_memory_gb"] = gpu_total_memory
+
+        return combined_summary

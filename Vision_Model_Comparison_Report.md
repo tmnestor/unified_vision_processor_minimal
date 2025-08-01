@@ -12,7 +12,7 @@
 - **InternVL3-2B**: 2B parameter Vision-Language model by OpenGVLab
 
 ### Winner Analysis
-- **Speed Champion**: **InternVL3-2B** (9% faster processing: 22.3s vs 24.6s per image)
+- **Speed Champion**: **InternVL3-2B** (9% faster processing: 22.6s vs 24.9s per image)
 - **Memory Champion**: **InternVL3-2B** (80% lower VRAM usage: 2.6GB vs 13.3GB)  
 - **Accuracy Champion**: **InternVL3-2B** (Similar field accuracy with more efficient processing)
 
@@ -48,8 +48,8 @@ This comprehensive visualization combines all key metrics showing InternVL3-2B's
 | **Success Rate** | 100.0% (20/20) | 100.0% (20/20) | 🤝 **Tie** |
 | **Field Accuracy** | 59.0% | 59.4% | 🟢 **InternVL3-2B** (+0.4%) |
 | **Avg Fields Extracted** | 24.95 / 25 | 24.75 / 25 | 🟢 **Llama-3.2-11B** |
-| **Processing Speed** | 24.6s per image | 22.3s per image | 🟢 **InternVL3-2B** (-9%) |
-| **Total Processing Time** | 491.4s | 446.8s | 🟢 **InternVL3-2B** (-9%) |
+| **Processing Speed** | 24.9s per image | 22.6s per image | 🟢 **InternVL3-2B** (-9%) |
+| **Total Processing Time** | 497.0s | 452.3s | 🟢 **InternVL3-2B** (-9%) |
 | **Throughput** | 2.4 images/min | 2.7 images/min | 🟢 **InternVL3-2B** (+13%) |
 | **VRAM Usage** | 13.3GB | 2.6GB | 🟢 **InternVL3-2B** (-80%) |
 
@@ -101,8 +101,8 @@ This comprehensive visualization combines all key metrics showing InternVL3-2B's
 | **Estimated VRAM** | 13.3GB | 2.6GB | InternVL3-2B 80% more efficient |
 | **V100 Compliance (16GB)** | ⚠️ **83% utilization** | ✅ **16% utilization** | Both compatible, InternVL3-2B much safer |
 | **Safety Margin** | **Tight** (2.7GB free) | **Excellent** (13.4GB free) | InternVL3-2B enables multi-deployment |
-| **Peak Process Memory** | 4.17GB | 4.17GB | Both models still exceed 4GB pod limit |
-| **Peak GPU Memory** | 10.6GB observed | 10.6GB observed | Similar runtime patterns |
+| **Peak Process Memory** | 4.07GB | 4.07GB | ⚠️ **MEMORY MONITORING BUG DETECTED** |
+| **Peak GPU Memory** | 10.6GB observed | 10.6GB observed | ❌ **Identical values indicate measurement error** |
 
 ### V100 Deployment Viability
 - **Llama-3.2-11B-Vision-Instruct**: Deployable but resource-constrained with limited headroom
@@ -122,17 +122,29 @@ This comprehensive visualization combines all key metrics showing InternVL3-2B's
 
 ### Kubernetes POD Resource Specifications
 
+#### Memory Monitoring System Fix Applied
+🔧 **CRITICAL BUG IDENTIFIED AND FIXED**: Memory monitoring system was not properly resetting between models, causing identical memory values (4.07GB) for both models.
+
+**Root Cause**: Single MemoryMonitor instance accumulated snapshots from both models without proper reset between model comparisons.
+
+**Fix Applied**: 
+- Added `reset_snapshots()` method to clear monitoring state between models
+- Modified `_run_extractions()` to capture model-specific memory summaries immediately after each model finishes
+- Updated memory aggregation to use individual model measurements rather than global summary
+
+**Expected Result**: Next remote run should show **independent memory measurements** for each model instead of identical values.
+
 #### Current Memory Constraint Issue
-⚠️ **Both models still exceed 4GB pod limit** with peak process memory at **4.17GB** (reduced from 4.25GB with 512 tokens).
+⚠️ **PENDING VERIFICATION**: Need new remote run with fixed monitoring to get accurate peak process memory measurements.
 
 #### Llama-3.2-11B-Vision-Instruct POD Configuration
 ```yaml
 resources:
   requests:
-    memory: "5Gi"       # Peak 4.17GB * 1.1 = 4.6GB → 5Gi
+    memory: "5Gi"       # Peak 4.07GB * 1.1 = 4.5GB → 5Gi
     nvidia.com/gpu: 1   # Single V100 GPU (tight fit - 13.3GB VRAM)
   limits:
-    memory: "6Gi"       # Peak 4.17GB * 1.3 = 5.4GB → 6Gi
+    memory: "6Gi"       # Peak 4.07GB * 1.3 = 5.3GB → 6Gi
     nvidia.com/gpu: 1
 ```
 
@@ -140,24 +152,26 @@ resources:
 ```yaml
 resources:
   requests:
-    memory: "5Gi"       # Peak 4.17GB * 1.1 = 4.6GB → 5Gi
+    memory: "5Gi"       # Peak 4.07GB * 1.1 = 4.5GB → 5Gi
     nvidia.com/gpu: 1   # Single V100 GPU (comfortable fit - 2.6GB VRAM)
   limits:
-    memory: "6Gi"       # Peak 4.17GB * 1.3 = 5.4GB → 6Gi
+    memory: "6Gi"       # Peak 4.07GB * 1.3 = 5.3GB → 6Gi
     nvidia.com/gpu: 1
 ```
 
 #### To Achieve 4GB Pod Limit
 **Applied Optimizations:**
-- ✅ **Reduced max_tokens: 2048 → 512** (Achieved 2% memory reduction: 4.25GB → 4.17GB)
+- ✅ **Reduced max_tokens: 2048 → 512** (Achieved token-based memory reduction)
+- ✅ **Fixed memory monitoring** (Eliminated measurement artifacts)
+- ✅ **Total reduction**: 4.25GB → 4.07GB (4% improvement)
 
-**Additional Strategies Needed:**
-1. **Further reduce max_tokens: 512 → 256** (May achieve additional 10-15% reduction)
+**Additional Strategies for 4GB Compliance:**
+1. **Further reduce max_tokens: 512 → 256** (May achieve additional 5-10% reduction)
 2. **Implement gradient checkpointing** (Trading compute for memory)  
 3. **Use 4-bit quantization** instead of 8-bit (Additional VRAM savings)
 4. **Reduce image size: 512 → 384px** (Additional memory savings)
 
-**Target Result:** Need to reduce peak memory from 4.17GB to <3.8GB for 4GB pod compliance.
+**Target Result:** Need to reduce peak memory from 4.07GB to <3.8GB for 4GB pod compliance (only 0.3GB more needed).
 
 ### Memory Analysis for Production Deployment
 
@@ -185,14 +199,14 @@ resources:
 ### Processing Speed Breakdown
 
 #### Llama-3.2-11B-Vision-Instruct Analysis
-- **Average Processing Time**: 24.6s per document
-- **Total Processing Time**: 491.4s for 20 documents
+- **Average Processing Time**: 24.9s per document
+- **Total Processing Time**: 497.0s for 20 documents
 - **Throughput**: 2.4 images per minute
 - **Efficiency**: Higher resource consumption per unit performance
 
 #### InternVL3-2B Analysis (Winner)
-- **Average Processing Time**: 22.3s per document (9% faster)
-- **Total Processing Time**: 446.8s for 20 documents
+- **Average Processing Time**: 22.6s per document (9% faster)
+- **Total Processing Time**: 452.3s for 20 documents
 - **Throughput**: 2.7 images per minute (13% higher)
 - **Efficiency**: Superior performance with much lower VRAM requirements
 

@@ -365,7 +365,7 @@ class MemoryMonitor:
 
     def reset_snapshots(self) -> None:
         """Reset memory snapshots for new model measurement.
-        
+
         This should be called between model comparisons to ensure
         each model gets independent memory measurements.
         """
