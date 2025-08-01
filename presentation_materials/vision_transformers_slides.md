@@ -7,11 +7,14 @@
 ### Slide 1: Title Slide
 **Vision Transformers in Information Extraction**
 - Moving Beyond LayoutLM to Modern Vision-Language Models
-- Tod Nestor | August 2025
+- **Focus**: Information Extraction for SSD-WRE Pipeline
 
+**Business Context**: Streamlining Substantiations for Work Related Expense Claims
+
+**Presenter**: Tod Nestor | August 2025
 **Duration**: 50 minutes (40 min presentation + 10 min Q&A)
 
-**Notes**: Welcome everyone. Today we'll explore a PoC experiment that investigates whether modern Vision Transformers can replace and significantly outperform LayoutLM for Information Extraction In the Document Understanding Pipleline.
+**Notes**: Welcome everyone. Today we'll explore a PoC experiment investigating whether modern Vision Transformers can replace LayoutLM for the Information Extraction component within the Streamlining of Substantiations - Work Related Expense (SSD-WRE) claims pipeline. This is critical for automating the processing of receipts, invoices, and other expense documentation.
 
 ---
 
