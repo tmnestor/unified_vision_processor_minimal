@@ -11,7 +11,7 @@
 
 **Duration**: 50 minutes (40 min presentation + 10 min Q&A)
 
-**Notes**: Welcome everyone. Today we'll explore how modern Vision Transformers can replace and significantly outperform LayoutLM for document processing.
+**Notes**: Welcome everyone. Today we'll explore a PoC experiment that investigates whether modern Vision Transformers can replace and significantly outperform LayoutLM for Information Extraction In the Document Understanding Pipleline.
 
 ---
 
