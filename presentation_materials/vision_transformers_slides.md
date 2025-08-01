@@ -23,7 +23,7 @@
 4. **Case Study**: Replacing LayoutLM in Production (10 min)
 5. **Q&A Session** (10 min)
 
-**Notes**: We'll start by understanding why LayoutLM needs replacement, then explore whether Vision Transformers provide a superior solution.
+**Notes**: We'll start by understanding why LayoutLM needs replacement, then explore whether Vision Transformers may provide a superior solution.
 
 ---
 
@@ -38,6 +38,7 @@ Document Understanding Evolution:
 - **2023+**: Vision-Language Models (InternVL, Llama-Vision)
 
 **Current Reality**: Many organizations still using LayoutLM
+
 **The Problem**: Performance has plateaued
 
 **Notes**: LayoutLM was revolutionary in 2020, but technology has advanced significantly. We're now at an inflection point.
