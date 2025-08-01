@@ -122,40 +122,8 @@ graph LR
     style VX1 fill:#32cd32,color:#fff
 ```
 
-## 5. Migration Path from LayoutLM to ViT
 
-```mermaid
-graph TD
-    subgraph "Phase 1: Pilot"
-        A1[Current LayoutLM<br/>Production] --> A2[Add ViT<br/>in Parallel]
-        A2 --> A3[Compare Results<br/>10% Traffic]
-    end
-    
-    subgraph "Phase 2: Rollout"
-        B1[Increase to<br/>50% Traffic] --> B2[Route by<br/>Doc Type]
-        B2 --> B3[Monitor<br/>Performance]
-    end
-    
-    subgraph "Phase 3: Migration"
-        C1[100% ViT<br/>Processing] --> C2[Decommission<br/>OCR]
-        C2 --> C3[Realize<br/>Savings]
-    end
-    
-    A3 --> B1
-    B3 --> C1
-    
-    style A1 fill:#ffe4e1
-    style A2 fill:#fffacd
-    style A3 fill:#e0ffe0
-    style B1 fill:#e0f0ff
-    style B2 fill:#e0f0ff
-    style B3 fill:#e0f0ff
-    style C1 fill:#90ee90
-    style C2 fill:#90ee90
-    style C3 fill:#32cd32,color:#fff
-```
-
-## 6. Vision Transformer Components Detail
+## 5. Vision Transformer Components Detail
 
 ```mermaid
 graph TD
@@ -186,7 +154,7 @@ graph TD
     style T6 fill:#98fb98
 ```
 
-## 7. Performance Comparison
+## 6. Performance Comparison
 
 ```mermaid
 graph TB

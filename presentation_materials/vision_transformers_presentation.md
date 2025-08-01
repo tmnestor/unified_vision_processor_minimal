@@ -11,23 +11,23 @@
 ## 📋 Agenda
 
 1. **Introduction**: The Evolution of Document AI (5 min)
-2. **Current State: LayoutLM and Its Limitations** (8 min)
+2. **Current State: LayoutLM and Its Limitations** (10 min)
    - Architecture and Approach
    - Production Challenges
    - Why We Need Better Solutions
-3. **Vision Transformers: The Next Generation** (10 min)
+3. **Vision Transformers: The Next Generation** (12 min)
    - Core Concepts and Architecture
    - Key Innovations
    - Advantages Over Previous Approaches
-4. **Why Vision Transformers Excel at Information Extraction** (7 min)
+4. **Why Vision Transformers Excel at Information Extraction** (8 min)
    - Technical Advantages
    - Real-World Benefits
    - Comparison with LayoutLM
-5. **Case Study: Replacing LayoutLM with Modern ViTs** (12 min)
+5. **Case Study: Replacing LayoutLM with Modern ViTs** (10 min)
    - Our Implementation: InternVL3 & Llama-3.2-Vision
    - Performance Comparison
    - Production Results
-6. **Future Directions and Migration Strategy** (8 min)
+6. **Future Directions** (5 min)
 7. **Q&A Session** (10 min)
 
 ---
@@ -316,13 +316,11 @@ Both models process images directly without OCR, eliminating:
 3. **Maintenance**: 3 models → 1 model (67% reduction)
 4. **Error Handling**: Cascading failures → Graceful degradation
 
-### Cost-Benefit Analysis
-| Factor | LayoutLM | Modern ViTs | Savings |
-|--------|----------|-------------|---------|
-| **OCR Licensing** | $X/month | $0 | 100% |
-| **Infrastructure** | 3 models | 1 model | 67% |
-| **Development Time** | High | Low | ~70% |
-| **Accuracy Issues** | Frequent | Rare | ~80% |
+### Key Benefits
+- **Simplified Infrastructure**: 3 models → 1 model
+- **No OCR Dependency**: Direct image processing
+- **Better Accuracy**: Consistent improvements across all metrics
+- **Reduced Complexity**: Single-stage processing
 
 ---
 
@@ -401,35 +399,22 @@ Image → ViT + LM → Structured Fields
 
 ---
 
-## 🌈 Future Directions and Migration Strategy
+## 🌈 Future Directions
 
-### Migration Path from LayoutLM
-1. **Phase 1: Pilot** (Months 1-2)
-   - Run ViT models in parallel with LayoutLM
-   - Compare results on production data
-   - Identify edge cases
+### Emerging Trends
+1. **Efficient ViTs**: Smaller models with better performance
+2. **Multi-Modal Pre-training**: Better vision-language alignment
+3. **Document-Specific Architectures**: Specialized for forms/tables
 
-2. **Phase 2: Gradual Rollout** (Months 3-4)
-   - Route simple documents to ViT models
-   - Keep LayoutLM for complex cases initially
-   - Monitor performance metrics
+### Opportunities for Organizations
+- **Expand Document Types**: Apply to new document categories
+- **Real-Time Processing**: Optimize for interactive applications
+- **Custom Fine-Tuning**: Specialize for proprietary documents
 
-3. **Phase 3: Full Migration** (Months 5-6)
-   - Complete transition to ViT models
-   - Decommission OCR infrastructure
-   - Realize cost savings
-
-### Expected Benefits Post-Migration
-- **Accuracy**: 45% → 59% field extraction rate
-- **Success Rate**: 85% → 100% document processing
-- **Maintenance**: 3 pipelines → 1 model
-- **Costs**: Eliminate OCR licensing, reduce compute by 60%
-
-### Technical Recommendations
-1. **Start with InternVL3-2B**: Lower resource requirements
-2. **Use Llama-3.2-Vision**: For high-value documents
-3. **Implement A/B Testing**: Gradual confidence building
-4. **Retain LayoutLM**: As fallback during transition
+### Next Steps in Research
+- Evaluate newer efficient ViT variants
+- Explore fine-tuning on domain-specific data
+- Investigate edge deployment options
 
 ---
 
@@ -448,7 +433,7 @@ Image → ViT + LM → Structured Fields
 ### Our Implementation Proves Viability
 - Both InternVL3 and Llama-3.2-Vision outperform LayoutLM
 - Production-ready with immediate benefits
-- Clear ROI within 6 months
+- Clear performance advantages demonstrated
 
 ### The Future is End-to-End
 - No more OCR dependencies

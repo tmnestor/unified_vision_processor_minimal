@@ -15,7 +15,7 @@ This directory contains comprehensive presentation materials on Vision Transform
 ### 2. **vision_transformers_slides.md**
 - 21-slide deck structure for 50-minute presentation (40 min + 10 min Q&A)
 - LayoutLM-focused narrative throughout
-- Migration strategy and ROI analysis
+- Technical comparison and benefits
 - Ready for PowerPoint/Keynote conversion
 - Detailed speaker notes for each slide
 
@@ -27,7 +27,7 @@ This directory contains comprehensive presentation materials on Vision Transform
 ### 4. **mermaid_diagrams.md**
 - All Mermaid diagram definitions in one file
 - Can be copied into presentations or rendered separately
-- Includes architecture, process flows, and comparisons
+- Includes architecture, process flows, and technical comparisons
 
 ### 5. **hybrid_diagram_approach.md**
 - Explains the Mermaid + Matplotlib hybrid approach
@@ -82,39 +82,34 @@ python generate_vit_diagrams.py
    - 25% accuracy improvement over LayoutLM
    - 100% success rate vs 85% with LayoutLM
 
-3. **Migration is practical and profitable**
-   - ROI within 3-4 months
-   - $180K annual savings (conservative estimate)
+3. **Implementation is straightforward**
+   - Direct replacement for LayoutLM
+   - Immediate performance benefits
    - Production-proven with our implementation
 
 ## 📊 Presentation Flow (50 minutes)
 
-1. **Current State: LayoutLM** (8 min)
+1. **Current State: LayoutLM** (10 min)
    - Architecture and limitations
    - Production challenges
    - Why change is needed
 
-2. **Vision Transformers** (10 min)
+2. **Vision Transformers** (12 min)
    - Core concepts and architecture
    - Direct comparison with LayoutLM
    - Technical advantages
 
-3. **Why ViTs Excel** (7 min)
+3. **Why ViTs Excel** (8 min)
    - Document-specific benefits
    - Elimination of OCR dependency
    - End-to-end learning
 
-4. **Case Study: Our Migration** (12 min)
+4. **Case Study: Our Implementation** (10 min)
    - Head-to-head comparison results
    - Performance improvements
-   - Cost-benefit analysis
+   - Production insights
 
-5. **Migration Strategy** (8 min)
-   - Phased approach
-   - Risk mitigation
-   - Quick wins
-
-6. **Q&A Session** (10 min)
+5. **Q&A Session** (10 min)
    - Address specific concerns
    - Discuss implementation details
 
