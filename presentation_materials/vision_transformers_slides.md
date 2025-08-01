@@ -41,7 +41,7 @@ Document Understanding Evolution:
 
 **The Problem**: Performance has plateaued
 
-**Notes**: LayoutLM was revolutionary in 2020, but technology has advanced significantly. We're now at an inflection point.
+**Notes**: LayoutLM was revolutionary in 2020, but technology has advanced significantly. Vision-language models now offer a fundamentally better approach.
 
 ---
 
