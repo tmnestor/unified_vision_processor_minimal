@@ -9,7 +9,7 @@ graph TB
     subgraph "Vision Transformer Architecture"
         A[Input Image<br/>224x224] --> B[Patch Division<br/>16x16 patches]
         B --> C[Linear Projection<br/>Patch Embeddings]
-        C --> D[+ Position<br/>Embeddings]
+        C --> D[Add Position<br/>Embeddings]
         D --> E[Transformer<br/>Encoder Blocks]
         E --> F[Multi-Head<br/>Self-Attention]
         E --> G[Feed Forward<br/>Network]
