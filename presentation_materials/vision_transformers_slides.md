@@ -14,7 +14,7 @@
 **Presenter**: Tod Nestor | August 2025
 **Duration**: 50 minutes (40 min presentation + 10 min Q&A)
 
-**Notes**: Welcome everyone. Today we'll explore a PoC experiment investigating whether modern Vision Transformers can replace LayoutLM for the Information Extraction component within the Streamlining of Substantiations - Work Related Expense (SSD-WRE) claims pipeline. This is critical for automating the processing of receipts, invoices, and other expense documentation.
+**Notes**: Welcome everyone. Today we'll explore a PoC experiment investigating whether modern Vision Transformers can replace LayoutLM for the Information Extraction component within the Streamlining of Substantiations - Work Related Expense (SSD-WRE) claims pipeline. This is critical for automating the processing of receipts, invoices, and other expense documentation. Tax payers submit scanned documents to support the WRE tax deductions they have claimed, and taxation audit officers review these submissions. Our goal is to automate the extraction of key fields from these documents to improve accuracy and efficiency.
 
 ---
 
