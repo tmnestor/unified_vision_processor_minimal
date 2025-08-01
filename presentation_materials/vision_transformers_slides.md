@@ -41,28 +41,46 @@ Document Understanding Evolution:
 
 **The Problem**: Performance has plateaued
 
-**Notes**: LayoutLM was revolutionary in 2020, but technology has advanced significantly. Vision-language models now offer a fundamentally better approach.
+**Notes**: LayoutLM was revolutionary in 2020, but technology has advanced significantly. Vision-language models promise a fundamentally better approach.
 
 ---
 
 ### Slide 4: LayoutLM - Current Production Standard
 **What Most Organizations Use Today**
 
-**LayoutLM Architecture**:
+**LayoutLM Architecture & Semantic Content Capture**:
 ```
-Document → OCR → Text + Coordinates → LayoutLM → Results
-         ↘ CNN → Image Features ↗
+Document Image
+    ├─→ OCR Engine ─→ Text Semantics (words, sentences)
+    │                 + Bounding Boxes (coordinate data)
+    │
+    ├─→ CNN Features ─→ Basic Visual Patterns (optional)
+    │                   (logos, colors, shapes - limited)
+    │
+    └─→ Layout Parser ─→ 2D Position Embeddings
+                        (spatial relationships)
+                           ↓
+                     LayoutLM Transformer
+                     (attempts to fuse all three)
+                           ↓
+                      Extracted Fields
 ```
+
+**Where Semantic Content Lives**:
+- **Text Semantics**: OCR output only - if OCR fails, meaning is lost
+- **Spatial Semantics**: Coordinate embeddings - requires perfect OCR alignment
+- **Visual Semantics**: Minimal - CNN features are shallow, not integrated
+- **Contextual Understanding**: Limited to text tokens + positions
 
 **Key Components**:
-- External OCR (Tesseract, Azure)
-- Text + 2D position embeddings
-- Optional: CNN image features
-- BERT-based transformer
+- External OCR (Tesseract, Azure) - captures text
+- 2D position embeddings - captures layout
+- Optional CNN features - captures basic visuals
+- BERT-based transformer - processes primarily text
 
-**Why It Was Revolutionary**: First to combine text, layout, and visual information
+**Critical Gap**: Rich visual semantics (logos, stamps, handwriting) are largely ignored
 
-**Notes**: LayoutLM brought transformers to documents, but it's fundamentally limited by its architecture.
+**Notes**: LayoutLM fragments semantic understanding across three separate systems. Each component captures only part of the document's meaning, and errors in any component cascade through the pipeline.
 
 ---
 
