@@ -14,7 +14,7 @@
 **Presenter**: Tod Nestor | August 2025
 **Duration**: 50 minutes (40 min presentation + 10 min Q&A)
 
-**Notes**: Welcome everyone. Today we'll explore a PoC experiment investigating whether modern Vision Transformers can replace LayoutLM for the Information Extraction component within the Streamlining of Substantiations - Work Related Expense (SSD-WRE) claims pipeline. This is critical for automating the processing of receipts, invoices, and other expense documentation. Tax payers submit scanned documents to support the WRE tax deductions they have claimed, and taxation audit officers review these submissions. Our goal is to automate the extraction of key fields from these documents to improve accuracy and efficiency.
+**Notes**: Welcome everyone. Let me first explain the business context. In the SSD-WRE pipeline, taxpayers submit scanned receipts, invoices, and other documents to substantiate their work-related expense deductions. Taxation audit officers must review these submissions, extracting key fields like supplier names, ABNs, amounts, and dates to verify claims. Currently, this Information Extraction component uses LayoutLM to automatically extract these fields from the submitted documents. However, LayoutLM's accuracy and reliability have become bottlenecks in the pipeline. Today's PoC explores whether modern Vision Transformers can replace LayoutLM to improve extraction accuracy, reduce manual review workload, and streamline the entire substantiation process.
 
 ---
 
