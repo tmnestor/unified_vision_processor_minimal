@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Generate Vision Transformer diagrams for presentation."""
 
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import numpy as np
 from pathlib import Path
+
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Create output directory relative to script location
 output_dir = Path(__file__).parent / "presentation_diagrams"
@@ -177,7 +178,7 @@ def create_vit_vs_cnn_comparison():
     layer_sizes = [(3, 2), (2.5, 1.5), (2, 1), (1.5, 0.5)]
     
     y_pos = 0.7
-    for i, (name, size, color) in enumerate(zip(layer_names, layer_sizes, layer_colors)):
+    for i, (name, size, color) in enumerate(zip(layer_names, layer_sizes, layer_colors, strict=False)):
         rect = patches.Rectangle((0.5 - size[0]/2, y_pos - size[1]/2), size[0], size[1],
                                transform=ax1.transAxes, linewidth=2, 
                                edgecolor='black', facecolor=color)
@@ -260,7 +261,7 @@ def create_document_processing_comparison():
     colors = ['#FFE4E1', '#FFD700', '#98FB98', '#87CEEB', '#DDA0DD']
     x_positions = [0.1, 0.3, 0.5, 0.7, 0.9]
     
-    for i, (step, x, color) in enumerate(zip(steps, x_positions, colors)):
+    for i, (step, x, color) in enumerate(zip(steps, x_positions, colors, strict=False)):
         rect = patches.FancyBboxPatch((x - 0.08, 0.35), 0.16, 0.3,
                                     boxstyle="round,pad=0.02",
                                     transform=ax1.transAxes,
@@ -291,7 +292,7 @@ def create_document_processing_comparison():
     vit_colors = ['#FFE4E1', '#90EE90', '#DDA0DD']
     vit_x = [0.2, 0.5, 0.8]
     
-    for i, (step, x, color) in enumerate(zip(vit_steps, vit_x, vit_colors)):
+    for i, (step, x, color) in enumerate(zip(vit_steps, vit_x, vit_colors, strict=False)):
         if i == 1:  # Make middle box larger
             rect = patches.FancyBboxPatch((x - 0.12, 0.3), 0.24, 0.4,
                                         boxstyle="round,pad=0.02",
@@ -341,7 +342,7 @@ def create_project_results_visualization():
     ax1.set_ylabel('Field Accuracy (%)', fontsize=12)
     ax1.set_title('Extraction Accuracy', fontsize=14, weight='bold')
     ax1.set_ylim(0, 100)
-    for bar, val in zip(bars1, accuracy):
+    for bar, val in zip(bars1, accuracy, strict=False):
         ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
                 f'{val}%', ha='center', fontsize=10)
     
@@ -350,7 +351,7 @@ def create_project_results_visualization():
     ax2.set_ylabel('Processing Time (s/image)', fontsize=12)
     ax2.set_title('Processing Speed', fontsize=14, weight='bold')
     ax2.set_ylim(0, 30)
-    for bar, val in zip(bars2, speed):
+    for bar, val in zip(bars2, speed, strict=False):
         ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
                 f'{val}s', ha='center', fontsize=10)
     
@@ -360,7 +361,7 @@ def create_project_results_visualization():
     ax3.set_title('Memory Efficiency', fontsize=14, weight='bold')
     ax3.set_ylim(0, 16)
     ax3.axhline(y=16, color='red', linestyle='--', label='V100 Limit')
-    for bar, val in zip(bars3, memory):
+    for bar, val in zip(bars3, memory, strict=False):
         ax3.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.2,
                 f'{val}GB', ha='center', fontsize=10)
     ax3.legend()
