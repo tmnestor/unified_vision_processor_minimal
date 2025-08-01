@@ -14,7 +14,23 @@
 **Presenter**: Tod Nestor | August 2025
 **Duration**: 50 minutes (40 min presentation + 10 min Q&A)
 
-**Notes**: Welcome everyone. Let me first explain the business context. In the SSD-WRE pipeline, taxpayers submit scanned receipts, invoices, and other documents to substantiate their work-related expense deductions. Taxation audit officers must review these submissions, extracting key fields like supplier names, ABNs, amounts, and dates to verify claims. Currently, this Information Extraction component uses LayoutLM to automatically extract these fields from the submitted documents. However, LayoutLM's accuracy and reliability have become bottlenecks in the pipeline. Today's PoC presentation explores whether modern Vision Transformers can replace LayoutLM to improve extraction accuracy, reduce manual review workload, and streamline the entire substantiation process.
+**Notes**: Welcome everyone. Let me first explain the business context. 
+
+In the Australian taxation system, individual tax returns have 10 deduction categories (D1-D10). All require substantiation with supporting documents:
+- D1: Work-related car expenses
+- D2: Work-related travel expenses  
+- D3: Work-related clothing/laundry
+- D4: Work-related self-education
+- D5: Other work-related expenses
+- D6: Low-value pool deduction
+- D7: Interest deductions
+- D8: Dividend deductions
+- D9: Gifts or donations
+- D10: Cost of managing tax affairs
+
+Taxpayers submit scanned receipts, invoices, and other documents through the SSD-WRE pipeline to substantiate all these deduction claims. Taxation audit officers must review these submissions, extracting key fields like supplier names, ABNs, amounts, dates, and expense descriptions to verify the claims and map them to the correct D1-D10 category.
+
+Currently, this Information Extraction component uses LayoutLM to automatically extract these fields. However, LayoutLM's accuracy and reliability have become critical bottlenecks in the substantiation process. Today's PoC explores whether modern Vision Transformers can replace LayoutLM to improve extraction accuracy, reduce manual review workload, and ensure compliant substantiation processing.
 
 ---
 
@@ -30,7 +46,33 @@
 
 ---
 
-### Slide 3: Industry-Wide Evolution of Document AI
+### Slide 3: ATO Work-Related Expense Substantiation Context
+**The Information Extraction Challenge**
+
+**Australian Tax Return Structure**:
+- Individual tax returns have 10 deduction categories (D1-D10)
+- SSD-WRE pipeline processes substantiation for **all deduction categories**
+- D1-D6: Work-related expenses (substantiation required if >$300)
+- D7-D10: Investment & other deductions (also require substantiation)
+- Supporting documents required: receipts, invoices, bank statements
+
+**Critical Fields for Extraction**:
+| Field | Purpose | D1-D10 Mapping |
+|-------|---------|----------------|
+| Supplier Name | Verify legitimate business | All categories |
+| ABN | Confirm registered entity | All categories |
+| Date | Match to tax year | All categories |
+| Amount | Verify claim amount | All categories |
+| Description | Categorize expense | Maps to D1-D10 |
+| GST Amount | Calculate claimable portion | All categories |
+
+**Current Challenge**: Manual review of thousands of documents per audit cycle
+
+**Notes**: The SSD-WRE pipeline must accurately extract these fields to enable efficient substantiation verification for all deduction categories (D1-D10). Errors or missing fields result in manual intervention, delays, and potential compliance issues. This is why investigating alternatives to LayoutLM's current limitations is critical.
+
+---
+
+### Slide 4: Industry-Wide Evolution of Document AI
 **How Document Understanding Technology Has Evolved Globally**
 
 **Industry Timeline** (Not ATO-specific):
@@ -51,7 +93,7 @@
 
 ---
 
-### Slide 4: LayoutLM - Current Production Standard
+### Slide 5: LayoutLM - Current Production Standard
 **What Most Organizations Use Today**
 
 **LayoutLM Architecture & Semantic Content Capture**:
@@ -90,7 +132,7 @@ Document Image
 
 ---
 
-### Slide 5: LayoutLM's Critical Limitations
+### Slide 6: LayoutLM's Critical Limitations
 **Why We Need to Move On**
 
 **Technical Limitations**:
@@ -111,7 +153,7 @@ Document Image
 
 ---
 
-### Slide 6: Vision Transformers - The Solution
+### Slide 7: Vision Transformers - The Solution
 **A Fundamentally Different Approach**
 
 ```mermaid
@@ -150,7 +192,7 @@ graph TB
 
 ---
 
-### Slide 7: How Vision Transformers Work
+### Slide 8: How Vision Transformers Work
 **The Architecture Breakdown**
 
 Key Components:
@@ -170,7 +212,7 @@ Attention(Q,K,V) = softmax(QK^T/√d_k)V
 
 ---
 
-### Slide 8: LayoutLM vs Vision Transformers
+### Slide 9: LayoutLM vs Vision Transformers
 **Head-to-Head Comparison**
 
 | Aspect | LayoutLM | Vision Transformers |
@@ -188,7 +230,7 @@ Attention(Q,K,V) = softmax(QK^T/√d_k)V
 
 ---
 
-### Slide 9: Self-Attention for Documents
+### Slide 10: Self-Attention for Documents
 **Why This Works So Well**
 
 ```mermaid
@@ -225,7 +267,7 @@ graph LR
 
 ---
 
-### Slide 10: Document Processing Pipeline Comparison
+### Slide 11: Document Processing Pipeline Comparison
 **LayoutLM vs Vision Transformers**
 
 ```mermaid
@@ -276,7 +318,7 @@ Image → Vision Transformer → Results
 
 ---
 
-### Slide 11: Case Study - Replacing LayoutLM
+### Slide 12: Case Study - Replacing LayoutLM
 **Our Production Implementation**
 
 **Context**: Organization using LayoutLM in production
@@ -295,7 +337,7 @@ Image → Vision Transformer → Results
 
 ---
 
-### Slide 12: Implementation Architecture
+### Slide 13: Implementation Architecture
 **From Complex to Simple**
 
 **LayoutLM Implementation** (Before):
@@ -325,7 +367,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 13: Performance Results
+### Slide 14: Performance Results
 **LayoutLM vs Vision Transformers**
 
 ![Project Results](presentation_diagrams/project_results.png)
@@ -344,7 +386,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 14: Production Insights
+### Slide 15: Production Insights
 **What We Learned**
 
 **Performance**:
@@ -365,7 +407,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 15: Future Opportunities
+### Slide 16: Future Opportunities
 **Where We Go From Here**
 
 **Near Term**:
@@ -387,7 +429,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 16: Technical Deep Dive (Optional)
+### Slide 17: Technical Deep Dive (Optional)
 **For the Technically Curious**
 
 **ViT Innovations**:
@@ -409,7 +451,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 17: Why Organizations Should Adopt ViTs
+### Slide 18: Why Organizations Should Adopt ViTs
 **The Compelling Case**
 
 **Immediate Benefits**:
@@ -433,7 +475,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 18: Key Takeaways
+### Slide 19: Key Takeaways
 **Moving Beyond LayoutLM**
 
 **LayoutLM Era (2020-2023)**:
@@ -456,7 +498,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 19: Implementation Support
+### Slide 20: Implementation Support
 **Resources to Get Started**
 
 **Available Today**:
@@ -482,7 +524,7 @@ python model_comparison.py compare
 
 ---
 
-### Slide 20: Q&A Session
+### Slide 21: Q&A Session
 **Your Questions** (10 minutes)
 
 **Suggested Discussion Topics**:
@@ -508,7 +550,7 @@ python model_comparison.py compare
 
 ---
 
-### Slide 21: References
+### Slide 22: References
 **Technical Papers and Resources**
 
 **LayoutLM Papers**:
