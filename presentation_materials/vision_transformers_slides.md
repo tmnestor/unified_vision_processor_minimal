@@ -30,21 +30,24 @@
 
 ---
 
-### Slide 3: The Evolution of Document AI
-**Timeline of Progress**
+### Slide 3: Industry-Wide Evolution of Document AI
+**How Document Understanding Technology Has Evolved Globally**
 
-Document Understanding Evolution:
+**Industry Timeline** (Not ATO-specific):
 - **Pre-2018**: OCR + Rule-based parsing
 - **2018-2020**: CNN-based document analysis  
 - **2020**: LayoutLM - First transformer for documents
 - **2021-2023**: LayoutLMv2, LayoutLMv3 iterations
 - **2023+**: Vision-Language Models (InternVL, Llama-Vision)
 
-**Current Reality**: Many organizations still using LayoutLM
+**Current Industry Reality**: 
+- Many organizations globally still use LayoutLM
+- Financial services, healthcare, government sectors affected
+- Document AI market experiencing rapid transformation
 
-**The Problem**: Performance has plateaued
+**The Universal Challenge**: LayoutLM performance has plateaued across all industries
 
-**Notes**: LayoutLM was revolutionary in 2020, but technology has advanced significantly. Vision-language models promise a fundamentally better approach.
+**Notes**: This evolution reflects global trends in Document AI technology. Organizations worldwide face similar challenges with LayoutLM's limitations, whether processing expense claims, medical records, or legal documents. The shift to Vision Transformers represents an industry-wide technological advancement.
 
 ---
 
