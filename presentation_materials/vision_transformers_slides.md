@@ -321,21 +321,20 @@ Image → Vision Transformer → Results
 ---
 
 ### Slide 12: Case Study - Replacing LayoutLM
-**Our Production Implementation**
+**Proof of Concept Experiment (to date)**
 
 **Context**: Organization using LayoutLM in production
-**Problem**: Accuracy plateaued at ~47%, high maintenance costs
+**Problem**: Accuracy plateaued, high maintenance costs
 **Solution**: Evaluate modern ViT replacements
 
 **Models Tested**:
 1. **InternVL3-2B**: Lightweight, efficient
 2. **Llama-3.2-Vision-11B**: Maximum accuracy
 
-**Test Set**: 26 fields from Australian documents
-- Invoices, receipts, bank statements
-- Same dataset used with LayoutLM
+**Test Set**: 26 fields from Synthetic Australian documents
+- Not production data - synthetic for controlled testing in AI Sandbox
 
-**Notes**: Direct comparison on production data - no cherry-picking.
+**Notes**: Direct comparison on production data in AAP 2.0 is the crucial next step.
 
 ---
 
