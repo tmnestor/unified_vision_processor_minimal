@@ -37,9 +37,26 @@ def test_presentation_code_corrected():
         config = ConfigManager(config_path)
         print("✓ ConfigManager created successfully")
         
+        # Set a specific model to use (internvl is lighter weight)
+        config.current_model_type = "internvl"
+        print(f"✓ Set model to: {config.current_model_type}")
+        
         # CORRECTED: Use SimpleExtractionManager instead of UnifiedProcessor
-        processor = SimpleExtractionManager(config)  # This would fail without actual models
-        print("✗ Would fail here without actual model files")
+        processor = SimpleExtractionManager(config)
+        print("✓ SimpleExtractionManager created successfully")
+        
+        # Test with an actual image if available
+        test_image = "evaluation_data/synthetic_invoice_001.png"
+        if Path(test_image).exists():
+            print(f"✓ Testing with image: {test_image}")
+            result = processor.process_document(test_image)
+            print(f"✓ Processing successful!")
+            print(f"  - Extracted {len(result.extracted_fields)} fields")
+            print(f"  - Processing time: {result.processing_time:.2f}s")
+            print(f"  - Confidence: {result.model_confidence}")
+        else:
+            print(f"⚠️  Test image not found: {test_image}")
+            print("   (This is expected for local testing)")
         
     except Exception as e:
         print(f"Expected error (no model files): {e}")
