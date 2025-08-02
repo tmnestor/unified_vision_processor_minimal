@@ -208,9 +208,7 @@ Key Components:
 **The Magic**: Each patch "sees" every other patch simultaneously
 
 **Mathematical Foundation**:
-```
-Attention(Q,K,V) = softmax(QK^T/√d_k)V
-```
+$$\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
 
 **Notes**: Unlike LayoutLM's sequential processing, ViTs process the entire document holistically.
 
@@ -583,9 +581,9 @@ python model_comparison.py compare
 **The Attention Formula Explained**
 
 Self-Attention Computation:
-1. **Linear Projections**: Q = XW_Q, K = XW_K, V = XW_V
-2. **Attention Scores**: A = softmax(QK^T/√d_k)
-3. **Weighted Values**: Output = AV
+1. **Linear Projections**: $Q = XW_Q$, $K = XW_K$, $V = XW_V$
+2. **Attention Scores**: $A = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)$
+3. **Weighted Values**: $\text{Output} = AV$
 
 Multi-Head Attention:
 - Parallel attention operations

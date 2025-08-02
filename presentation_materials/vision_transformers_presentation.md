@@ -174,9 +174,7 @@ num_patches = (image_size // patch_size) ** 2  # 196 patches
 ## 🎯 Key Components Explained
 
 ### Self-Attention Mechanism
-```
-Attention(Q, K, V) = softmax(QK^T / √d_k)V
-```
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
 - **Q (Query)**: What information am I looking for?
 - **K (Key)**: What information do I have?
 - **V (Value)**: The actual information content
@@ -467,21 +465,15 @@ Image → ViT + LM → Structured Fields
 
 ### Vision Transformer Equations
 **Patch Embedding**:
-```
-z_0 = [x_class; x_p^1E; x_p^2E; ...; x_p^NE] + E_pos
-```
+$$z_0 = [x_{\text{class}}; x_p^1E; x_p^2E; \ldots; x_p^NE] + E_{\text{pos}}$$
 
 **Multi-Head Attention**:
-```
-MSA(z) = [head_1; head_2; ...; head_h]W^O
-where head_i = Attention(zW_i^Q, zW_i^K, zW_i^V)
-```
+$$\text{MSA}(z) = [\text{head}_1; \text{head}_2; \ldots; \text{head}_h]W^O$$
+$$\text{where } \text{head}_i = \text{Attention}(zW_i^Q, zW_i^K, zW_i^V)$$
 
 **Transformer Block**:
-```
-z'_l = MSA(LN(z_{l-1})) + z_{l-1}
-z_l = MLP(LN(z'_l)) + z'_l
-```
+$$z'_l = \text{MSA}(\text{LN}(z_{l-1})) + z_{l-1}$$
+$$z_l = \text{MLP}(\text{LN}(z'_l)) + z'_l$$
 
 ### Model Configurations in Our Project
 **InternVL3-2B**:
