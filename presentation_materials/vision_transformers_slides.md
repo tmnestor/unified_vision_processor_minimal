@@ -465,22 +465,22 @@ def extract_fields(image):
 
 <div style="text-align: center;">
 <h4>Original Document</h4>
-<img src="presentation_diagrams/synthetic_invoice_014.png" alt="Original Document" style="width: 400px; height: auto; border: 1px solid #ccc; border-radius: 8px;">
+<img src="presentation_diagrams/synthetic_invoice_014.png" alt="Original Document" style="width: 250px; height: auto; border: 1px solid #ccc; border-radius: 8px;">
 </div>
 
 <div style="text-align: center;">
 <h4>InternVL3 Extraction</h4>
-<img src="presentation_diagrams/internvl_extraction.png" alt="InternVL3 Results" style="width: 400px; height: auto; border: 1px solid #ccc; border-radius: 8px;">
+<img src="presentation_diagrams/internvl_extraction.png" alt="InternVL3 Results" style="width: 250px; height: auto; border: 1px solid #ccc; border-radius: 8px;">
 </div>
 
 <div style="text-align: center;">
 <h4>Original Document</h4>
-<img src="presentation_diagrams/synthetic_invoice_014.png" alt="Original Document" style="width: 400px; height: auto; border: 1px solid #ccc; border-radius: 8px;">
+<img src="presentation_diagrams/synthetic_invoice_014.png" alt="Original Document" style="width: 250px; height: auto; border: 1px solid #ccc; border-radius: 8px;">
 </div>
 
 <div style="text-align: center;">
 <h4>Llama-3.2-Vision Extraction</h4>
-<img src="presentation_diagrams/llama_extraction.png" alt="Llama Results" style="width: 400px; height: auto; border: 1px solid #ccc; border-radius: 8px;">
+<img src="presentation_diagrams/llama_extraction.png" alt="Llama Results" style="width: 250px; height: auto; border: 1px solid #ccc; border-radius: 8px;">
 </div>
 
 </div>
