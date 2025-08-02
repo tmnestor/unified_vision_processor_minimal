@@ -458,7 +458,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 16: Live Extraction Comparison
+### Slide 16: Extraction Comparison
 **Real Document Processing Results**
 
 <table style="width: 100%; border-collapse: collapse;">
