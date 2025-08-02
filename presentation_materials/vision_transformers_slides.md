@@ -34,8 +34,8 @@
 
 ---
 
-### Slide 3: ATO Work-Related Expense Substantiation Context
-**The Information Extraction Challenge**
+### Slide 3: Understanding the Challenge
+**What Documents We Process and Why It Matters**
 
 **Australian Tax Return Deductions Section** (Paper Form - Historical Reference):
 ![Australian Tax Return Deductions](presentation_diagrams/Deductions_TT24.png)
@@ -70,7 +70,9 @@
 
 **Current Challenge**: Manual review of thousands of documents per audit cycle
 
-**Notes**: This slide shows the deductions section from a historical paper tax return form to illustrate the D1-D10 structure that remains consistent in modern digital returns. The SSD-WRE pipeline must accurately extract key fields from supporting documents regardless of how taxpayers submit their returns today. Notice how D1-D6 are specifically work-related expenses, while D7-D10 cover investment and other deductions. The substantiation requirements and field extraction challenges remain the same whether taxpayers use paper forms, online lodgment, or tax agents - all require the same supporting documentation.
+**Notes**: Now let's get specific about what we're processing. This visual shows the actual tax return deductions structure - these are the categories taxpayers claim and must substantiate with documents. Each category (D1-D10) requires supporting evidence: receipts, invoices, bank statements. 
+
+**The Scale**: Thousands of documents daily across all categories. **The Challenge**: Every document needs accurate field extraction - supplier names, ABNs, amounts, dates - to verify claims and categorize them correctly. **The Impact**: Manual processing creates delays and compliance risks. This is exactly why automated information extraction is critical to the substantiation pipeline.
 
 ---
 
