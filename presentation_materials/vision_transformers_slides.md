@@ -247,16 +247,17 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 
 ```mermaid
 graph LR
-    subgraph "Self-Attention for Document Understanding"
-        P1[Patch 1<br/>Header] -.->|0.9| P5[Patch 5<br/>Total]
-        P2[Patch 2<br/>Items] -.->|0.7| P5
-        P3[Patch 3<br/>Prices] -.->|0.8| P5
-        P4[Patch 4<br/>Tax] -.->|0.6| P5
-        P5 -.->|0.3| P6[Patch 6<br/>Footer]
+    subgraph "Self-Attention: Hyatt Hotels Invoice"
+        P1[Hyatt Hotels<br/>Header] -.->|0.8| P5[TOTAL<br/>$31.33]
+        P2[Line Items<br/>Milk, Apples, Beef] -.->|0.9| P5
+        P3[Prices<br/>$4.80, $11.88...] -.->|0.9| P5
+        P4[GST 10%<br/>$2.85] -.->|0.7| P5
+        P5 -.->|0.4| P6[Payment: VISA<br/>Account: 93351576]
         
-        P1 -.->|0.2| P2
-        P2 -.->|0.9| P3
-        P3 -.->|0.7| P4
+        P1 -.->|0.3| P7[Invoice #INV-84875<br/>Date: 01/07/2025]
+        P2 -.->|0.8| P3
+        P4 -.->|0.6| P3
+        P7 -.->|0.5| P1
     end
     
     style P1 fill:#ffb6c1
@@ -265,6 +266,7 @@ graph LR
     style P4 fill:#dda0dd
     style P5 fill:#ffd700
     style P6 fill:#f0e68c
+    style P7 fill:#d8bfd8
 ```
 
 **Document-Specific Benefits**:
@@ -273,7 +275,7 @@ graph LR
 - Handles multi-column layouts
 - Processes logos and graphics
 
-**Real Example**: Invoice total at bottom links to line items at top - automatically
+**Real Example**: Hyatt Hotels invoice - $31.33 total automatically links to line items (Milk, Apples, Beef) and GST calculation
 
 <!-- Speaker Notes: Attention mechanisms naturally model document structure. Each patch can attend to every other patch, creating global understanding of relationships. -->
 
