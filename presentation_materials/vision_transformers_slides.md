@@ -116,7 +116,7 @@ Speaker Notes: This visual shows the actual tax return deductions structure. Eac
 
 ---
 
-### Slide 3a: Critical Extraction Fields
+### Slide 4: Critical Extraction Fields
 
 | Field | Purpose | Impact |
 |-------|---------|--------|
@@ -132,7 +132,7 @@ Speaker Notes: This visual shows the actual tax return deductions structure. Eac
 
 ---
 
-### Slide 4: Industry Evolution of Document AI
+### Slide 5: Industry Evolution of Document AI
 
 **Timeline**:
 - **Pre-2018**: OCR + Rules
@@ -289,7 +289,7 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 
 ---
 
-### Slide 15: Performance Results
+### Slide 14: Performance Results
 
 ![Project Results](presentation_diagrams/project_results.png)
 
@@ -305,7 +305,7 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 
 <!-- _class: lead -->
 
-### Slide 16: From Prompt to Extraction - Input
+### Slide 15: From Prompt to Extraction - Input
 **Complete Processing Pipeline Demonstration**
 
 ![Extraction Prompt](presentation_diagrams/extraction_prompt.png)
@@ -313,7 +313,7 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 
 ---
 
-### Slide 16a: From Prompt to Extraction - Results
+### Slide 16: From Prompt to Extraction - Results
 **Model Output Comparison**
 
 ![Llama-3.2-Vision Output](presentation_diagrams/llama_extraction.png)
@@ -350,7 +350,7 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 
 ---
 
-### Slide 23: Key References
+### Slide 18: Key References
 
 **Foundation Papers**:
 1. Dosovitskiy et al. (2020) "An Image is Worth 16x16 Words" - ICLR 2021
