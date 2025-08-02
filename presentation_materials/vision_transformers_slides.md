@@ -91,7 +91,11 @@
 - Financial services, healthcare, government sectors affected
 - Document AI market experiencing rapid transformation
 
-**The Universal Challenge**: LayoutLM performance has plateaued across all industries
+**Documented LayoutLM Limitations** (Research-Based):
+- **OCR Dependency**: "LayoutLM makes use of the Tesseract library for text extraction, which is not very accurate" (Nitor Infotech, 2024)
+- **Computational Intensity**: "Training and fine-tuning LayoutLM models can be computationally intensive and require significant resources" (UBIAI, 2024)
+- **Domain Specificity**: "May require additional fine-tuning and customization for domain-specific applications" (Medium, 2024)
+- **Complex Layout Handling**: "Traditional OCR systems encounter difficulties with complex layouts, multi-modal content" (DocuClipper, 2024)
 
 **Notes**: This evolution reflects global trends in Document AI technology. Organizations worldwide face similar challenges with LayoutLM's limitations, whether processing expense claims, medical records, or legal documents. The shift to Vision Transformers represents an industry-wide technological advancement.
 
@@ -638,10 +642,15 @@ python model_comparison.py compare
 8. Chen et al. (2024) "InternVL" - arXiv:2312.14238
 9. Meta AI (2024) "Llama 3.2 Multimodal" - Technical Report
 
-**Benchmarks**:
-10. FUNSD, CORD, DocVQA datasets
+**LayoutLM Limitations Analysis**:
+10. UBIAI (2024) "The Role of LayoutLMv3 in Document Layout Understanding" - Industry Analysis
+11. Nitor Infotech (2024) "How Can LayoutLM Transform Text Extraction" - Technical Review
+12. DocuClipper (2024) "9 Biggest OCR Limitations And How To Overcome Them" - Industry Report
 
-**Notes**: All papers available in our shared research folder.
+**Benchmarks**:
+13. FUNSD, CORD, DocVQA datasets
+
+**Notes**: All papers and industry reports available in our shared research folder.
 
 ---
 
