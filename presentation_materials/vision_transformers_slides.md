@@ -174,7 +174,19 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 
 ---
 
-### Slide 7: Vision Transformers - The Solution
+### Slide 7: Document Processing Pipeline Comparison
+
+![Document Processing Comparison](presentation_diagrams/document_processing_comparison.png)
+
+**Key Comparison**:
+- **LayoutLM**: 6-stage pipeline, ~15% failure rate
+- **Vision Transformers**: 2-stage pipeline, <1% failure rate
+
+<!-- Speaker Notes: Simplicity isn't just elegant - it's more reliable and maintainable. The LayoutLM pipeline has multiple failure points while Vision Transformers process everything end-to-end. -->
+
+---
+
+### Slide 8: Vision Transformers - The Solution
 
 ![Vision Transformer Architecture](presentation_diagrams/vit_architecture.png)
 
@@ -193,7 +205,47 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 
 ---
 
-### Slide 8: How Vision Transformers Work
+<!-- _class: lead -->
+
+### Slide 9: From Prompt to Extraction - Input
+**Complete Processing Pipeline Demonstration**
+
+![Extraction Prompt](presentation_diagrams/extraction_prompt.png)
+![Original Document](presentation_diagrams/synthetic_invoice_014.png)
+
+---
+
+### Slide 10: From Prompt to Extraction - Results
+**Model Output Comparison**
+
+![Llama-3.2-Vision Output](presentation_diagrams/llama_extraction.png)
+![InternVL3 Output](presentation_diagrams/internvl_extraction.png)
+
+**Key Observations**:
+- Both models successfully extract structured data
+- Similar field accuracy (~59% for both models)
+- Clean KEY: VALUE format output
+- Consistent performance across document types
+
+**Notes**: Side-by-side comparison shows both models deliver production-ready results with slightly different strengths.
+
+---
+
+### Slide 11: Performance Results
+
+![Project Results](presentation_diagrams/project_results.png)
+
+**Vision Transformers vs LayoutLM**:
+- ✅ **100% Success Rate** (vs ??% LayoutLM)
+- ✅ **~59% Field Accuracy** (25% improvement)
+- ✅ **Single Pipeline** (vs 3+ steps)
+- ✅ **2.6GB Memory** (InternVL3)
+
+<!-- Speaker Notes: Key insight - 25% accuracy improvement with 100% reliability. InternVL3 achieves better results than LayoutLM while using 67% less memory. Processing time is acceptable for production use. -->
+
+---
+
+### Slide 12: How Vision Transformers Work
 
 **Key Components**:
 1. **Patch Embedding**: Image → 16x16 patches
@@ -210,7 +262,7 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 
 ---
 
-### Slide 9: Semantic Capture Comparison
+### Slide 13: Semantic Capture Comparison
 
 | Aspect | LayoutLM | Vision Transformer |
 |--------|----------|-------------------|
@@ -228,21 +280,7 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 
 ---
 
-### Slide 10: Semantic Information Flow
-
-![LayoutLM vs ViT Architecture](presentation_diagrams/layoutlm_vs_vit_architecture.png)
-
-**Key Differences**:
-- **LayoutLM**: Fragmented processing → information loss
-- **Vision Transformers**: Unified processing → complete understanding
-
-<!-- 
-Speaker Notes: The architecture determines semantic capture quality. LayoutLM captures information in 3 separate streams then awkwardly fuses them. Vision Transformers capture information holistically from the start. Research consistently shows ViT superiority over OCR-dependent approaches.
--->
-
----
-
-### Slide 11: Self-Attention for Documents
+### Slide 14: Self-Attention for Documents
 **Why This Works So Well**
 
 ```mermaid
@@ -281,7 +319,21 @@ graph LR
 
 ---
 
-### Slide 12: End-to-End Document Understanding
+### Slide 15: Semantic Information Flow
+
+![LayoutLM vs ViT Architecture](presentation_diagrams/layoutlm_vs_vit_architecture.png)
+
+**Key Differences**:
+- **LayoutLM**: Fragmented processing → information loss
+- **Vision Transformers**: Unified processing → complete understanding
+
+<!-- 
+Speaker Notes: The architecture determines semantic capture quality. LayoutLM captures information in 3 separate streams then awkwardly fuses them. Vision Transformers capture information holistically from the start. Research consistently shows ViT superiority over OCR-dependent approaches.
+-->
+
+---
+
+### Slide 16: End-to-End Document Understanding
 **From Patches to Extracted Information**
 
 ![Document Understanding Flow](presentation_diagrams/mermaid_exports/Document_Understanding_Flow.png)
@@ -297,19 +349,7 @@ graph LR
 
 ---
 
-### Slide 13: Document Processing Pipeline Comparison
-
-![Document Processing Comparison](presentation_diagrams/document_processing_comparison.png)
-
-**Key Comparison**:
-- **LayoutLM**: 6-stage pipeline, ~15% failure rate
-- **Vision Transformers**: 2-stage pipeline, <1% failure rate
-
-<!-- Speaker Notes: Simplicity isn't just elegant - it's more reliable and maintainable. The LayoutLM pipeline has multiple failure points while Vision Transformers process everything end-to-end. -->
-
----
-
-### Slide 14: Case Study - Replacing LayoutLM
+### Slide 17: Case Study - Replacing LayoutLM
 **Proof of Concept Experiment (to date)**
 
 **Context**: Organization using LayoutLM in production
@@ -324,46 +364,6 @@ graph LR
 - Not production data - synthetic for controlled testing in AI Sandbox
 
 **Notes**: Direct comparison on production data in AAP 2.0 is the crucial next step.
-
----
-
-### Slide 15: Performance Results
-
-![Project Results](presentation_diagrams/project_results.png)
-
-**Vision Transformers vs LayoutLM**:
-- ✅ **100% Success Rate** (vs ??% LayoutLM)
-- ✅ **~59% Field Accuracy** (25% improvement)
-- ✅ **Single Pipeline** (vs 3+ steps)
-- ✅ **2.6GB Memory** (InternVL3)
-
-<!-- Speaker Notes: Key insight - 25% accuracy improvement with 100% reliability. InternVL3 achieves better results than LayoutLM while using 67% less memory. Processing time is acceptable for production use. -->
-
----
-
-<!-- _class: lead -->
-
-### Slide 16: From Prompt to Extraction - Input
-**Complete Processing Pipeline Demonstration**
-
-![Extraction Prompt](presentation_diagrams/extraction_prompt.png)
-![Original Document](presentation_diagrams/synthetic_invoice_014.png)
-
----
-
-### Slide 17: From Prompt to Extraction - Results
-**Model Output Comparison**
-
-![Llama-3.2-Vision Output](presentation_diagrams/llama_extraction.png)
-![InternVL3 Output](presentation_diagrams/internvl_extraction.png)
-
-**Key Observations**:
-- Both models successfully extract structured data
-- Similar field accuracy (~59% for both models)
-- Clean KEY: VALUE format output
-- Consistent performance across document types
-
-**Notes**: Side-by-side comparison shows both models deliver production-ready results with slightly different strengths.
 
 ---
 
@@ -404,4 +404,3 @@ graph LR
 7. Nitor Infotech (2024) "LayoutLM Text Extraction"
 
 <!-- Speaker Notes: Complete bibliography with 13 references available in shared research folder. Includes all LayoutLM versions, ViT foundations, comparison studies, and industry reports. -->
-
