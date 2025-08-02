@@ -60,14 +60,29 @@ Speaker Notes: This visual shows the actual tax return deductions structure. Eac
 
 <!-- Speaker Notes: These are the critical fields we must extract from every document. Manual processing of thousands of documents per audit cycle is unsustainable. -->
 
-### Slide 5: Industry Evolution of Document AI
+### Slide 5: Industry-Wide Evolution of Document AI
 
-**Timeline**:
-- **Pre-2018**: OCR + Rules
-- **2018-2020**: CNN-based analysis  
-- **2020**: LayoutLM v1 (R-CNN + OCR)
-- **2021-2023**: LayoutLM v2/v3 (image patches)
-- **2023+**: Vision-Language Models
+```mermaid
+gantt
+    title Industry-Wide Evolution of Document AI (Not ATO-specific)
+    dateFormat  YYYY
+    axisFormat  %Y
+    
+    section Pre-2018
+    OCR + Rule-based parsing    :done, pre2018, 2010, 2018
+    
+    section 2018-2020
+    CNN-based document analysis :done, cnn2018, 2018, 2020
+    
+    section 2020
+    LayoutLM First transformer  :done, layoutlm, 2020, 2021
+    
+    section 2021-2023
+    LayoutLMv2 LayoutLMv3      :done, layoutlm23, 2021, 2023
+    
+    section 2023+
+    Vision-Language Models      :active, vlm2023, 2023, 2025
+```
 
 **Current Reality**: 
 - Many organizations still use LayoutLM
