@@ -260,13 +260,13 @@ graph LR
         P7 -.->|0.5| P1
     end
     
-    style P1 fill:#ffb6c1
-    style P2 fill:#98fb98
-    style P3 fill:#87ceeb
-    style P4 fill:#dda0dd
-    style P5 fill:#ffd700
-    style P6 fill:#f0e68c
-    style P7 fill:#d8bfd8
+    style P1 fill:#2563eb,color:#fff
+    style P2 fill:#059669,color:#fff
+    style P3 fill:#0891b2,color:#fff
+    style P4 fill:#7c3aed,color:#fff
+    style P5 fill:#dc2626,color:#fff
+    style P6 fill:#ea580c,color:#fff
+    style P7 fill:#64748b,color:#fff
 ```
 
 **Document-Specific Benefits**:
