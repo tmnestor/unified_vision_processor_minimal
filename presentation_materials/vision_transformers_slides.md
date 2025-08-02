@@ -17,15 +17,19 @@
 **Notes**: Welcome everyone. Let me first explain the business context. 
 
 In the Australian taxation system, individual tax returns have 10 deduction categories (D1-D10). All require substantiation with supporting documents:
+
+**Work-Related Expenses (D1-D6):**
 - D1: Work-related car expenses
-- D2: Work-related travel expenses  
-- D3: Work-related clothing/laundry
-- D4: Work-related self-education
+- D2: Work-related travel expenses
+- D3: Work-related clothing, laundry and dry-cleaning expenses
+- D4: Work-related self-education expenses
 - D5: Other work-related expenses
-- D6: Low-value pool deduction
-- D7: Interest deductions
-- D8: Dividend deductions
-- D9: Gifts or donations
+- D6: Low-value pool deduction (decline in value of low-cost assets)
+
+**Investment & Other Deductions (D7-D10):**
+- D7: Interest deductions (expenses from earning interest income)
+- D8: Dividend deductions (expenses from earning dividend income)
+- D9: Gifts or donations (to deductible gift recipients)
 - D10: Cost of managing tax affairs
 
 Taxpayers submit scanned receipts, invoices, and other documents through the SSD-WRE pipeline to substantiate all these deduction claims. Taxation audit officers must review these submissions, extracting key fields like supplier names, ABNs, amounts, dates, and expense descriptions to verify the claims and map them to the correct D1-D10 category.
@@ -52,11 +56,23 @@ Currently, this Information Extraction component uses LayoutLM to automatically 
 **Australian Tax Return Deductions Section**:
 ![Australian Tax Return Deductions](presentation_diagrams/Deductions_TT24.png)
 
-**Pipeline Scope**:
-- SSD-WRE pipeline processes substantiation for **all deduction categories (D1-D10)**
-- D1-D6: Work-related expenses (substantiation required if >$300)
-- D7-D10: Investment & other deductions (also require substantiation)
-- Supporting documents required: receipts, invoices, bank statements
+**Deduction Categories Structure**:
+
+**Work-Related Expenses (D1-D6):**
+- D1: Work-related car expenses
+- D2: Work-related travel expenses  
+- D3: Work-related clothing, laundry and dry-cleaning expenses
+- D4: Work-related self-education expenses
+- D5: Other work-related expenses
+- D6: Low-value pool deduction (decline in value of low-cost assets)
+
+**Investment & Other Deductions (D7-D10):**
+- D7: Interest deductions (expenses from earning interest income)
+- D8: Dividend deductions (expenses from earning dividend income)
+- D9: Gifts or donations (to deductible gift recipients)
+- D10: Cost of managing tax affairs
+
+**Pipeline Requirement**: Supporting documents required for **all categories**
 
 **Critical Fields for Extraction**:
 | Field | Purpose | D1-D10 Mapping |
