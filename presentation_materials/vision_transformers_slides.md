@@ -118,11 +118,21 @@ Document Image
                       Extracted Fields
 ```
 
-**Where Semantic Content Lives**:
-- **Text Semantics**: OCR output only - if OCR fails, meaning is lost
-- **Spatial Semantics**: Coordinate embeddings - requires perfect OCR alignment
-- **Visual Semantics**: Minimal - CNN features are shallow, not integrated
-- **Contextual Understanding**: Limited to text tokens + positions
+**How LayoutLM Captures Semantic Information**:
+- **Text Semantics**: 
+  - ❌ **Fragmented**: OCR extracts words as isolated tokens
+  - ❌ **Error-prone**: OCR failures = complete semantic loss
+  - ❌ **No visual context**: Text meaning divorced from visual appearance
+- **Spatial Semantics**: 
+  - ⚠️ **Coordinate-dependent**: 2D position embeddings require perfect OCR box alignment
+  - ⚠️ **Brittle**: Misaligned boxes break spatial understanding
+- **Visual Semantics**: 
+  - ❌ **Minimal**: Optional CNN features capture only basic visual patterns
+  - ❌ **Disconnected**: Visual features not integrated with text understanding
+  - ❌ **Shallow**: Cannot understand complex visual elements (handwriting, logos, stamps)
+- **Semantic Integration**: 
+  - ❌ **Post-hoc fusion**: Three separate streams awkwardly combined in transformer
+  - ❌ **Lossy process**: Semantic information lost at each pipeline stage
 
 **Key Components**:
 - External OCR (Tesseract, Azure) - captures text
@@ -184,13 +194,24 @@ graph TB
     style I fill:#eac4d5
 ```
 
-**Core Innovation**:
-- Divide image into patches (16x16 pixels)
-- Process patches like words in a sentence
-- Use self-attention for global understanding
-- **NO OCR REQUIRED**
+**How Vision Transformers Capture Semantic Information**:
 
-**Key Difference from LayoutLM**: Direct image → text, no intermediate steps
+**🔄 Unified Semantic Integration**:
+- **All semantics in one model**: Text, visual, and spatial understanding unified
+- **No information loss**: Every pixel contributes to understanding
+- **End-to-end learning**: Semantics emerge naturally from training
+
+**📍 Where Semantic Information Lives**:
+1. **Patch Embeddings**: Each 16x16 patch captures local visual+textual semantics
+2. **Position Embeddings**: Spatial relationships learned, not hard-coded
+3. **Self-Attention Layers**: Global semantic relationships discovered dynamically
+4. **Language Model Head**: Converts rich semantic understanding to structured text
+
+**✅ Key Advantages**:
+- **Holistic Understanding**: Sees text within visual context (handwriting, fonts, layouts)
+- **Robust to Errors**: No single point of failure like OCR
+- **Rich Visual Semantics**: Understands logos, stamps, signatures, tables
+- **Dynamic Relationships**: Learns field relationships from data, not rules
 
 **Notes**: This is the breakthrough - we skip OCR entirely and let the model learn to read.
 
@@ -214,25 +235,66 @@ $$\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$
 
 ---
 
-### Slide 9: LayoutLM vs Vision Transformers
-**Head-to-Head Comparison**
+### Slide 9: Semantic Information Capture Comparison
+**LayoutLM vs Vision Transformers: Where the Understanding Lives**
 
-| Aspect | LayoutLM | Vision Transformers |
-|--------|----------|-------------------|
-| **Input Requirements** | OCR text + boxes + image | Just the image |
-| **Pipeline Complexity** | 3+ stages | Single model |
-| **Failure Points** | Multiple (OCR, alignment) | None |
-| **Visual Understanding** | Limited | Complete |
-| **Maintenance** | High | Low |
-| **Accuracy Ceiling** | ~70% | 90%+ |
+| Semantic Type | LayoutLM Approach | Vision Transformer Approach |
+|---------------|------------------|----------------------------|
+| **Text Semantics** | ❌ OCR tokens (fragmented, error-prone) | ✅ Visual text understanding (contextual, robust) |
+| **Visual Semantics** | ❌ Optional CNN features (shallow, disconnected) | ✅ Deep visual understanding (integrated, rich) |
+| **Spatial Semantics** | ⚠️ Hard-coded coordinates (brittle alignment) | ✅ Learned spatial relationships (flexible, adaptive) |
+| **Contextual Semantics** | ❌ Post-hoc fusion (lossy, incomplete) | ✅ Unified representation (complete, coherent) |
+| **Integration Point** | Late fusion in transformer | Early fusion from patches |
+| **Semantic Loss** | High (each pipeline stage) | Minimal (end-to-end) |
 
-**Bottom Line**: ViTs eliminate every pain point of LayoutLM
+**The Key Difference**: 
+- **LayoutLM**: Semantic information **reconstructed** from fragments
+- **Vision Transformers**: Semantic information **naturally learned** from complete visual context
 
 **Notes**: This isn't an incremental improvement - it's a paradigm shift.
 
 ---
 
-### Slide 10: Self-Attention for Documents
+### Slide 10: Semantic Information Flow
+**How Understanding Emerges in Each Architecture**
+
+**LayoutLM Semantic Flow** (❌ **Fragmented**):
+```
+📄 Document Image
+    ↓ OCR (lossy)
+📝 Text Tokens + 📦 Bounding Boxes + 🖼️ CNN Features
+    ↓ Separate Processing
+🔀 Late Fusion in Transformer
+    ↓ Information Loss
+📊 Limited Understanding
+```
+
+**Vision Transformer Semantic Flow** (✅ **Unified**):
+```
+📄 Document Image
+    ↓ Patch Division (lossless)
+🧩 Visual Patches with Rich Semantics
+    ↓ Position Encoding
+🎯 Spatial-Visual-Textual Embeddings
+    ↓ Self-Attention (global integration)
+🧠 Deep Semantic Understanding
+    ↓ Language Model Head
+📊 Structured Output
+```
+
+**Semantic Capture Points**:
+- **LayoutLM**: Semantic information captured in 3 separate streams, then awkwardly fused
+- **Vision Transformers**: Semantic information captured holistically from the start
+
+**Published Evidence**: Recent research supports ViT superiority:
+- **Vision Grid Transformer (ICCV 2023)**: "VGT achieved the best results in most categories" compared to LayoutLMv3 on document layout analysis tasks
+- **Donut (ECCV 2022)**: OCR-free transformer "achieves state-of-the-art performances on various VDU tasks in terms of both speed and accuracy" vs. OCR-dependent approaches like LayoutLM
+
+**Notes**: The architecture determines the quality of semantic capture. ViTs preserve and integrate all semantic information from the beginning, while LayoutLM struggles to reconstruct meaning from fragments.
+
+---
+
+### Slide 11: Self-Attention for Documents
 **Why This Works So Well**
 
 ```mermaid
@@ -269,7 +331,7 @@ graph LR
 
 ---
 
-### Slide 11: Document Processing Pipeline Comparison
+### Slide 12: Document Processing Pipeline Comparison
 **LayoutLM vs Vision Transformers**
 
 ```mermaid
@@ -320,7 +382,7 @@ Image → Vision Transformer → Results
 
 ---
 
-### Slide 12: Case Study - Replacing LayoutLM
+### Slide 13: Case Study - Replacing LayoutLM
 **Proof of Concept Experiment (to date)**
 
 **Context**: Organization using LayoutLM in production
@@ -338,7 +400,7 @@ Image → Vision Transformer → Results
 
 ---
 
-### Slide 13: Implementation Architecture
+### Slide 14: Implementation Architecture
 **From Complex to Simple**
 
 **LayoutLM Implementation** (Before):
@@ -368,7 +430,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 14: Performance Results
+### Slide 15: Performance Results
 **LayoutLM vs Vision Transformers**
 
 ![Project Results](presentation_diagrams/project_results.png)
@@ -387,7 +449,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 15: Production Insights
+### Slide 16: Production Insights
 **What We Learned**
 
 **Performance**:
@@ -408,7 +470,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 16: Future Opportunities
+### Slide 17: Future Opportunities
 **Where We Go From Here**
 
 **Near Term**:
@@ -430,7 +492,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 17: Technical Deep Dive (Optional)
+### Slide 18: Technical Deep Dive (Optional)
 **For the Technically Curious**
 
 **ViT Innovations**:
@@ -452,7 +514,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 18: Why Organizations Should Adopt ViTs
+### Slide 19: Why Organizations Should Adopt ViTs
 **The Compelling Case**
 
 **Immediate Benefits**:
@@ -476,7 +538,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 19: Key Takeaways
+### Slide 20: Key Takeaways
 **Moving Beyond LayoutLM**
 
 **LayoutLM Era (2020-2023)**:
@@ -499,7 +561,7 @@ def extract_fields(image):
 
 ---
 
-### Slide 20: Implementation Support
+### Slide 21: Implementation Support
 **Resources to Get Started**
 
 **Available Today**:
@@ -525,7 +587,7 @@ python model_comparison.py compare
 
 ---
 
-### Slide 21: Q&A Session
+### Slide 22: Q&A Session
 **Your Questions** (10 minutes)
 
 **Suggested Discussion Topics**:
@@ -551,7 +613,7 @@ python model_comparison.py compare
 
 ---
 
-### Slide 22: References
+### Slide 23: References
 **Technical Papers and Resources**
 
 **LayoutLM Papers**:
@@ -563,12 +625,16 @@ python model_comparison.py compare
 4. Dosovitskiy et al. (2020) "An Image is Worth 16x16 Words" - ICLR 2021
 5. Touvron et al. (2021) "Training data-efficient image transformers" - ICML 2021
 
+**ViT vs LayoutLM Comparisons**:
+6. Kim et al. (2022) "OCR-free Document Understanding Transformer (Donut)" - ECCV 2022
+7. Da et al. (2023) "Vision Grid Transformer for Document Layout Analysis" - ICCV 2023
+
 **Our Models**:
-6. Chen et al. (2024) "InternVL" - arXiv:2312.14238
-7. Meta AI (2024) "Llama 3.2 Multimodal" - Technical Report
+8. Chen et al. (2024) "InternVL" - arXiv:2312.14238
+9. Meta AI (2024) "Llama 3.2 Multimodal" - Technical Report
 
 **Benchmarks**:
-8. FUNSD, CORD, DocVQA datasets
+10. FUNSD, CORD, DocVQA datasets
 
 **Notes**: All papers available in our shared research folder.
 
