@@ -264,7 +264,7 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 ### Slide 11: Self-Attention for Documents
 **Why This Works So Well**
 
-<img src="presentation_diagrams/mermaid_exports/Self_Attention_Mechanism.png" alt="Self-Attention Mechanism" style="max-height: 250px; max-width: 80%; object-fit: contain;">
+<img src="presentation_diagrams/mermaid_exports/Self_Attention_Mechanism.png" alt="Self-Attention Mechanism" style="max-height: 180px; max-width: 60%; object-fit: contain;">
 
 **Document-Specific Benefits**:
 - Links headers to values across page
