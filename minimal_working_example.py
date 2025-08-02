@@ -50,7 +50,7 @@ def test_presentation_code_corrected():
         if Path(test_image).exists():
             print(f"✓ Testing with image: {test_image}")
             result = processor.process_document(test_image)
-            print(f"✓ Processing successful!")
+            print("✓ Processing successful!")
             print(f"  - Extracted {len(result.extracted_fields)} fields")
             print(f"  - Processing time: {result.processing_time:.2f}s")
             print(f"  - Confidence: {result.model_confidence}")
