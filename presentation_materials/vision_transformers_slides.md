@@ -22,14 +22,15 @@
 ---
 
 ### Slide 2: Agenda
-**What We'll Cover Today** (40 minutes)
-1. **Current State**: LayoutLM and Its Limitations (10 min)
-2. **Vision Transformers**: The Next Generation (12 min)
-3. **Why ViTs Excel**: Technical Advantages (8 min)
-4. **Case Study**: Replacing LayoutLM in Production (10 min)
+**Our Journey Today** (40 minutes)
+
+1. **Understanding the Challenge**: What documents we process and why current technology is limiting us (10 min)
+2. **Current State**: LayoutLM's approach and its bottlenecks (10 min)  
+3. **The Alternative**: Vision Transformers and how they work differently (12 min)
+4. **Proof of Concept Results**: Head-to-head performance comparison (8 min)
 5. **Q&A Session** (10 min)
 
-**Notes**: We'll start by understanding why LayoutLM needs replacement, then explore whether Vision Transformers may provide a superior solution.
+**Notes**: We'll build understanding step by step - from the business context through to technical evidence. By the end, you'll have the information needed to evaluate this technology decision.
 
 ---
 
