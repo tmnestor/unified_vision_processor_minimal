@@ -153,25 +153,6 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 
 ---
 
-### Slide 5: LayoutLM v1 Architecture
-
-![LayoutLM vs ViT Architecture](presentation_diagrams/layoutlm_vs_vit_architecture.png)
-
-**Key Limitations** (LayoutLM v1):
-- ❌ OCR dependency (error cascade)
-- ❌ Fragmented processing (3 systems)
-- ❌ Limited visual understanding
-- ❌ Post-hoc fusion of features
-
-<!-- 
-Speaker Notes: LayoutLM fragments semantic understanding across three separate systems. OCR extracts words as isolated tokens - if OCR fails, everything fails. Visual features are minimal and disconnected from text. The three streams are awkwardly combined in the transformer, losing information at each stage. Rich visual semantics like logos, stamps, and handwriting are largely ignored.
-
-Technical Note: LayoutLM v1 specifically uses Region-based Convolutional Neural Networks (R-CNN) for visual feature extraction. R-CNNs are more sophisticated than basic CNNs, designed for object detection and region proposals, and better suited for document layout analysis. 
-
-IMPORTANT: Later versions (LayoutLMv2, LayoutLMv3) actually moved away from R-CNN and adopted image patches similar to Vision Transformers. However, most production systems still use LayoutLM v1, which is why we focus on its R-CNN-based limitations in this presentation.
--->
-
----
 
 ### Slide 6: LayoutLM v1's Critical Limitations
 
@@ -264,7 +245,7 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 ### Slide 11: Self-Attention for Documents
 **Why This Works So Well**
 
-<img src="presentation_diagrams/mermaid_exports/Self_Attention_Mechanism.png" alt="Self-Attention Mechanism" style="max-height: 180px; max-width: 60%; object-fit: contain;">
+<img src="presentation_diagrams/mermaid_exports/Self_Attention_Mechanism.png" alt="Self-Attention Mechanism" style="max-height: 120px; max-width: 40%; object-fit: contain; display: block; margin: 0 auto;">
 
 **Document-Specific Benefits**:
 - Links headers to values across page
