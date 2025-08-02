@@ -1,70 +1,6 @@
----
-marp: true
-theme: default
-paginate: true
-backgroundColor: #fff
-size: 16:9
-# PowerPoint-specific settings
-width: 1280
-height: 720
-style: |
-  section {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    font-size: 28px;
-    padding: 50px;
-  }
-  h1 {
-    color: #2563eb;
-    font-size: 42px;
-  }
-  h2 {
-    color: #1e40af;
-    font-size: 36px;
-  }
-  h3 {
-    color: #1e3a8a;
-    font-size: 32px;
-  }
-  table {
-    font-size: 20px;
-  }
-  code {
-    background-color: #f3f4f6;
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-size: 24px;
-  }
-  pre {
-    background-color: #1f2937;
-    color: #f9fafb;
-    font-size: 18px;
-  }
-  img {
-    background-color: transparent;
-    max-height: 300px;
-    max-width: 90%;
-    object-fit: contain;
-  }
-  ul, ol {
-    font-size: 24px;
-    line-height: 1.5;
-  }
-  p {
-    font-size: 24px;
-    line-height: 1.4;
-  }
-  /* Limit content height to prevent overflow */
-  section.slide {
-    overflow: hidden;
-  }
-footer: Vision Transformers | 2025
----
-
 # Vision Transformers in Information Extraction
 ## Moving Beyond LayoutLM to Modern Vision-Language Models
 ### 50-Minute Presentation (40 min + 10 min Q&A)
-
----
 
 ### Slide 1: Title Slide
 
@@ -83,8 +19,6 @@ Current Reality: This information extraction is currently automated using Layout
 Today's Question: Can modern Vision Transformers provide a better solution? This PoC presentation will show you the evidence and help inform our technology strategy moving forward.
 -->
 
----
-
 ### Slide 2: Agenda
 **Our Journey Today** (40 minutes)
 
@@ -97,8 +31,6 @@ Today's Question: Can modern Vision Transformers provide a better solution? This
 <!-- 
 Speaker Notes: We'll build understanding step by step - from the business context through to technical evidence. By the end, you'll have the information needed to evaluate this technology decision.
 -->
-
----
 
 ### Slide 3: Understanding the Challenge
 **What Documents We Process and Why It Matters**
@@ -114,8 +46,6 @@ Speaker Notes: We'll build understanding step by step - from the business contex
 Speaker Notes: This visual shows the actual tax return deductions structure. Each category (D1-D10) requires supporting evidence: receipts, invoices, bank statements. Every document needs accurate field extraction - supplier names, ABNs, amounts, dates - to verify claims and categorize them correctly.
 -->
 
----
-
 ### Slide 4: Critical Extraction Fields
 
 | Field | Purpose | Impact |
@@ -129,8 +59,6 @@ Speaker Notes: This visual shows the actual tax return deductions structure. Eac
 **Current Challenge**: Manual review creates delays and compliance risks
 
 <!-- Speaker Notes: These are the critical fields we must extract from every document. Manual processing of thousands of documents per audit cycle is unsustainable. -->
-
----
 
 ### Slide 5: Industry Evolution of Document AI
 
@@ -151,9 +79,6 @@ Speaker Notes: This evolution reflects global trends. Organizations worldwide fa
 Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-2023) adopted image patches similar to Vision Transformers. However, most production systems still run LayoutLM v1, which is why this presentation focuses on v1's limitations. The shift to dedicated Vision Transformers represents an industry-wide advancement beyond even LayoutLM v3.
 -->
 
----
-
-
 ### Slide 6: LayoutLM v1's Critical Limitations
 
 **Technical Issues** (v1 specific):
@@ -172,8 +97,6 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 
 <!-- Speaker Notes: These aren't minor issues - they're fundamental architectural limitations of LayoutLM v1 that prevent scaling and improvement. Note: Later versions (v2, v3) addressed some of these issues by adopting image patches, but most production systems still use v1. -->
 
----
-
 ### Slide 7: Document Processing Pipeline Comparison
 
 ![Document Processing Comparison](presentation_diagrams/document_processing_comparison.png)
@@ -183,8 +106,6 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 - **Vision Transformers**: 2-stage pipeline, <1% failure rate
 
 <!-- Speaker Notes: Simplicity isn't just elegant - it's more reliable and maintainable. The LayoutLM pipeline has multiple failure points while Vision Transformers process everything end-to-end. -->
-
----
 
 ### Slide 8: Vision Transformers - The Solution
 
@@ -203,17 +124,11 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 Speaker Notes: The original ViT breakthrough enabled all modern vision-language models. Key innovation: treats image patches like text tokens, applying transformers directly. All semantics (text, visual, spatial) are unified in one model with no information loss. Modern adaptations like InternVL3 and Llama-3.2-Vision build on this foundation for document understanding.
 -->
 
----
-
-<!-- _class: lead -->
-
 ### Slide 9: From Prompt to Extraction - Input
 **Complete Processing Pipeline Demonstration**
 
 ![Extraction Prompt](presentation_diagrams/extraction_prompt.png)
 ![Original Document](presentation_diagrams/synthetic_invoice_014.png)
-
----
 
 ### Slide 10: From Prompt to Extraction - Results
 **Model Output Comparison**
@@ -229,8 +144,6 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 
 **Notes**: Side-by-side comparison shows both models deliver production-ready results with slightly different strengths.
 
----
-
 ### Slide 11: Performance Results
 
 ![Project Results](presentation_diagrams/project_results.png)
@@ -242,8 +155,6 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 - ✅ **2.6GB Memory** (InternVL3)
 
 <!-- Speaker Notes: Key insight - 25% accuracy improvement with 100% reliability. InternVL3 achieves better results than LayoutLM while using 67% less memory. Processing time is acceptable for production use. -->
-
----
 
 ### Slide 12: How Vision Transformers Work
 
@@ -260,8 +171,6 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 
 <!-- Speaker Notes: Unlike LayoutLM's sequential processing, ViTs process the entire document holistically. The self-attention mechanism allows every patch to interact with every other patch, creating global understanding. -->
 
----
-
 ### Slide 13: Semantic Capture Comparison
 
 | Aspect | LayoutLM | Vision Transformer |
@@ -277,8 +186,6 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 - ViT: Learns from complete context
 
 <!-- Speaker Notes: This isn't an incremental improvement - it's a paradigm shift. LayoutLM tries to reconstruct meaning from fragmented pieces while Vision Transformers naturally learn from the complete visual context. -->
-
----
 
 ### Slide 14: Self-Attention for Documents
 **Why This Works So Well**
@@ -317,8 +224,6 @@ graph LR
 
 <!-- Speaker Notes: Attention mechanisms naturally model document structure. Each patch can attend to every other patch, creating global understanding of relationships. -->
 
----
-
 ### Slide 15: Semantic Information Flow
 
 ![LayoutLM vs ViT Architecture](presentation_diagrams/layoutlm_vs_vit_architecture.png)
@@ -330,8 +235,6 @@ graph LR
 <!-- 
 Speaker Notes: The architecture determines semantic capture quality. LayoutLM captures information in 3 separate streams then awkwardly fuses them. Vision Transformers capture information holistically from the start. Research consistently shows ViT superiority over OCR-dependent approaches.
 -->
-
----
 
 ### Slide 16: End-to-End Document Understanding
 **From Patches to Extracted Information**
@@ -346,8 +249,6 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 **Real Example**: Hyatt Hotels invoice → Complete field extraction including ABN, items, prices, GST, and total
 
 <!-- Speaker Notes: This diagram shows the complete Vision Transformer pipeline processing our Hyatt Hotels invoice. Notice how the model progresses from analyzing individual patches (header, items, totals, payment) through multiple attention layers that build regional and then global understanding. The semantic understanding phase identifies relationships like "Subtotal + GST → Total", and finally generates all the structured output fields we need. -->
-
----
 
 ### Slide 17: Case Study - Replacing LayoutLM
 **Proof of Concept Experiment (to date)**
@@ -364,8 +265,6 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 - Not production data - synthetic for controlled testing in AI Sandbox
 
 **Notes**: Direct comparison on production data in AAP 2.0 is the crucial next step.
-
----
 
 ### Slide 18: Production Insights
 **What We Learned**
@@ -385,8 +284,6 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 - Robust to image quality issues
 
 **Notes**: Smaller ViT models can match or exceed larger ones for specific tasks.
-
----
 
 ### Slide 19: Key References
 
