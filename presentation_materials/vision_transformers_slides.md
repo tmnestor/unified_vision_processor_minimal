@@ -135,8 +135,8 @@ Speaker Notes: This visual shows the actual tax return deductions structure. Eac
 **Timeline**:
 - **Pre-2018**: OCR + Rules
 - **2018-2020**: CNN-based analysis  
-- **2020**: LayoutLM emerges
-- **2021-2023**: LayoutLM iterations
+- **2020**: LayoutLM v1 (R-CNN + OCR)
+- **2021-2023**: LayoutLM v2/v3 (image patches)
 - **2023+**: Vision-Language Models
 
 **Current Reality**: 
@@ -144,16 +144,18 @@ Speaker Notes: This visual shows the actual tax return deductions structure. Eac
 - Document AI market transforming rapidly
 
 <!-- 
-Speaker Notes: This evolution reflects global trends. Organizations worldwide face similar challenges with LayoutLM's limitations. Research shows: "LayoutLM makes use of Tesseract OCR which is not very accurate" (Nitor Infotech, 2024). "Training LayoutLM can be computationally intensive" (UBIAI, 2024). The shift to Vision Transformers represents an industry-wide advancement.
+Speaker Notes: This evolution reflects global trends. Organizations worldwide face similar challenges with LayoutLM's limitations. Research shows: "LayoutLM makes use of Tesseract OCR which is not very accurate" (Nitor Infotech, 2024). "Training LayoutLM can be computationally intensive" (UBIAI, 2024). 
+
+Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-2023) adopted image patches similar to Vision Transformers. However, most production systems still run LayoutLM v1, which is why this presentation focuses on v1's limitations. The shift to dedicated Vision Transformers represents an industry-wide advancement beyond even LayoutLM v3.
 -->
 
 ---
 
-### Slide 5: LayoutLM Architecture
+### Slide 5: LayoutLM v1 Architecture
 
 ![LayoutLM vs ViT Architecture](presentation_diagrams/layoutlm_vs_vit_architecture.png)
 
-**Key Limitations**:
+**Key Limitations** (LayoutLM v1):
 - ❌ OCR dependency (error cascade)
 - ❌ Fragmented processing (3 systems)
 - ❌ Limited visual understanding
@@ -161,13 +163,17 @@ Speaker Notes: This evolution reflects global trends. Organizations worldwide fa
 
 <!-- 
 Speaker Notes: LayoutLM fragments semantic understanding across three separate systems. OCR extracts words as isolated tokens - if OCR fails, everything fails. Visual features are minimal and disconnected from text. The three streams are awkwardly combined in the transformer, losing information at each stage. Rich visual semantics like logos, stamps, and handwriting are largely ignored.
+
+Technical Note: LayoutLM v1 specifically uses Region-based Convolutional Neural Networks (R-CNN) for visual feature extraction. R-CNNs are more sophisticated than basic CNNs, designed for object detection and region proposals, and better suited for document layout analysis. 
+
+IMPORTANT: Later versions (LayoutLMv2, LayoutLMv3) actually moved away from R-CNN and adopted image patches similar to Vision Transformers. However, most production systems still use LayoutLM v1, which is why we focus on its R-CNN-based limitations in this presentation.
 -->
 
 ---
 
-### Slide 6: LayoutLM's Critical Limitations
+### Slide 6: LayoutLM v1's Critical Limitations
 
-**Technical Issues**:
+**Technical Issues** (v1 specific):
 1. **OCR Dependency**: Failures cascade
 2. **Complex Pipeline**: 3+ models to maintain
 3. **Limited Vision**: Text-focused only
@@ -181,7 +187,7 @@ Speaker Notes: LayoutLM fragments semantic understanding across three separate s
 
 **Example**: Invoice with logo → OCR fails → Extraction fails
 
-<!-- Speaker Notes: These aren't minor issues - they're fundamental architectural limitations that prevent scaling and improvement. -->
+<!-- Speaker Notes: These aren't minor issues - they're fundamental architectural limitations of LayoutLM v1 that prevent scaling and improvement. Note: Later versions (v2, v3) addressed some of these issues by adopting image patches, but most production systems still use v1. -->
 
 ---
 
@@ -263,7 +269,7 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 ### Slide 11: Self-Attention for Documents
 **Why This Works So Well**
 
-![Self-Attention Mechanism](presentation_diagrams/attention_mechanism.png)
+![Self-Attention Mechanism](presentation_diagrams/mermaid_exports/Self_Attention_Mechanism.png)
 
 **Document-Specific Benefits**:
 - Links headers to values across page

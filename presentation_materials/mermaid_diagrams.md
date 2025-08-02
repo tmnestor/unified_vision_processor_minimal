@@ -34,7 +34,7 @@ graph TB
 graph TB
     subgraph "LayoutLM Pipeline"
         L1[Document Image] --> L2[OCR Engine]
-        L1 --> L3[CNN Features]
+        L1 --> L3[R-CNN Features]
         L1 --> L4[Layout Coordinates]
         L2 --> L5[Text + Boxes]
         L3 --> L6[Image Features]
@@ -169,6 +169,170 @@ graph TB
     style M4 fill:#90ee90
     style M6 fill:#90ee90
     style M8 fill:#90ee90
+```
+
+## 7. Vision Transformer Detailed Pipeline
+
+```mermaid
+graph TD
+    subgraph "Input Processing"
+        A[Document Image<br/>448x448] --> B[Patch Division<br/>32x32 patches]
+        B --> C[14x14 patches<br/>each 32x32 pixels]
+        C --> D[Flatten to<br/>196 patch vectors]
+    end
+    
+    subgraph "Embedding Layer"
+        D --> E[Linear Projection<br/>768-dim embeddings]
+        E --> F[Add Positional<br/>Embeddings]
+        F --> G[Add [CLS] Token]
+    end
+    
+    subgraph "Transformer Blocks (x12)"
+        G --> H[Multi-Head<br/>Self-Attention]
+        H --> I[Add & Norm]
+        I --> J[Feed Forward<br/>Network]
+        J --> K[Add & Norm]
+        K --> L[Next Block]
+    end
+    
+    subgraph "Language Model Head"
+        L --> M[Vision Encoder<br/>Output]
+        M --> N[Language Model<br/>Decoder]
+        N --> O[Text Generation<br/>KEY: VALUE]
+    end
+    
+    style A fill:#e8f4fd
+    style E fill:#b8e0d2
+    style F fill:#b8e0d2
+    style H fill:#ffd700
+    style J fill:#98fb98
+    style N fill:#dda0dd
+    style O fill:#eac4d5
+```
+
+## 8. Image Patch Processing Detail
+
+```mermaid
+graph LR
+    subgraph "Single Document Patch Processing"
+        P1[Patch: Header<br/>32x32 pixels] --> P2[Flatten:<br/>3072 values]
+        P2 --> P3[Linear Layer:<br/>768 dims]
+        P3 --> P4[+ Position<br/>Embedding]
+        P4 --> P5[Patch Token<br/>Ready for Attention]
+    end
+    
+    subgraph "Attention Mechanism"
+        P5 --> A1[Query Q]
+        P5 --> A2[Key K] 
+        P5 --> A3[Value V]
+        A1 --> A4[Attention<br/>Weights]
+        A2 --> A4
+        A4 --> A5[Weighted<br/>Values]
+        A3 --> A5
+        A5 --> A6[Output<br/>Representation]
+    end
+    
+    subgraph "Global Context"
+        A6 --> G1[Attend to<br/>ALL patches]
+        G1 --> G2[Header ↔ Total<br/>Items ↔ Prices<br/>Logo ↔ Company]
+        G2 --> G3[Rich Context<br/>Understanding]
+    end
+    
+    style P1 fill:#ffb6c1
+    style P3 fill:#b8e0d2
+    style A4 fill:#ffd700
+    style G2 fill:#98fb98
+    style G3 fill:#eac4d5
+```
+
+## 9. Multi-Head Attention Detail
+
+```mermaid
+graph TB
+    subgraph "Multi-Head Self-Attention (8 heads)"
+        I[Input Patches<br/>196 x 768] --> Q[Query Matrix<br/>Q = X · W_q]
+        I --> K[Key Matrix<br/>K = X · W_k]
+        I --> V[Value Matrix<br/>V = X · W_v]
+        
+        Q --> H1[Head 1<br/>Q₁K₁ᵀV₁]
+        Q --> H2[Head 2<br/>Q₂K₂ᵀV₂]
+        Q --> H3[Head 3<br/>Q₃K₃ᵀV₃]
+        Q --> H8[... Head 8<br/>Q₈K₈ᵀV₈]
+        
+        K --> H1
+        K --> H2  
+        K --> H3
+        K --> H8
+        
+        V --> H1
+        V --> H2
+        V --> H3
+        V --> H8
+        
+        H1 --> C[Concatenate<br/>All Heads]
+        H2 --> C
+        H3 --> C
+        H8 --> C
+        
+        C --> O[Output Projection<br/>W_o]
+        O --> R[Final Output<br/>196 x 768]
+    end
+    
+    style I fill:#e8f4fd
+    style Q fill:#b8e0d2
+    style K fill:#b8e0d2  
+    style V fill:#b8e0d2
+    style H1 fill:#ffd700
+    style H2 fill:#ffd700
+    style H3 fill:#ffd700
+    style H8 fill:#ffd700
+    style C fill:#98fb98
+    style R fill:#eac4d5
+```
+
+## 10. Document Understanding Flow
+
+```mermaid
+graph LR
+    subgraph "Document Patch Analysis"
+        D1[Invoice Header<br/>Patch 1-20] --> A1[Attention Layer 1:<br/>Local features]
+        D2[Line Items<br/>Patch 21-80] --> A1
+        D3[Total Section<br/>Patch 81-120] --> A1
+        D4[Footer Info<br/>Patch 121-196] --> A1
+        
+        A1 --> A2[Attention Layer 6:<br/>Regional relationships]
+        A2 --> A3[Attention Layer 12:<br/>Global understanding]
+    end
+    
+    subgraph "Semantic Understanding"
+        A3 --> S1[Header ↔ Company Info]
+        A3 --> S2[Items ↔ Quantities]
+        A3 --> S3[Prices ↔ Total]
+        A3 --> S4[Date ↔ Due Date]
+        
+        S1 --> LM[Language Model<br/>Generation]
+        S2 --> LM
+        S3 --> LM
+        S4 --> LM
+    end
+    
+    subgraph "Output Generation"
+        LM --> O1[SUPPLIER: Hyatt Hotels]
+        LM --> O2[TOTAL: $521.21]
+        LM --> O3[GST: $47.38]
+        LM --> O4[INVOICE_DATE: 2024-03-15]
+    end
+    
+    style D1 fill:#ffb6c1
+    style D2 fill:#98fb98
+    style D3 fill:#87ceeb
+    style D4 fill:#dda0dd
+    style A3 fill:#ffd700
+    style LM fill:#eac4d5
+    style O1 fill:#f0e68c
+    style O2 fill:#f0e68c
+    style O3 fill:#f0e68c
+    style O4 fill:#f0e68c
 ```
 
 ## Usage Notes
