@@ -628,21 +628,17 @@ python model_comparison.py compare
 **LayoutLM Papers**:
 
 1. Xu et al. (2020) "LayoutLM" - KDD 2020
-
 2. Xu et al. (2021) "LayoutLMv2" - ACL 2021
-
 3. Huang et al. (2022) "LayoutLMv3" - ACM MM 2022
 
 **Vision Transformer Foundations**:
 
 4. Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., ... & Houlsby, N. (2020). "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale." *ICLR 2021*. [arXiv:2010.11929](https://arxiv.org/abs/2010.11929)
-
 5. Touvron et al. (2021) "Training data-efficient image transformers" - ICML 2021
 
 **ViT vs LayoutLM Comparisons**:
 
 6. Kim et al. (2022) "OCR-free Document Understanding Transformer (Donut)" - ECCV 2022
-
 7. Da et al. (2023) "Vision Grid Transformer for Document Layout Analysis" - ICCV 2023
 
 **Our Models**:
@@ -653,9 +649,7 @@ python model_comparison.py compare
 
 **LayoutLM Limitations Analysis**:
 10. UBIAI (2024) "The Role of LayoutLMv3 in Document Layout Understanding" - Industry Analysis
-
 11. Nitor Infotech (2024) "How Can LayoutLM Transform Text Extraction" - Technical Review
-
 12. DocuClipper (2024) "9 Biggest OCR Limitations And How To Overcome Them" - Industry Report
 
 **Benchmarks**:
