@@ -23,100 +23,18 @@ def test_presentation_code_corrected():
         
         print("✓ Imports successful")
         
-        # Create a local config file with corrected paths for Mac
-        local_config_content = """
-# Simplified config for local testing
-defaults:
-  datasets_path: "./evaluation_data"
-  max_tokens: 512
-  quantization: true
-  output_dir: "./output" 
-  models: "internvl"
-  trust_remote_code: true
-  debug_mode: false
-
-# Token limits
-token_limits:
-  max_tokens: 512
-
-# Success criteria  
-min_fields_for_success: 5
-
-quality_thresholds:
-  excellent: 12
-  good: 8
-  fair: 5
-  poor: 0
-
-speed_thresholds:
-  very_fast: 15.0
-  fast: 25.0
-  moderate: 40.0
-
-# Memory config
-memory_config:
-  v100_limit_gb: 16.0
-  safety_margin: 0.85
-
-# Device configuration
-device_config:
-  memory_limit_gb: 16.0
-  device_maps:
-    internvl:
-      strategy: 'single_gpu'
-      device_map: {'': 0}
-      quantization_compatible: true
-    llama:
-      strategy: 'single_gpu'
-      device_map: {'': 0}
-      quantization_compatible: true
-
-# Model paths - these would need to be updated for actual model locations
-model_paths:
-  llama: "./models/Llama-3.2-11B-Vision-Instruct"  # Update this path
-  internvl: "./models/InternVL3-2B"                # Update this path
-
-# Prompts
-system_prompts:
-  internvl: "Extract data accurately from business documents."
-
-extraction_prompt: |
-  Extract data from this business document. Output ALL fields below with their exact keys. Use "N/A" if field is not visible or not present.
-  REQUIRED OUTPUT FORMAT (output ALL lines exactly as shown):
-  DOCUMENT_TYPE: [value or N/A]
-  SUPPLIER: [value or N/A]
-  ABN: [11-digit Australian Business Number or N/A]
-  PAYER_NAME: [value or N/A]
-  TOTAL: [total amount in dollars or N/A]
-
-image_processing:
-  max_image_size: 512
-  timeout_seconds: 30
-
-logging:
-  file_logging: false
-  file_log_level: "INFO"
-
-post_processing:
-  enabled: true
-  smart_mode: true
-  force_parsing: false
-
-repetition_control:
-  enabled: true
-  word_threshold: 0.15
-  phrase_threshold: 2
-  fallback_max_tokens: 512
-"""
+        # CORRECTED: Use the actual model_comparison.yaml file (works remotely)
+        config_path = "model_comparison.yaml"
         
-        # Write local config
-        config_path = Path("local_config.yaml")
-        config_path.write_text(local_config_content)
+        # Verify config file exists
+        if not Path(config_path).exists():
+            print(f"✗ Config file not found: {config_path}")
+            return
         
-        print(f"✓ Created local config: {config_path}")
+        print(f"✓ Using config: {config_path}")
         
         # CORRECTED: Initialize with proper config manager
-        config = ConfigManager(str(config_path))
+        config = ConfigManager(config_path)
         print("✓ ConfigManager created successfully")
         
         # CORRECTED: Use SimpleExtractionManager instead of UnifiedProcessor
