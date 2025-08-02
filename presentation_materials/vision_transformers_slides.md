@@ -11,13 +11,13 @@
 **Presenter**: Tod Nestor | August 2025
 **Duration**: 50 minutes (40 min presentation + 10 min Q&A)
 
-**Notes**: Welcome everyone. Let me first explain the business context. 
+**Notes**: Welcome everyone. Today we're exploring a critical technology decision that could transform how we process tax document substantiation.
 
-In the Australian taxation system, taxpayers claiming deductions must provide substantiation documents if their total claims exceed $300. The tax return has 10 deduction categories (D1-D10) covering work-related expenses, investment deductions, and other allowable claims.
+**The Business Challenge**: The Australian Taxation Office processes thousands of expense claim documents daily. Taxpayers submit receipts, invoices, and statements to support their deductions, and audit officers must verify these claims by extracting key information from each document.
 
-Taxpayers submit scanned receipts, invoices, and other documents through the SSD-WRE pipeline to substantiate these deduction claims. Taxation audit officers must review these submissions, extracting key fields like supplier names, ABNs, amounts, dates, and expense descriptions to verify claims and categorize them correctly.
+**Current Reality**: This information extraction is currently automated using LayoutLM technology, but we're hitting performance and reliability limits that are creating bottlenecks in the substantiation pipeline.
 
-Currently, this Information Extraction component uses LayoutLM to automatically extract these fields. However, LayoutLM's accuracy and reliability have become critical bottlenecks in the substantiation process. Today's PoC explores whether modern Vision Transformers can replace LayoutLM to improve extraction accuracy, reduce manual review workload, and ensure compliant substantiation processing.
+**Today's Question**: Can modern Vision Transformers provide a better solution? This PoC presentation will show you the evidence and help inform our technology strategy moving forward.
 
 ---
 
