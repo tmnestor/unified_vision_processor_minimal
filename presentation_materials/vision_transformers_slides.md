@@ -458,28 +458,28 @@ def extract_fields(image):
 
 ---
 
-### Slide 16: Extraction Comparison
-**Real Document Processing Results**
+### Slide 16: From Prompt to Extraction
+**Complete Processing Pipeline Demonstration**
 
 <table style="width: 100%; border-collapse: collapse;">
 <tr>
 <td style="width: 50%; padding: 10px; text-align: center;">
-<strong>Original Document</strong><br>
-<img src="presentation_diagrams/synthetic_invoice_014.png" alt="Original Document" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
+<strong>Extraction Prompt</strong><br>
+<img src="presentation_diagrams/extraction_prompt.png" alt="Extraction Prompt" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
 </td>
 <td style="width: 50%; padding: 10px; text-align: center;">
-<strong>InternVL3 Extraction</strong><br>
-<img src="presentation_diagrams/internvl_extraction.png" alt="InternVL3 Results" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
+<strong>Original Document</strong><br>
+<img src="presentation_diagrams/synthetic_invoice_014.png" alt="Original Document" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
 </td>
 </tr>
 <tr>
 <td style="width: 50%; padding: 10px; text-align: center;">
-<strong>Original Document</strong><br>
-<img src="presentation_diagrams/synthetic_invoice_014.png" alt="Original Document" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
+<strong>Llama-3.2-Vision Output</strong><br>
+<img src="presentation_diagrams/llama_extraction.png" alt="Llama Results" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
 </td>
 <td style="width: 50%; padding: 10px; text-align: center;">
-<strong>Llama-3.2-Vision Extraction</strong><br>
-<img src="presentation_diagrams/llama_extraction.png" alt="Llama Results" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
+<strong>InternVL3 Output</strong><br>
+<img src="presentation_diagrams/internvl_extraction.png" alt="InternVL3 Results" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
 </td>
 </tr>
 </table>
