@@ -295,20 +295,20 @@ graph TB
 ```mermaid
 graph LR
     subgraph "Document Patch Analysis"
-        D1[Invoice Header<br/>Patch 1-20] --> A1[Attention Layer 1:<br/>Local features]
-        D2[Line Items<br/>Patch 21-80] --> A1
-        D3[Total Section<br/>Patch 81-120] --> A1
-        D4[Footer Info<br/>Patch 121-196] --> A1
+        D1[Hyatt Hotels Header<br/>ABN: 31 217 193 004] --> A1[Attention Layer 1:<br/>Local features]
+        D2[Line Items<br/>Milk, Apples, Beef, Pasta] --> A1
+        D3[Total Section<br/>Subtotal: $28.48<br/>GST: $2.85] --> A1
+        D4[Payment Info<br/>VISA ending 9136] --> A1
         
         A1 --> A2[Attention Layer 6:<br/>Regional relationships]
         A2 --> A3[Attention Layer 12:<br/>Global understanding]
     end
     
-    subgraph "Semantic Understanding"
-        A3 --> S1[Header ↔ Company Info]
-        A3 --> S2[Items ↔ Quantities]
-        A3 --> S3[Prices ↔ Total]
-        A3 --> S4[Date ↔ Due Date]
+    subgraph "Semantic Understanding"  
+        A3 --> S1[Header ↔ Hyatt Hotels Perth]
+        A3 --> S2[Items ↔ Quantities/Prices]
+        A3 --> S3[Subtotal + GST → Total]
+        A3 --> S4[Invoice # ↔ Date]
         
         S1 --> LM[Language Model<br/>Generation]
         S2 --> LM
@@ -318,19 +318,21 @@ graph LR
     
     subgraph "Output Generation"
         LM --> O1[SUPPLIER: Hyatt Hotels]
-        LM --> O2[TOTAL: $521.21]
-        LM --> O3[GST: $47.38]
-        LM --> O4[INVOICE_DATE: 2024-03-15]
+        LM --> O2[TOTAL: $31.33]
+        LM --> O3[GST: $2.85]
+        LM --> O4[INVOICE_DATE: 01/07/2025]
+        LM --> O5[INVOICE_NUMBER: INV-84875]
+        LM --> O6[ABN: 31 217 193 004]
     end
     
-    style D1 fill:#ffb6c1
-    style D2 fill:#98fb98
-    style D3 fill:#87ceeb
-    style D4 fill:#dda0dd
-    style A3 fill:#ffd700
-    style LM fill:#eac4d5
-    style O1 fill:#f0e68c
-    style O2 fill:#f0e68c
+    style D1 fill:#2563eb,color:#fff
+    style D2 fill:#059669,color:#fff
+    style D3 fill:#0891b2,color:#fff
+    style D4 fill:#ea580c,color:#fff
+    style A3 fill:#dc2626,color:#fff
+    style LM fill:#7c3aed,color:#fff
+    style O1 fill:#64748b,color:#fff
+    style O2 fill:#dc2626,color:#fff
     style O3 fill:#f0e68c
     style O4 fill:#f0e68c
 ```
