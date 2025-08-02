@@ -16,23 +16,9 @@
 
 **Notes**: Welcome everyone. Let me first explain the business context. 
 
-In the Australian taxation system, individual tax returns have 10 deduction categories (D1-D10). All require substantiation with supporting documents:
+In the Australian taxation system, taxpayers claiming deductions must provide substantiation documents if their total claims exceed $300. The tax return has 10 deduction categories (D1-D10) covering work-related expenses, investment deductions, and other allowable claims.
 
-**Work-Related Expenses (D1-D6):**
-- D1: Work-related car expenses
-- D2: Work-related travel expenses
-- D3: Work-related clothing, laundry and dry-cleaning expenses
-- D4: Work-related self-education expenses
-- D5: Other work-related expenses
-- D6: Low-value pool deduction (decline in value of low-cost assets)
-
-**Investment & Other Deductions (D7-D10):**
-- D7: Interest deductions (expenses from earning interest income)
-- D8: Dividend deductions (expenses from earning dividend income)
-- D9: Gifts or donations (to deductible gift recipients)
-- D10: Cost of managing tax affairs
-
-Taxpayers submit scanned receipts, invoices, and other documents through the SSD-WRE pipeline to substantiate all these deduction claims. Taxation audit officers must review these submissions, extracting key fields like supplier names, ABNs, amounts, dates, and expense descriptions to verify the claims and map them to the correct D1-D10 category.
+Taxpayers submit scanned receipts, invoices, and other documents through the SSD-WRE pipeline to substantiate these deduction claims. Taxation audit officers must review these submissions, extracting key fields like supplier names, ABNs, amounts, dates, and expense descriptions to verify claims and categorize them correctly.
 
 Currently, this Information Extraction component uses LayoutLM to automatically extract these fields. However, LayoutLM's accuracy and reliability have become critical bottlenecks in the substantiation process. Today's PoC explores whether modern Vision Transformers can replace LayoutLM to improve extraction accuracy, reduce manual review workload, and ensure compliant substantiation processing.
 
@@ -53,7 +39,7 @@ Currently, this Information Extraction component uses LayoutLM to automatically 
 ### Slide 3: ATO Work-Related Expense Substantiation Context
 **The Information Extraction Challenge**
 
-**Australian Tax Return Deductions Section**:
+**Australian Tax Return Deductions Section** (Paper Form - Historical Reference):
 ![Australian Tax Return Deductions](presentation_diagrams/Deductions_TT24.png)
 
 **Deduction Categories Structure**:
@@ -72,7 +58,7 @@ Currently, this Information Extraction component uses LayoutLM to automatically 
 - D9: Gifts or donations (to deductible gift recipients)
 - D10: Cost of managing tax affairs
 
-**Pipeline Requirement**: Supporting documents required for **all categories**
+**Pipeline Requirement**: Supporting documents required for **all categories** (structure consistent across paper and digital returns)
 
 **Critical Fields for Extraction**:
 | Field | Purpose | D1-D10 Mapping |
@@ -86,7 +72,7 @@ Currently, this Information Extraction component uses LayoutLM to automatically 
 
 **Current Challenge**: Manual review of thousands of documents per audit cycle
 
-**Notes**: This slide shows the actual Australian tax return deductions section with all D1-D10 categories clearly labeled. The SSD-WRE pipeline must accurately extract key fields from supporting documents to populate these sections. Notice how D1-D6 are specifically work-related expenses, while D7-D10 cover investment and other deductions. Errors or missing fields result in manual intervention, delays, and potential compliance issues. This visual context shows exactly why accurate information extraction is critical for the substantiation process.
+**Notes**: This slide shows the deductions section from a historical paper tax return form to illustrate the D1-D10 structure that remains consistent in modern digital returns. The SSD-WRE pipeline must accurately extract key fields from supporting documents regardless of how taxpayers submit their returns today. Notice how D1-D6 are specifically work-related expenses, while D7-D10 cover investment and other deductions. The substantiation requirements and field extraction challenges remain the same whether taxpayers use paper forms, online lodgment, or tax agents - all require the same supporting documentation.
 
 ---
 
