@@ -477,16 +477,20 @@ $$z_l = \text{MLP}(\text{LN}(z'_l)) + z'_l$$
 
 ### Model Configurations in Our Project
 **InternVL3-2B**:
-- Vision Encoder: 2B parameters
-- Patch Size: 14x14
+- Vision Encoder: 2B parameters  
+- Image Processing: 448×448 pixel tiles, dynamic resolution up to 4K
+- Patch Size: 14×14 pixels
+- Visual Tokens: 256 per 448×448 tile
 - Hidden Dimension: 1536
 - Attention Heads: 16
 
 **Llama-3.2-Vision-11B**:
-- Vision Encoder: Part of 11B total
-- Patch Size: 16x16
-- Integrated vision-language model
-- Optimized for instruction following
+- Vision Encoder: Part of 11B total parameters
+- Image Processing: Up to 1120×1120 pixels maximum resolution
+- Patch Size: 16×16 pixels
+- Output Limit: 2048 tokens
+- Context Length: 128K tokens
+- Integrated vision-language model with cross-attention layers
 
 ---
 

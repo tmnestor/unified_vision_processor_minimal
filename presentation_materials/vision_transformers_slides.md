@@ -168,12 +168,12 @@ Document Image
 ---
 
 ### Slide 7: Vision Transformers - The Solution
-**A Fundamentally Different Approach**
+**Original ViT Architecture (Dosovitskiy et al., 2020)**
 
 ```mermaid
 graph TB
     subgraph "Vision Transformer Architecture"
-        A[Input Image<br/>224x224] --> B[Patch Division<br/>16x16 patches]
+        A[Input Image<br/>224×224] --> B[Patch Division<br/>16×16 patches]
         B --> C[Linear Projection<br/>Patch Embeddings]
         C --> D[Add Position<br/>Embeddings]
         D --> E[Transformer<br/>Encoder Blocks]
@@ -194,6 +194,11 @@ graph TB
     style I fill:#eac4d5
 ```
 
+**Core Innovation of Original ViT** (Dosovitskiy et al., ICLR 2020):
+- **"An Image is Worth 16x16 Words"**: Treats image patches like text tokens
+- **Transformer Architecture**: Applied directly to vision tasks for first time
+- **Self-Attention**: Global understanding without convolutional inductive bias
+
 **How Vision Transformers Capture Semantic Information**:
 
 **🔄 Unified Semantic Integration**:
@@ -201,19 +206,19 @@ graph TB
 - **No information loss**: Every pixel contributes to understanding
 - **End-to-end learning**: Semantics emerge naturally from training
 
-**📍 Where Semantic Information Lives**:
-1. **Patch Embeddings**: Each 16x16 patch captures local visual+textual semantics
+**📍 Where Semantic Information Lives** (Original ViT Framework):
+1. **Patch Embeddings**: Each 16×16 patch captures local visual+textual semantics
 2. **Position Embeddings**: Spatial relationships learned, not hard-coded
 3. **Self-Attention Layers**: Global semantic relationships discovered dynamically
-4. **Language Model Head**: Converts rich semantic understanding to structured text
+4. **Classification Head**: Converts visual understanding to output (adapted for language in modern models)
 
-**✅ Key Advantages**:
-- **Holistic Understanding**: Sees text within visual context (handwriting, fonts, layouts)
-- **Robust to Errors**: No single point of failure like OCR
-- **Rich Visual Semantics**: Understands logos, stamps, signatures, tables
-- **Dynamic Relationships**: Learns field relationships from data, not rules
+**🔬 Evolution to Document Understanding**:
+- **Original ViT**: Image classification (224×224, 16×16 patches)
+- **Modern Adaptations**: Document-optimized vision-language models
+  - **InternVL3-2B**: 448×448 pixel tiles, 14×14 patches, dynamic resolution up to 4K
+  - **Llama-3.2-Vision-11B**: Up to 1120×1120 pixels, 16×16 patches, language model integration
 
-**Notes**: This is the breakthrough - we skip OCR entirely and let the model learn to read.
+**Notes**: The original ViT breakthrough enabled all modern vision-language models. While specs have evolved for document tasks, the core semantic capture principles remain unchanged.
 
 ---
 
@@ -622,7 +627,7 @@ python model_comparison.py compare
 3. Huang et al. (2022) "LayoutLMv3" - ACM MM 2022
 
 **Vision Transformer Foundations**:
-4. Dosovitskiy et al. (2020) "An Image is Worth 16x16 Words" - ICLR 2021
+4. Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., ... & Houlsby, N. (2020). "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale." *ICLR 2021*. [arXiv:2010.11929](https://arxiv.org/abs/2010.11929)
 5. Touvron et al. (2021) "Training data-efficient image transformers" - ICML 2021
 
 **ViT vs LayoutLM Comparisons**:
