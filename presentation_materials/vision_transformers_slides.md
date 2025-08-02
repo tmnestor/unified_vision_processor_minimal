@@ -461,13 +461,13 @@ def extract_fields(image):
 ### Slide 16: Live Extraction Comparison
 **Real Document Processing Results**
 
-![Original Document](synthetic_invoice_014.png)
+![Original Document](presentation_diagrams/synthetic_invoice_014.png)
 
 **InternVL3 Extraction**:
-![InternVL3 Results](internvl_extraction.png)
+![InternVL3 Results](presentation_diagrams/internvl_extraction.png)
 
 **Llama-3.2-Vision Extraction**:
-![Llama Results](llama_extraction.png)
+![Llama Results](presentation_diagrams/llama_extraction.png)
 
 **Key Observations**:
 - Both models successfully extract structured data
