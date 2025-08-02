@@ -245,7 +245,27 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 ### Slide 11: Self-Attention for Documents
 **Why This Works So Well**
 
-<img src="presentation_diagrams/mermaid_exports/Self_Attention_Mechanism.png" alt="Self-Attention Mechanism" style="max-height: 120px; max-width: 40%; object-fit: contain; display: block; margin: 0 auto;">
+```mermaid
+graph LR
+    subgraph "Self-Attention for Document Understanding"
+        P1[Patch 1<br/>Header] -.->|0.9| P5[Patch 5<br/>Total]
+        P2[Patch 2<br/>Items] -.->|0.7| P5
+        P3[Patch 3<br/>Prices] -.->|0.8| P5
+        P4[Patch 4<br/>Tax] -.->|0.6| P5
+        P5 -.->|0.3| P6[Patch 6<br/>Footer]
+        
+        P1 -.->|0.2| P2
+        P2 -.->|0.9| P3
+        P3 -.->|0.7| P4
+    end
+    
+    style P1 fill:#ffb6c1
+    style P2 fill:#98fb98
+    style P3 fill:#87ceeb
+    style P4 fill:#dda0dd
+    style P5 fill:#ffd700
+    style P6 fill:#f0e68c
+```
 
 **Document-Specific Benefits**:
 - Links headers to values across page
