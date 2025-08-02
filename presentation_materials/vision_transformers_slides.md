@@ -1,3 +1,44 @@
+---
+marp: true
+theme: gaia
+paginate: true
+backgroundColor: #fff
+backgroundImage: linear-gradient(to bottom, #fafafa, #ffffff)
+style: |
+  section {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  h1 {
+    color: #2563eb;
+  }
+  h2 {
+    color: #1e40af;
+  }
+  h3 {
+    color: #1e3a8a;
+  }
+  table {
+    font-size: 0.9em;
+  }
+  code {
+    background-color: #f3f4f6;
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+  pre {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+  img {
+    background-color: transparent;
+  }
+  .mermaid {
+    display: flex;
+    justify-content: center;
+  }
+footer: Vision Transformers in Information Extraction | 2025
+---
+
 # Vision Transformers in Information Extraction
 ## Moving Beyond LayoutLM to Modern Vision-Language Models
 ### 50-Minute Presentation (40 min + 10 min Q&A)
