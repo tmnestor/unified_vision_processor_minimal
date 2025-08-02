@@ -49,9 +49,11 @@ Currently, this Information Extraction component uses LayoutLM to automatically 
 ### Slide 3: ATO Work-Related Expense Substantiation Context
 **The Information Extraction Challenge**
 
-**Australian Tax Return Structure**:
-- Individual tax returns have 10 deduction categories (D1-D10)
-- SSD-WRE pipeline processes substantiation for **all deduction categories**
+**Australian Tax Return Deductions Section**:
+![Australian Tax Return Deductions](presentation_diagrams/Deductions_TT24.png)
+
+**Pipeline Scope**:
+- SSD-WRE pipeline processes substantiation for **all deduction categories (D1-D10)**
 - D1-D6: Work-related expenses (substantiation required if >$300)
 - D7-D10: Investment & other deductions (also require substantiation)
 - Supporting documents required: receipts, invoices, bank statements
@@ -68,7 +70,7 @@ Currently, this Information Extraction component uses LayoutLM to automatically 
 
 **Current Challenge**: Manual review of thousands of documents per audit cycle
 
-**Notes**: The SSD-WRE pipeline must accurately extract these fields to enable efficient substantiation verification for all deduction categories (D1-D10). Errors or missing fields result in manual intervention, delays, and potential compliance issues. This is why investigating alternatives to LayoutLM's current limitations is critical.
+**Notes**: This slide shows the actual Australian tax return deductions section with all D1-D10 categories clearly labeled. The SSD-WRE pipeline must accurately extract key fields from supporting documents to populate these sections. Notice how D1-D6 are specifically work-related expenses, while D7-D10 cover investment and other deductions. Errors or missing fields result in manual intervention, delays, and potential compliance issues. This visual context shows exactly why accurate information extraction is critical for the substantiation process.
 
 ---
 
