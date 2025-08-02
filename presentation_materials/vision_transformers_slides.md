@@ -13,7 +13,7 @@
 
 **Notes**: Welcome everyone. Today we're exploring a critical technology decision that could transform how we process tax document substantiation.
 
-**The Business Challenge**: The Australian Taxation Office processes thousands of expense claim documents daily. Taxpayers submit receipts, invoices, and statements to support their deductions, and audit officers must verify these claims by extracting key information from each document.
+**The Business Challenge**: During taxtime, the ATO processes thousands of expense claim documents daily. Taxpayers submit receipts, invoices, and statements to support their deductions, and audit officers must verify these claims by extracting key information from each document.
 
 **Current Reality**: This information extraction is currently automated using LayoutLM technology, but we're hitting performance and reliability limits that are creating bottlenecks in the substantiation pipeline.
 
