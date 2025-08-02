@@ -5,11 +5,8 @@
 ---
 
 ### Slide 1: Title Slide
-**Vision Transformers in Information Extraction**
-- Moving Beyond LayoutLM to Modern Vision-Language Models
-- **Focus**: Information Extraction for SSD-WRE Pipeline
 
-**Business Context**: Streamlining Substantiations for Work Related Expense Claims
+**Business Context**: Information Extraction within the SSD-WRE Pipeline
 
 **Presenter**: Tod Nestor | August 2025
 **Duration**: 50 minutes (40 min presentation + 10 min Q&A)
