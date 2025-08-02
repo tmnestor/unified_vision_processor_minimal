@@ -281,7 +281,23 @@ graph LR
 
 ---
 
-### Slide 12: Document Processing Pipeline Comparison
+### Slide 12: End-to-End Document Understanding
+**From Patches to Extracted Information**
+
+![Document Understanding Flow](presentation_diagrams/mermaid_exports/Document_Understanding_Flow.png)
+
+**Three-Stage Processing**:
+1. **Patch Analysis**: Document regions processed through attention layers
+2. **Semantic Understanding**: Relationships identified between elements
+3. **Output Generation**: Structured data extraction with all key fields
+
+**Real Example**: Hyatt Hotels invoice → Complete field extraction including ABN, items, prices, GST, and total
+
+<!-- Speaker Notes: This diagram shows the complete Vision Transformer pipeline processing our Hyatt Hotels invoice. Notice how the model progresses from analyzing individual patches (header, items, totals, payment) through multiple attention layers that build regional and then global understanding. The semantic understanding phase identifies relationships like "Subtotal + GST → Total", and finally generates all the structured output fields we need. -->
+
+---
+
+### Slide 13: Document Processing Pipeline Comparison
 
 ![Document Processing Comparison](presentation_diagrams/document_processing_comparison.png)
 
@@ -293,7 +309,7 @@ graph LR
 
 ---
 
-### Slide 13: Case Study - Replacing LayoutLM
+### Slide 14: Case Study - Replacing LayoutLM
 **Proof of Concept Experiment (to date)**
 
 **Context**: Organization using LayoutLM in production
@@ -311,7 +327,7 @@ graph LR
 
 ---
 
-### Slide 14: Performance Results
+### Slide 15: Performance Results
 
 ![Project Results](presentation_diagrams/project_results.png)
 
@@ -327,7 +343,7 @@ graph LR
 
 <!-- _class: lead -->
 
-### Slide 15: From Prompt to Extraction - Input
+### Slide 16: From Prompt to Extraction - Input
 **Complete Processing Pipeline Demonstration**
 
 ![Extraction Prompt](presentation_diagrams/extraction_prompt.png)
@@ -335,7 +351,7 @@ graph LR
 
 ---
 
-### Slide 16: From Prompt to Extraction - Results
+### Slide 17: From Prompt to Extraction - Results
 **Model Output Comparison**
 
 ![Llama-3.2-Vision Output](presentation_diagrams/llama_extraction.png)
@@ -351,7 +367,7 @@ graph LR
 
 ---
 
-### Slide 17: Production Insights
+### Slide 18: Production Insights
 **What We Learned**
 
 **Performance**:
@@ -372,7 +388,7 @@ graph LR
 
 ---
 
-### Slide 18: Key References
+### Slide 19: Key References
 
 **Foundation Papers**:
 1. Dosovitskiy et al. (2020) "An Image is Worth 16x16 Words" - ICLR 2021
