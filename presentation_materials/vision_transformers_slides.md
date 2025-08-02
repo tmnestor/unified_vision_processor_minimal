@@ -680,20 +680,30 @@ Multi-Head Attention:
 **How We Process Documents**
 
 ```python
-from vision_processor import UnifiedProcessor
+from vision_processor.config import ConfigManager
+from vision_processor.extraction.extraction_manager import SimpleExtractionManager
 
-# Initialize
-processor = UnifiedProcessor(model="internvl3")
+# Initialize with configuration
+config = ConfigManager("model_comparison.yaml")
 
-# Extract fields
-results = processor.extract_fields(
-    image_path="invoice.png",
-    expected_fields=DOCUMENT_FIELDS
-)
+# Create extraction manager (works with InternVL3 or Llama-3.2-Vision)
+processor = SimpleExtractionManager(config)
 
-# Results include all 26 fields with confidence scores
-print(results.extracted_fields)
+# Extract fields from document
+result = processor.process_document("invoice.png")
+
+# Results include all 25 fields with confidence scores
+print(result.extracted_fields)
+print(f"Processing time: {result.processing_time:.2f}s")
+print(f"Confidence: {result.model_confidence}")
+print(f"Method: {result.extraction_method}")
 ```
+
+**Key Features**:
+- Model-agnostic interface (same code works for InternVL3 or Llama-3.2-Vision)
+- Configuration-driven (all settings in YAML file)
+- Rich result object with metadata
+- Production-ready error handling
 
 ---
 
