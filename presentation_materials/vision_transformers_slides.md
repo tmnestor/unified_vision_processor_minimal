@@ -41,7 +41,9 @@ style: |
   }
   img {
     background-color: transparent;
-    max-height: 400px;
+    max-height: 300px;
+    max-width: 90%;
+    object-fit: contain;
   }
   ul, ol {
     font-size: 24px;
@@ -195,8 +197,7 @@ IMPORTANT: Later versions (LayoutLMv2, LayoutLMv3) actually moved away from R-CN
 
 ![Vision Transformer Architecture](presentation_diagrams/vit_architecture.png)
 
-**Core Innovation** (Dosovitskiy et al., 2020):
-- **"An Image is Worth 16x16 Words"**
+**Core Innovation**: "An Image is Worth 16x16 Words"
 - Direct transformer on vision tasks
 - Global self-attention understanding
 
@@ -204,7 +205,6 @@ IMPORTANT: Later versions (LayoutLMv2, LayoutLMv3) actually moved away from R-CN
 - ✅ Unified processing (one model)
 - ✅ No OCR dependency
 - ✅ End-to-end learning
-- ✅ Every pixel contributes
 
 <!-- 
 Speaker Notes: The original ViT breakthrough enabled all modern vision-language models. Key innovation: treats image patches like text tokens, applying transformers directly. All semantics (text, visual, spatial) are unified in one model with no information loss. Modern adaptations like InternVL3 and Llama-3.2-Vision build on this foundation for document understanding.
@@ -248,17 +248,12 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 ---
 
 ### Slide 10: Semantic Information Flow
-**How Understanding Emerges in Each Architecture**
 
 ![LayoutLM vs ViT Architecture](presentation_diagrams/layoutlm_vs_vit_architecture.png)
 
 **Key Differences**:
 - **LayoutLM**: Fragmented processing → information loss
 - **Vision Transformers**: Unified processing → complete understanding
-
-**Published Evidence**:
-- Vision Grid Transformer (ICCV 2023): "Best results in most categories"
-- Donut (ECCV 2022): "State-of-the-art speed and accuracy"
 
 <!-- 
 Speaker Notes: The architecture determines semantic capture quality. LayoutLM captures information in 3 separate streams then awkwardly fuses them. Vision Transformers capture information holistically from the start. Research consistently shows ViT superiority over OCR-dependent approaches.
@@ -284,21 +279,12 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 ---
 
 ### Slide 12: Document Processing Pipeline Comparison
-**LayoutLM vs Vision Transformers**
 
 ![Document Processing Comparison](presentation_diagrams/document_processing_comparison.png)
 
-**LayoutLM Pipeline**:
-```
-Image → OCR → Text/Boxes → Normalize → LayoutLM → Post-process → Results
-```
-**Failure Rate**: ~15% (OCR errors, alignment issues)
-
-**Vision Transformer Pipeline**:
-```
-Image → Vision Transformer → Results
-```
-**Failure Rate**: <1% (only extreme image quality)
+**Key Comparison**:
+- **LayoutLM**: 6-stage pipeline, ~15% failure rate
+- **Vision Transformers**: 2-stage pipeline, <1% failure rate
 
 <!-- Speaker Notes: Simplicity isn't just elegant - it's more reliable and maintainable. The LayoutLM pipeline has multiple failure points while Vision Transformers process everything end-to-end. -->
 
@@ -336,31 +322,21 @@ Image → Vision Transformer → Results
 
 ---
 
-### Slide 16: From Prompt to Extraction
+<!-- _class: lead -->
+
+### Slide 16: From Prompt to Extraction - Input
 **Complete Processing Pipeline Demonstration**
 
-<table style="width: 100%; border-collapse: collapse;">
-<tr>
-<td style="width: 50%; padding: 10px; text-align: center;">
-<strong>Extraction Prompt</strong><br>
-<img src="presentation_diagrams/extraction_prompt.png" alt="Extraction Prompt" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
-</td>
-<td style="width: 50%; padding: 10px; text-align: center;">
-<strong>Original Document</strong><br>
-<img src="presentation_diagrams/synthetic_invoice_014.png" alt="Original Document" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
-</td>
-</tr>
-<tr>
-<td style="width: 50%; padding: 10px; text-align: center;">
-<strong>Llama-3.2-Vision Output</strong><br>
-<img src="presentation_diagrams/llama_extraction.png" alt="Llama Results" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
-</td>
-<td style="width: 50%; padding: 10px; text-align: center;">
-<strong>InternVL3 Output</strong><br>
-<img src="presentation_diagrams/internvl_extraction.png" alt="InternVL3 Results" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px;">
-</td>
-</tr>
-</table>
+![Extraction Prompt](presentation_diagrams/extraction_prompt.png)
+![Original Document](presentation_diagrams/synthetic_invoice_014.png)
+
+---
+
+### Slide 16a: From Prompt to Extraction - Results
+**Model Output Comparison**
+
+![Llama-3.2-Vision Output](presentation_diagrams/llama_extraction.png)
+![InternVL3 Output](presentation_diagrams/internvl_extraction.png)
 
 **Key Observations**:
 - Both models successfully extract structured data
@@ -393,121 +369,20 @@ Image → Vision Transformer → Results
 
 ---
 
-### Slide 23: References
-**Technical Papers and Resources**
+### Slide 23: Key References
 
-**LayoutLM Papers**:
-
-1. Xu et al. (2020) "LayoutLM" - KDD 2020
-2. Xu et al. (2021) "LayoutLMv2" - ACL 2021
-3. Huang et al. (2022) "LayoutLMv3" - ACM MM 2022
-
-**Vision Transformer Foundations**:
-
-4. Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., ... & Houlsby, N. (2020). "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale." *ICLR 2021*. [arXiv:2010.11929](https://arxiv.org/abs/2010.11929)
-5. Touvron et al. (2021) "Training data-efficient image transformers" - ICML 2021
-
-**ViT vs LayoutLM Comparisons**:
-
-6. Kim et al. (2022) "OCR-free Document Understanding Transformer (Donut)" - ECCV 2022
-7. Da et al. (2023) "Vision Grid Transformer for Document Layout Analysis" - ICCV 2023
+**Foundation Papers**:
+1. Dosovitskiy et al. (2020) "An Image is Worth 16x16 Words" - ICLR 2021
+2. Xu et al. (2020) "LayoutLM" - KDD 2020
+3. Kim et al. (2022) "Donut: OCR-free Transformer" - ECCV 2022
 
 **Our Models**:
+4. Chen et al. (2024) "InternVL" - arXiv:2312.14238
+5. Meta AI (2024) "Llama 3.2 Multimodal" - Technical Report
 
-8. Chen et al. (2024) "InternVL" - arXiv:2312.14238
+**Industry Analysis**:
+6. UBIAI (2024) "LayoutLMv3 in Document Understanding"
+7. Nitor Infotech (2024) "LayoutLM Text Extraction"
 
-9. Meta AI (2024) "Llama 3.2 Multimodal" - Technical Report
+<!-- Speaker Notes: Complete bibliography with 13 references available in shared research folder. Includes all LayoutLM versions, ViT foundations, comparison studies, and industry reports. -->
 
-**LayoutLM Limitations Analysis**:
-10. UBIAI (2024) "The Role of LayoutLMv3 in Document Layout Understanding" - Industry Analysis
-11. Nitor Infotech (2024) "How Can LayoutLM Transform Text Extraction" - Technical Review
-12. DocuClipper (2024) "9 Biggest OCR Limitations And How To Overcome Them" - Industry Report
-
-**Benchmarks**:
-13. FUNSD, CORD, DocVQA datasets
-
-**Notes**: All papers and industry reports available in our shared research folder.
-
----
-
-## Appendix Slides (If Needed)
-
-### A1: Mathematical Foundations
-**The Attention Formula Explained**
-
-Self-Attention Computation:
-1. **Linear Projections**: $Q = XW_Q$, $K = XW_K$, $V = XW_V$
-2. **Attention Scores**: $A = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)$
-3. **Weighted Values**: $\text{Output} = AV$
-
-Multi-Head Attention:
-- Parallel attention operations
-- Different representation subspaces
-- Concatenated and projected
-
----
-
-### A2: Implementation Code Sample
-**How We Process Documents**
-
-```python
-from vision_processor.config import ConfigManager
-from vision_processor.extraction.extraction_manager import SimpleExtractionManager
-
-# Initialize with configuration
-config = ConfigManager("model_comparison.yaml")
-
-# Create extraction manager (works with InternVL3 or Llama-3.2-Vision)
-processor = SimpleExtractionManager(config)
-
-# Extract fields from document
-result = processor.process_document("invoice.png")
-
-# Results include all 25 fields with confidence scores
-print(result.extracted_fields)
-print(f"Processing time: {result.processing_time:.2f}s")
-print(f"Confidence: {result.model_confidence}")
-print(f"Method: {result.extraction_method}")
-```
-
-**Key Features**:
-- Model-agnostic interface (same code works for InternVL3 or Llama-3.2-Vision)
-- Configuration-driven (all settings in YAML file)
-- Rich result object with metadata
-- Production-ready error handling
-
----
-
-### A3: Benchmark Comparisons
-**ViT Performance on Standard Datasets**
-
-| Model | ImageNet Top-1 | Params | FLOPs |
-|-------|----------------|--------|-------|
-| ResNet-152 | 78.3% | 60M | 11.3G |
-| ViT-B/16 | 77.9% | 86M | 17.5G |
-| ViT-L/16 | 79.7% | 307M | 61.5G |
-| ViT-H/14 | 88.5% | 632M | 167.4G |
-
-**Document AI Specific**:
-- ViTs consistently outperform CNNs
-- Especially on layout understanding tasks
-
----
-
-### A4: Resources and References
-**Learn More**
-
-**Papers**:
-- "An Image is Worth 16x16 Words" (Original ViT)
-- "How Do Vision Transformers Work?" (Mechanistic understanding)
-- "DocFormer: End-to-End Transformer for Document Understanding"
-
-**Implementations**:
-- Hugging Face Transformers
-- timm (PyTorch Image Models)
-- Our vision_comparison repository
-
-**Courses**:
-- CS231n (Stanford)
-- Fast.ai Practical Deep Learning
-- Hugging Face Course
