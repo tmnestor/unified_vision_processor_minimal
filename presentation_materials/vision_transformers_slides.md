@@ -446,10 +446,10 @@ def extract_fields(image):
 
 | Metric | LayoutLM | InternVL3 | Llama-3.2 |
 |--------|----------|-----------|-----------|
-| **Success Rate** | 85% | 100% | 100% |
-| **Field Accuracy** | 47% | 59.4% | 59% |
+| **Success Rate** | ??% | 100% | 100% |
+| **Field Accuracy** | ??% | 59.4% | 59% |
 | **Processing Time** | 3-5s+OCR | 22.6s | 24.9s |
-| **Memory Usage** | ~8GB | 2.6GB | 13.3GB |
+| **Memory Usage** | ??GB | 2.6GB | 13.3GB |
 | **Pipeline Steps** | 3+ | 1 | 1 |
 
 **Key Insight**: 25% accuracy improvement, 100% reliability
