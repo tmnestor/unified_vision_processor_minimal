@@ -520,7 +520,8 @@ Speaker Notes: This slide synthesizes current research on how Vision Transformer
 - **Hierarchical Understanding**: Progressive semantic refinement through layers
 - **No Information Loss**: Direct pixel-to-semantic processing
 
-**Research Quote**: *"The attention mechanism in a ViT repeatedly transforms representation vectors of image patches, incorporating more and more semantic relations between image patches"*
+**Research Quote**: *"The attention mechanism in a ViT repeatedly transforms representation vectors of image patches, incorporating more and more semantic relations between image patches"*  
+*(Source: Vision Transformer - Wikipedia, based on foundational ViT research)*
 
 **Business Impact**: 25% accuracy improvement with 100% reliability
 
