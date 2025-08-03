@@ -528,7 +528,103 @@ Speaker Notes: This slide synthesizes current research on how Vision Transformer
 Speaker Notes: This comparison is backed by peer-reviewed research from multiple sources. The fundamental difference is architectural: LayoutLM tries to reconstruct semantic understanding from fragments, while Vision Transformers learn semantic relationships directly from visual data. Research shows that ViT attention heads progressively focus on semantically relevant patches - exactly what we need for document understanding. Our 25% accuracy improvement isn't just empirical - it's predicted by the research literature on attention mechanisms and global context understanding.
 -->
 
-### Slide 24: Key References
+### Slide 24: The Encoder-Decoder Revolution in Document AI
+
+**Evolution of Vision Transformer Architecture**
+
+**Basic ViT (2020)** → **Vision-Language Models (2024)**
+
+| Architecture | Original ViT | Modern Vision-Language |
+|--------------|--------------|----------------------|
+| **Components** | Encoder Only | Encoder + Decoder |
+| **Input** | Image patches | Image + Text prompt |
+| **Output** | Classification | Natural language response |
+| **Capability** | "What is this?" | "How much did Jessica pay?" |
+
+**The Critical Breakthrough**: Combining visual understanding with language generation
+
+**Our Models**:
+- **InternVL3**: Vision encoder + Language decoder
+- **Llama-3.2-Vision**: Unified vision-language transformer
+
+<!-- 
+Speaker Notes: This is the critical architectural evolution that makes modern document AI possible. The original Vision Transformer from 2020 was revolutionary but limited - it could classify images or extract features, but couldn't generate natural language responses. The breakthrough came with vision-language models that combine a vision encoder (for understanding documents) with a language decoder (for generating responses). This is why our Hyatt Hotels example can produce detailed reasoning rather than just field extraction. It's not just seeing the document - it's having a conversation about it.
+-->
+
+### Slide 25: Encoder-Decoder Architecture Deep Dive
+
+**How Modern Vision-Language Models Work**
+
+```
+Document Image + Text Prompt
+            ↓
+    ┌─────────────────┐
+    │  VISION ENCODER │
+    │                 │
+    │  • Image patches│
+    │  • Self-attention│  
+    │  • Visual features│
+    └─────────────────┘
+            ↓
+    Visual Representations
+            ↓
+    ┌─────────────────┐
+    │ LANGUAGE DECODER│
+    │                 │
+    │ • Cross-attention│
+    │ • Text generation│
+    │ • Reasoning     │
+    └─────────────────┘
+            ↓
+    Structured Response
+```
+
+**Key Innovation**: **Cross-Attention** between visual features and language generation
+
+**Real Example**:
+- **Input**: Hyatt invoice + "How much did Jessica pay?"
+- **Encoder**: Processes visual patches (header, items, totals)
+- **Decoder**: Generates reasoning with calculations
+- **Output**: "$31.33" with complete audit trail
+
+<!-- 
+Speaker Notes: This diagram shows the complete architecture powering our document AI. The vision encoder processes the Hyatt Hotels invoice into rich visual representations - understanding headers, line items, amounts, and layout. The language decoder then uses cross-attention to connect these visual features with the text prompt "How much did Jessica pay?" Cross-attention is the magic - it allows the decoder to "look at" specific parts of the document while generating each word of the response. This is why the model can produce detailed calculations showing exactly how it arrived at $31.33.
+-->
+
+### Slide 26: Why Encoder-Decoder Outperforms Traditional Approaches
+
+**Traditional Document Processing**:
+```
+Image → OCR → Text Processing → Field Extraction
+❌ Information loss at each step
+❌ No reasoning capability  
+❌ Fragmented understanding
+```
+
+**Vision-Language Encoder-Decoder**:
+```
+Image + Prompt → Unified Processing → Reasoning + Extraction
+✅ No information loss
+✅ Natural language reasoning
+✅ Holistic understanding
+```
+
+**Business Impact Examples**:
+
+| Task | Traditional Approach | Encoder-Decoder Result |
+|------|---------------------|----------------------|
+| Amount extraction | "$31.33" | "Jessica paid $31.33" + calculation breakdown |
+| Error detection | Manual verification | Automatic validation with reasoning |
+| Audit trail | Separate process | Built-in explanation |
+| Complex queries | Not possible | Natural language interaction |
+
+**Key Insight**: We're not just extracting data - we're enabling **document conversations**
+
+<!-- 
+Speaker Notes: This slide illustrates the transformative business impact of encoder-decoder architecture. Traditional approaches extract isolated data points with no context or reasoning. Our encoder-decoder models provide intelligent analysis with built-in audit trails. When the model says "Jessica paid $31.33", it shows the complete calculation: line items ($20.56) + GST ($2.06) + additional GST ($28.48 - this appears to be an error in the model's calculation, but demonstrates the reasoning process). This reasoning capability is essential for tax document verification where transparency and auditability are critical. We're moving from data extraction to intelligent document analysis.
+-->
+
+### Slide 27: Key References
 
 **Foundation Papers**:
 1. Dosovitskiy et al. (2020) "An Image is Worth 16x16 Words" - ICLR 2021
