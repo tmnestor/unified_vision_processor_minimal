@@ -230,6 +230,12 @@ Speaker Notes: The final stage converts the rich visual understanding into the s
 ![Extraction Prompt](presentation_diagrams/extraction_prompt.png)
 ![Original Document](presentation_diagrams/synthetic_invoice_014.png)
 
+<!-- 
+Speaker Notes: Now let's see Vision Transformers in action with a real example. On the left, you see our extraction prompt - this is the same prompt used for both models, asking for 26 specific fields including supplier, ABN, date, amounts, and line items. The prompt is dynamically generated from our YAML configuration, ensuring consistency across all extractions.
+
+On the right is synthetic invoice #14 - a Hyatt Hotels receipt showing typical complexity: header information, line items (Milk, Apples, Beef), subtotal, GST calculation, and total. This represents the kind of document we process thousands of times daily. Notice the visual elements - logos, formatting, table structure - that OCR-based systems struggle with but Vision Transformers handle naturally. Let's see how both models perform on this exact document...
+-->
+
 ### Slide 11: From Prompt to Extraction - Results
 **Model Output Comparison**
 
@@ -243,6 +249,12 @@ Speaker Notes: The final stage converts the rich visual understanding into the s
 - Consistent performance across document types
 
 **Notes**: Side-by-side comparison shows both models deliver production-ready results with slightly different strengths.
+
+<!-- 
+Speaker Notes: Here are the actual results from both models processing that same Hyatt Hotels invoice. Both successfully extracted the key information: supplier name "Hyatt Hotels", correct ABN, accurate amounts and GST calculations, and complete line item details. The output format is clean and structured - exactly what our downstream systems need.
+
+Notice that both models achieved similar field accuracy rates around 59%, but with different strengths. Llama-3.2-Vision excelled at precise formatting while InternVL3 showed better handling of complex layouts. Both significantly outperform our current LayoutLM baseline. Most importantly, both models processed this document end-to-end with zero failures - no OCR errors, no pipeline breaks, no manual intervention required. This reliability is what makes Vision Transformers production-ready.
+-->
 
 ### Slide 12: Performance Results
 
@@ -348,6 +360,14 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 
 **Notes**: Direct comparison on production data in AAP 2.0 is the crucial next step.
 
+<!-- 
+Speaker Notes: This slide outlines our systematic approach to evaluating Vision Transformers as LayoutLM replacements. The context is real - many organizations are hitting LayoutLM's accuracy ceiling and struggling with maintenance overhead from the complex multi-model pipeline.
+
+Our experimental design was rigorous: we selected two representative Vision Transformer models covering different performance points. InternVL3-2B represents the efficiency end - smaller, faster, lower resource requirements. Llama-3.2-Vision-11B represents the accuracy end - larger model with maximum performance potential.
+
+The test set covers 26 fields representative of Australian tax documents - supplier names, ABNs, dates, amounts, line items, and more. We used synthetic data for controlled testing in our AI Sandbox environment, ensuring consistent evaluation conditions. The key insight: both models significantly outperformed our LayoutLM baseline while requiring less infrastructure. The next critical step is validating these results against production data in AAP 2.0.
+-->
+
 ### Slide 19: Production Insights
 **What We Learned**
 
@@ -366,6 +386,14 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 - Robust to image quality issues
 
 **Notes**: Smaller ViT models can match or exceed larger ones for specific tasks.
+
+<!-- 
+Speaker Notes: These insights directly address the key concerns leadership has about adopting new technology. On performance: Vision Transformers eliminated our biggest pain point - the unpredictable failures that plague LayoutLM pipelines. Every document type processed successfully with no hand-tuning or special handling required.
+
+On efficiency: This is perhaps the most surprising finding. InternVL3 uses only 2.6GB VRAM - just 16% of a V100's capacity. This means we could run multiple models simultaneously on existing hardware, enabling A/B testing and specialized model deployment without infrastructure investment.
+
+On quality: We discovered that model size doesn't always predict accuracy for document extraction tasks. Both the 2B and 11B parameter models achieved similar field accuracy rates, suggesting that document understanding has different scaling characteristics than general language tasks. This opens opportunities for cost-effective deployment of smaller, specialized models. The robustness to image quality issues eliminates another major operational concern.
+-->
 
 ### Slide 20: Key References
 
