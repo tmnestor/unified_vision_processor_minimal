@@ -1,0 +1,40 @@
+graph TB
+    subgraph comparison [" "]
+        subgraph layoutlm ["LayoutLM Architecture - Fragmented Processing"]
+            direction TB
+            L1[Document Image] --> L2A[OCR Engine]
+            L1 --> L2B[CNN Features] 
+            L1 --> L2C[Layout Coords]
+            
+            L2A --> L3A[Text Tokens]
+            L2B --> L3B[Visual Features]
+            L2C --> L3C[Position Embeddings]
+            
+            L3A --> L4[LayoutLM Transformer<br/>Late Fusion]
+            L3B --> L4
+            L3C --> L4
+            
+            L4 --> L5[Extracted Fields]
+            
+            L6[❌ Multiple Failure Points<br/>❌ Information Loss at Fusion<br/>❌ Complex Pipeline]
+        end
+        
+        subgraph vit ["Vision Transformer Architecture - End-to-End Processing"]
+            direction TB
+            V1[Document Image] --> V2[Vision Transformer<br/>+ Language Model<br/>Unified Processing]
+            V2 --> V3[Extracted Fields]
+            
+            V4[✅ Single Model<br/>✅ No Information Loss<br/>✅ Simple Pipeline]
+        end
+    end
+    
+    %% Styling
+    classDef layoutlmNode fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#000
+    classDef vitNode fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef issues fill:#fce4ec,stroke:#e91e63,stroke-width:2px,color:#000
+    classDef benefits fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
+    
+    class L1,L2A,L2B,L2C,L3A,L3B,L3C,L4,L5 layoutlmNode
+    class V1,V2,V3 vitNode
+    class L6 issues
+    class V4 benefits

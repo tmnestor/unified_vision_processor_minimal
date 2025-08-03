@@ -207,7 +207,9 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 
 ### Slide 15: Semantic Information Flow
 
-![LayoutLM vs ViT Architecture](presentation_diagrams/layoutlm_vs_vit_architecture.png)
+![LayoutLM vs Vision Transformer Architecture](presentation_diagrams/mermaid_exports/LayoutLM_vs_Vision_Transformer_Architecture.png)
+
+<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/LayoutLM_vs_Vision_Transformer_Architecture.mmd -->
 
 **Key Differences**:
 - **LayoutLM**: Fragmented processing → information loss
