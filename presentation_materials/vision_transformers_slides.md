@@ -104,7 +104,52 @@ Speaker Notes: These aren't minor technical issues - they're fundamental archite
 
 ---
 
-### Slide 5: What "Semantic Understanding" Means - Live Example
+### Slide 5: Vision Transformer Solution - Simple Implementation
+
+**The Alternative: 15 Lines vs 200+ Lines of LayoutLM Code**
+
+```python
+from pathlib import Path
+import torch
+from PIL import Image
+from transformers import AutoProcessor, MllamaForConditionalGeneration
+
+# Tax document processing setup
+model_id = "/models/Llama-3.2-11B-Vision-Instruct"
+tax_receipt_path = "/documents/taxpayer_receipt_001.png"
+
+# Initialize model for tax processing
+model = MllamaForConditionalGeneration.from_pretrained(
+    model_id, torch_dtype=torch.bfloat16, device_map="auto"
+)
+processor = AutoProcessor.from_pretrained(model_id)
+
+# Load taxpayer receipt and process
+receipt_image = Image.open(tax_receipt_path)
+tax_extraction_prompt = """Extract: SUPPLIER, ABN, DATE, AMOUNT, GST, ITEMS"""
+
+# Get structured tax data - ONE STEP
+message = [{"role": "user", "content": [{"type": "image"}, {"type": "text", "text": tax_extraction_prompt}]}]
+inputs = processor(receipt_image, processor.apply_chat_template(message, add_generation_prompt=True), return_tensors="pt")
+output = model.generate(**inputs, max_new_tokens=1000)
+tax_data = processor.decode(output[0])
+```
+
+**Key Contrasts with LayoutLM**:
+- ✅ **No OCR setup** (vs complex Tesseract configuration)
+- ✅ **No coordinate processing** (vs R-CNN feature extraction) 
+- ✅ **No multi-model coordination** (vs OCR + CNN + LayoutLM alignment)
+- ✅ **Single end-to-end pipeline** (vs 6+ stage pipeline)
+
+**Result**: Production-ready tax extraction with minimal code complexity
+
+<!-- 
+Speaker Notes: After seeing LayoutLM's limitations, here's the Vision Transformer alternative - just 15 lines of clean Python code that replaces what would be 200+ lines of LayoutLM pipeline setup. No OCR configuration, no coordinate alignment, no multi-model orchestration. Load the model, process the receipt image, get structured tax data. The contrast is striking: LayoutLM requires OCR servers, feature extraction models, coordinate processing, and complex pipeline coordination. Vision Transformers need just this simple code that runs on our existing infrastructure. This simplicity isn't just elegant - it's more reliable, maintainable, and cost-effective for production tax document processing.
+-->
+
+---
+
+### Slide 6: What "Semantic Understanding" Means - Live Example
 
 **Question: "How much did Jessica pay?"**
 
@@ -152,7 +197,7 @@ Speaker Notes: This is what we mean by "semantic understanding" - the model does
 
 ---
 
-### Slide 6: From Text to Vision - The Transformer Evolution
+### Slide 7: From Text to Vision - The Transformer Evolution
 
 ![Text vs Vision Transformer Comparison](presentation_diagrams/mermaid_exports/Text_vs_Vision_Transformer_Comparison.png)
 
@@ -179,7 +224,7 @@ Speaker Notes: This is the key insight that makes Vision Transformers intuitive 
 
 ---
 
-### Slide 7: Vision Transformer Overview - Core Innovation
+### Slide 8: Vision Transformer Overview - Core Innovation
 
 **"An Image is Worth 16x16 Words" Applied to Tax Documents**
 
@@ -207,7 +252,7 @@ Speaker Notes: This overview shows why Vision Transformers are perfectly suited 
 
 ---
 
-### Slide 8: Stage 1 - Input Processing for Tax Documents
+### Slide 9: Stage 1 - Input Processing for Tax Documents
 
 ![ViT Input Processing](presentation_diagrams/mermaid_exports/ViT_Input_Processing.png)
 
@@ -235,7 +280,7 @@ Speaker Notes: This stage is where Vision Transformers gain their first advantag
 
 ---
 
-### Slide 9: Stage 2 - Transformer Processing for Tax Understanding
+### Slide 10: Stage 2 - Transformer Processing for Tax Understanding
 
 ![ViT Transformer Stack](presentation_diagrams/mermaid_exports/ViT_Transformer_Stack.png)
 
@@ -268,7 +313,7 @@ Speaker Notes: This is where Vision Transformers excel for tax documents. Unlike
 
 ---
 
-### Slide 10: Stage 3 - Tax Field Generation
+### Slide 11: Stage 3 - Tax Field Generation
 
 ![ViT Language Generation](presentation_diagrams/mermaid_exports/ViT_Language_Generation.png)
 
@@ -308,7 +353,7 @@ Speaker Notes: The final stage produces exactly what tax processing systems need
 
 ---
 
-### Slide 11: Self-Attention for Tax Documents
+### Slide 12: Self-Attention for Tax Documents
 
 ![Self-Attention: Hyatt Hotels Invoice](presentation_diagrams/mermaid_exports/Self_Attention_Hyatt_Invoice.png)
 
@@ -341,7 +386,7 @@ Speaker Notes: This slide shows why self-attention is perfect for tax document p
 
 ---
 
-### Slide 12: Encoder-Decoder Architecture for Tax Processing
+### Slide 13: Encoder-Decoder Architecture for Tax Processing
 
 ![Encoder-Decoder Architecture](presentation_diagrams/mermaid_exports/Encoder_Decoder_Architecture.png)
 
@@ -375,7 +420,7 @@ Speaker Notes: This diagram shows the complete architecture powering modern tax 
 
 ---
 
-### Slide 13: Pipeline Comparison - LayoutLM vs Vision Transformers
+### Slide 14: Pipeline Comparison - LayoutLM vs Vision Transformers
 
 ![LayoutLM vs Vision Transformer Architecture](presentation_diagrams/mermaid_exports/LayoutLM_vs_Vision_Transformer_Architecture.png)
 
@@ -411,7 +456,7 @@ Speaker Notes: This architectural comparison shows why Vision Transformers are s
 
 ---
 
-### Slide 14: Semantic Capture Comparison
+### Slide 15: Semantic Capture Comparison
 
 **How Each Approach Handles Tax Document Understanding**
 
@@ -445,7 +490,7 @@ Speaker Notes: This comparison highlights why Vision Transformers are fundamenta
 
 ---
 
-### Slide 15: Performance Results on Tax Documents
+### Slide 16: Performance Results on Tax Documents
 
 ![Project Results](presentation_diagrams/project_results.png)
 
@@ -478,7 +523,7 @@ Speaker Notes: These results demonstrate clear superiority for tax document proc
 
 ---
 
-### Slide 16: Production Insights for Tax Processing
+### Slide 17: Production Insights for Tax Processing
 
 **Operational Benefits for Tax Document Pipeline**
 
@@ -510,7 +555,7 @@ Speaker Notes: These operational insights address the key concerns for productio
 
 ---
 
-### Slide 17: Why Encoder-Decoder Wins for Tax Processing
+### Slide 18: Why Encoder-Decoder Wins for Tax Processing
 
 **Superior Reasoning and Audit Capabilities**
 
@@ -552,7 +597,7 @@ Speaker Notes: This slide demonstrates why encoder-decoder architecture provides
 
 ---
 
-### Slide 18: Tax Document Case Study
+### Slide 19: Tax Document Case Study
 
 **Proof of Concept: Replacing LayoutLM for ATO Document Processing**
 
@@ -582,64 +627,6 @@ Speaker Notes: This slide demonstrates why encoder-decoder architecture provides
 
 <!-- 
 Speaker Notes: This case study demonstrates a systematic approach to replacing LayoutLM with Vision Transformers for tax processing. The experimental design was rigorous, covering both efficiency and accuracy requirements. The results show clear advantages across all critical metrics. Most importantly, the tax-specific intelligence capabilities - automatic expense categorization, GST validation, supplier verification - provide functionality that goes beyond simple field extraction to support actual tax compliance workflows. The production deployment plan provides a measured approach to adopting this technology, starting with pilot implementation and scaling based on results.
--->
-
----
-
-### Slide 19: Implementation Example with Live Output
-
-**Production-Ready Vision Transformer Code + Actual Response**
-
-```python
-from pathlib import Path
-import torch
-from PIL import Image
-from transformers import AutoProcessor, MllamaForConditionalGeneration
-
-# Tax document processing setup
-model_id = "/models/Llama-3.2-11B-Vision-Instruct"
-tax_receipt_path = "/documents/taxpayer_receipt_001.png"
-
-# Initialize model for tax processing
-model = MllamaForConditionalGeneration.from_pretrained(
-    model_id, torch_dtype=torch.bfloat16, device_map="auto"
-)
-processor = AutoProcessor.from_pretrained(model_id)
-
-# Load taxpayer receipt
-receipt_image = Image.open(tax_receipt_path)
-
-# Tax-specific extraction prompt
-tax_extraction_prompt = """Extract the following tax-relevant fields from this receipt:
-SUPPLIER, ABN, DATE, AMOUNT, GST, SUBTOTAL, ITEMS, PRICES, 
-CATEGORY (work-related expense type), DEDUCTIBLE (yes/no)"""
-
-# Process tax document and get response
-text_input = processor.apply_chat_template(message_structure, add_generation_prompt=True)
-inputs = processor(receipt_image, text_input, return_tensors="pt").to(model.device)
-output = model.generate(**inputs, max_new_tokens=1000)
-tax_data = processor.decode(output[0])
-```
-
-**Actual Model Response**:
-```
-SUPPLIER: Hyatt Hotels
-ABN: 11 234 567 890
-DATE: 01/07/2025
-AMOUNT: $31.33
-GST: $2.85
-SUBTOTAL: $28.48
-ITEMS: Milk 2L | Apples 1kg | Ground Beef 500g | Pasta 500g
-QUANTITIES: 1 | 1 | 1 | 1  
-PRICES: $4.80 | $3.96 | $8.90 | $2.90
-CATEGORY: Work-related meal expense
-DEDUCTIBLE: Yes
-```
-
-**Impact**: Simple code → Complete tax extraction in production-ready format
-
-<!-- 
-Speaker Notes: This slide demonstrates the complete Vision Transformer workflow - from simple implementation code to actual structured output. The code is remarkably straightforward - just 15 lines of Python replace what would be hundreds of lines in a LayoutLM pipeline. But the real power is shown in the model response: perfect extraction of all tax-relevant fields in exactly the format our systems need. Notice the structured output includes supplier verification, ABN validation, automatic expense categorization, and deductibility determination. This isn't just field extraction - it's intelligent tax document analysis that provides everything needed for compliance verification and audit trails.
 -->
 
 ---
