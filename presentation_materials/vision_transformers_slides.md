@@ -118,17 +118,43 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 
 ### Slide 7: Document Processing Pipeline Comparison
 
-![Document Processing Comparison](presentation_diagrams/document_processing_comparison.png)
+![Document Processing Pipeline Comparison](presentation_diagrams/mermaid_exports/Document_Processing_Pipeline_Comparison_v2.png)
 
 **Key Comparison**:
 - **LayoutLM**: 6-stage pipeline, ~15% failure rate
 - **Vision Transformers**: 2-stage pipeline, <1% failure rate
 
+<!-- Mermaid source (for reference):
+```mermaid
+graph TD
+    subgraph "LayoutLM Pipeline (6 Stages)"
+        A1[Document Image] --> B1[OCR Processing]
+        B1 --> C1[Text Extraction]
+        C1 --> D1[Layout Analysis]
+        D1 --> E1[Feature Fusion]
+        E1 --> F1[Field Extraction]
+        F1 --> G1[Structured Output]
+        
+        B1 -.->|OCR Fails| X1[❌ Pipeline Failure<br/>~15% failure rate]
+        C1 -.->|Text Issues| X1
+        D1 -.->|Layout Issues| X1
+        E1 -.->|Fusion Issues| X1
+    end
+    
+    subgraph "Vision Transformer Pipeline (2 Stages)"
+        A2[Document Image] --> B2[End-to-End Processing<br/>Vision-Language Model]
+        B2 --> C2[Structured Output]
+        
+        B2 -.->|Rare Failure| X2[❌ Processing Error<br/><1% failure rate]
+    end
+```
+-->
+
 <!-- Speaker Notes: Simplicity isn't just elegant - it's more reliable and maintainable. The LayoutLM pipeline has multiple failure points while Vision Transformers process everything end-to-end. -->
 
 ### Slide 8: Vision Transformers - The Solution
 
-![Vision Transformer Architecture](presentation_diagrams/vit_architecture.png)
+![Vision Transformer Architecture](presentation_diagrams/mermaid_exports/Vision_Transformer_Architecture_v2.png)
 
 **Core Innovation**: "An Image is Worth 16x16 Words"
 - Direct transformer on vision tasks
@@ -138,6 +164,32 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 - ✅ Unified processing (one model)
 - ✅ No OCR dependency
 - ✅ End-to-end learning
+
+<!-- Mermaid source (for reference):
+```mermaid
+graph TB
+    subgraph "Input Processing"
+        A[Document Image<br/>e.g., Invoice, Receipt] --> B[Split into 16x16 Patches]
+        B --> C[Linear Projection<br/>Patch Embedding]
+        C --> D[Add Position Encoding<br/>Spatial Relationships]
+    end
+    
+    subgraph "Transformer Encoder Stack"
+        D --> E[Multi-Head Self-Attention<br/>Global Context Understanding]
+        E --> F[Feed Forward Network<br/>Feature Processing]
+        F --> G[Layer Normalization<br/>+ Residual Connection]
+        G --> H{More Layers?}
+        H -->|Yes| E
+        H -->|No| I[Final Layer Output]
+    end
+    
+    subgraph "Language Generation Head"
+        I --> J[Vision-Language Fusion<br/>Semantic Understanding]
+        J --> K[Language Model Head<br/>Text Generation]
+        K --> L[Structured Output<br/>KEY: VALUE pairs]
+    end
+```
+-->
 
 <!-- 
 Speaker Notes: The original ViT breakthrough enabled all modern vision-language models. Key innovation: treats image patches like text tokens, applying transformers directly. All semantics (text, visual, spatial) are unified in one model with no information loss. Modern adaptations like InternVL3 and Llama-3.2-Vision build on this foundation for document understanding.
