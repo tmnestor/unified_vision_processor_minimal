@@ -68,29 +68,7 @@ Speaker Notes: This visual shows the actual tax return deductions structure. Eac
 - Many organizations still use LayoutLM
 - Document AI market transforming rapidly
 
-<!-- Mermaid source code (for reference):
-```mermaid
-gantt
-    title Industry-Wide Evolution of Document AI (Not ATO-specific)
-    dateFormat  YYYY
-    axisFormat  %Y
-    
-    section Pre-2018
-    OCR + Rule-based parsing    :done, pre2018, 2010, 2018
-    
-    section 2018-2020
-    CNN-based document analysis :done, cnn2018, 2018, 2020
-    
-    section 2020
-    LayoutLM First transformer  :done, layoutlm, 2020, 2021
-    
-    section 2021-2023
-    LayoutLMv2 LayoutLMv3      :done, layoutlm23, 2021, 2023
-    
-    section 2023+
-    Vision-Language Models      :active, vlm2023, 2023, 2025
-```
--->
+<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/Document_AI_Evolution_Timeline.mmd -->
 
 <!-- 
 Speaker Notes: This evolution reflects global trends. Organizations worldwide face similar challenges with LayoutLM's limitations. Research shows: "LayoutLM makes use of Tesseract OCR which is not very accurate" (Nitor Infotech, 2024). "Training LayoutLM can be computationally intensive" (UBIAI, 2024). 
@@ -124,31 +102,7 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 - **LayoutLM**: 6-stage pipeline, ~15% failure rate
 - **Vision Transformers**: 2-stage pipeline, <1% failure rate
 
-<!-- Mermaid source (for reference):
-```mermaid
-graph TD
-    subgraph "LayoutLM Pipeline (6 Stages)"
-        A1[Document Image] --> B1[OCR Processing]
-        B1 --> C1[Text Extraction]
-        C1 --> D1[Layout Analysis]
-        D1 --> E1[Feature Fusion]
-        E1 --> F1[Field Extraction]
-        F1 --> G1[Structured Output]
-        
-        B1 -.->|OCR Fails| X1[❌ Pipeline Failure<br/>~15% failure rate]
-        C1 -.->|Text Issues| X1
-        D1 -.->|Layout Issues| X1
-        E1 -.->|Fusion Issues| X1
-    end
-    
-    subgraph "Vision Transformer Pipeline (2 Stages)"
-        A2[Document Image] --> B2[End-to-End Processing<br/>Vision-Language Model]
-        B2 --> C2[Structured Output]
-        
-        B2 -.->|Rare Failure| X2[❌ Processing Error<br/><1% failure rate]
-    end
-```
--->
+<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/Document_Processing_Pipeline_Comparison_v2.mmd -->
 
 <!-- Speaker Notes: Simplicity isn't just elegant - it's more reliable and maintainable. The LayoutLM pipeline has multiple failure points while Vision Transformers process everything end-to-end. -->
 
@@ -237,29 +191,9 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 ### Slide 14: Self-Attention for Documents
 **Why This Works So Well**
 
-```mermaid
-graph LR
-    subgraph "Self-Attention: Hyatt Hotels Invoice"
-        P1[Hyatt Hotels<br/>Header] -.->|0.8| P5[TOTAL<br/>$31.33]
-        P2[Line Items<br/>Milk, Apples, Beef] -.->|0.9| P5
-        P3[Prices<br/>$4.80, $11.88...] -.->|0.9| P5
-        P4[GST 10%<br/>$2.85] -.->|0.7| P5
-        P5 -.->|0.4| P6[Payment: VISA<br/>Account: 93351576]
-        
-        P1 -.->|0.3| P7[Invoice #INV-84875<br/>Date: 01/07/2025]
-        P2 -.->|0.8| P3
-        P4 -.->|0.6| P3
-        P7 -.->|0.5| P1
-    end
-    
-    style P1 fill:#2563eb,color:#fff
-    style P2 fill:#059669,color:#fff
-    style P3 fill:#0891b2,color:#fff
-    style P4 fill:#7c3aed,color:#fff
-    style P5 fill:#dc2626,color:#fff
-    style P6 fill:#ea580c,color:#fff
-    style P7 fill:#64748b,color:#fff
-```
+![Self-Attention: Hyatt Hotels Invoice](presentation_diagrams/mermaid_exports/Self_Attention_Hyatt_Invoice.png)
+
+<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/Self_Attention_Hyatt_Invoice.mmd -->
 
 **Document-Specific Benefits**:
 - Links headers to values across page
