@@ -1,0 +1,41 @@
+graph LR
+    subgraph textside ["Classic Text Transformer (2017) - 'Attention is All You Need'"]
+        T1[Text Input<br/>'The quick brown fox'] --> T2[Tokenization<br/>Split into words/subwords] --> T3[Token Embeddings<br/>Convert words to vectors] --> T4[Position Encoding<br/>Add positional information]
+        T4 --> T5[Encoder Stack<br/>Multi-Head Self-Attention<br/>+ Feed Forward Networks<br/>N layers]
+        T5 --> T6[Text Output<br/>Understanding/Generation]
+    end
+    
+    subgraph visionside ["Vision Transformer (2020) - 'An Image is Worth 16x16 Words'"]
+        V1[Image Input<br/>Document/Invoice] --> V2[Patch Extraction<br/>Split into 16x16 patches] --> V3[Patch Embeddings<br/>Convert patches to vectors] --> V4[Position Encoding<br/>Add spatial information]
+        V4 --> V5[Encoder Stack<br/>Multi-Head Self-Attention<br/>+ Feed Forward Networks<br/>SAME ARCHITECTURE!]
+        V5 --> V6[Vision-Language Output<br/>Structured Extraction]
+    end
+    
+    subgraph breakthrough ["The Breakthrough: Same Core, Different Input"]
+        B1[🔑 SAME self-attention mechanism]
+        B2[🔑 SAME encoder architecture] 
+        B3[🔑 SAME position encoding concept]
+        B4[✨ DIFFERENT: Text tokens → Image patches]
+        B5[✨ DIFFERENT: Language → Vision-Language fusion]
+    end
+    
+    %% Connect similar components
+    T2 -.->|Equivalent Process| V2
+    T3 -.->|Same Concept| V3  
+    T4 -.->|Same Purpose| V4
+    T5 -.->|IDENTICAL ARCHITECTURE| V5
+    
+    %% Connect to breakthrough
+    T5 -.-> B1
+    V5 -.-> B2
+    
+    %% Styling
+    classDef textNode fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef visionNode fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef breakthroughNode fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    classDef sameArch fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#000
+    
+    class T1,T2,T3,T4,T6 textNode
+    class V1,V2,V3,V4,V6 visionNode
+    class T5,V5 sameArch
+    class B1,B2,B3,B4,B5 breakthroughNode

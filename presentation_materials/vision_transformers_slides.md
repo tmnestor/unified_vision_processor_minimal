@@ -106,7 +106,28 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 
 <!-- Speaker Notes: Simplicity isn't just elegant - it's more reliable and maintainable. The LayoutLM pipeline has multiple failure points while Vision Transformers process everything end-to-end. -->
 
-### Slide 8: Vision Transformers - The Solution
+### Slide 8: From Text to Vision - The Transformer Evolution
+
+![Text vs Vision Transformer Comparison](presentation_diagrams/mermaid_exports/Text_vs_Vision_Transformer_Comparison.png)
+
+**The Revolutionary Insight**: *Same core architecture, different input*
+
+**What You Already Know** (Text Transformers 2017):
+- Tokenization → Self-Attention → Understanding
+- "Attention is All You Need" revolutionized NLP
+
+**The Vision Breakthrough** (2020):
+- Image patches = Text tokens  
+- **IDENTICAL** self-attention architecture
+- Vision-Language fusion for document understanding
+
+<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/Text_vs_Vision_Transformer_Comparison.mmd -->
+
+<!-- 
+Speaker Notes: This is the key insight that will help you understand Vision Transformers - they use the EXACT SAME architecture you already know from text transformers. In 2017, "Attention is All You Need" showed that self-attention could replace recurrent networks for text. The breakthrough was realizing that images could be treated the same way as text. Instead of tokenizing "The quick brown fox" into words, we tokenize a Hyatt Hotels invoice into 16x16 pixel patches. The magic is that the encoder stack - the multi-head self-attention and feed forward networks - is IDENTICAL. Same architecture, same self-attention mechanism, same position encoding concept. The only differences are the input (text tokens vs image patches) and output (language understanding vs vision-language fusion). This is why Vision Transformers were so revolutionary - they didn't invent new architectures, they brilliantly applied the transformer architecture to a completely different domain. Your audience already understands how transformers work for text - now they'll see it's the same technology applied to vision.
+-->
+
+### Slide 9: Vision Transformers - The Solution
 
 **Core Innovation**: "An Image is Worth 16x16 Words"
 - Direct transformer application to vision tasks
@@ -127,7 +148,7 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 Speaker Notes: The original ViT breakthrough enabled all modern vision-language models. Key innovation: treats image patches like text tokens, applying transformers directly. All semantics (text, visual, spatial) are unified in one model with no information loss. Modern adaptations like InternVL3 and Llama-3.2-Vision build on this foundation for document understanding. Let's dive into each stage...
 -->
 
-### Slide 8a: Vision Transformer Architecture - Component Flow
+### Slide 9a: Vision Transformer Architecture - Component Flow
 
 ![ViT Component Flow](presentation_diagrams/mermaid_exports/ViT_Component_Flow.png)
 
@@ -144,7 +165,7 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 Speaker Notes: Before we dive into details, let's understand the overall architecture. Vision Transformers process documents through three main stages that work together seamlessly. Stage 1 converts the document image into encoded patches that transformers can understand. Stage 2 uses self-attention to build global understanding of the document structure and content. Stage 3 converts this understanding into the structured output we need. Unlike LayoutLM's fragmented approach, this is one unified pipeline where each stage feeds directly into the next. Now let's explore each stage in detail...
 -->
 
-### Slide 8b: Input Processing - Converting Images to Tokens
+### Slide 9b: Input Processing - Converting Images to Tokens
 
 ![ViT Input Processing](presentation_diagrams/mermaid_exports/ViT_Input_Processing.png)
 
@@ -162,7 +183,7 @@ Speaker Notes: Before we dive into details, let's understand the overall archite
 Speaker Notes: This is where the magic begins. Unlike OCR which tries to extract text first, Vision Transformers treat the entire image as data. A Hyatt Hotels invoice gets split into 16x16 pixel patches - maybe 100-200 patches total. Each patch becomes a mathematical vector, just like a word in a sentence. The position encoding tells the model "this patch is in the top-left corner, this one is bottom-right" - spatial relationships are preserved. The result is a sequence of encoded patches that the transformer can process, with no information lost to OCR failures.
 -->
 
-### Slide 8c: Transformer Processing - Global Understanding
+### Slide 9c: Transformer Processing - Global Understanding
 
 ![ViT Transformer Stack](presentation_diagrams/mermaid_exports/ViT_Transformer_Stack.png)
 
@@ -180,7 +201,7 @@ Speaker Notes: This is where the magic begins. Unlike OCR which tries to extract
 Speaker Notes: This is where Vision Transformers really shine. In traditional approaches, you extract text from one part of the document, then try to connect it to other parts later. Here, every patch of the document can "attend to" every other patch simultaneously. When processing that Hyatt Hotels invoice, the patch containing "TOTAL" can directly connect to patches containing "$31.33", "GST", and line items - all in one step. This happens 12-24 times through the layers, building increasingly sophisticated understanding. No sequential processing, no coordination problems - just direct global understanding.
 -->
 
-### Slide 8d: Language Generation - From Understanding to Extraction
+### Slide 9d: Language Generation - From Understanding to Extraction
 
 ![ViT Language Generation](presentation_diagrams/mermaid_exports/ViT_Language_Generation.png)
 
@@ -203,13 +224,13 @@ DATE: 01/07/2025
 Speaker Notes: The final stage converts the rich visual understanding into the structured output we need. The vision-language fusion layer has learned to connect visual patterns - like "$31.33 in large text near the word TOTAL" - to semantic concepts like "this is the document amount". The language model head then generates clean, structured text in exactly the format we specify. No post-processing, no template matching, no coordination between separate models. One unified system that goes from pixels to structured data.
 -->
 
-### Slide 9: From Prompt to Extraction - Input
+### Slide 10: From Prompt to Extraction - Input
 **Complete Processing Pipeline Demonstration**
 
 ![Extraction Prompt](presentation_diagrams/extraction_prompt.png)
 ![Original Document](presentation_diagrams/synthetic_invoice_014.png)
 
-### Slide 10: From Prompt to Extraction - Results
+### Slide 11: From Prompt to Extraction - Results
 **Model Output Comparison**
 
 ![Llama-3.2-Vision Output](presentation_diagrams/llama_extraction.png)
@@ -223,7 +244,7 @@ Speaker Notes: The final stage converts the rich visual understanding into the s
 
 **Notes**: Side-by-side comparison shows both models deliver production-ready results with slightly different strengths.
 
-### Slide 11: Performance Results
+### Slide 12: Performance Results
 
 ![Project Results](presentation_diagrams/project_results.png)
 
@@ -235,7 +256,7 @@ Speaker Notes: The final stage converts the rich visual understanding into the s
 
 <!-- Speaker Notes: Key insight - 25% accuracy improvement with 100% reliability. InternVL3 achieves better results than LayoutLM while using 67% less memory. Processing time is acceptable for production use. -->
 
-### Slide 12: How Vision Transformers Work
+### Slide 13: How Vision Transformers Work
 
 **Key Components**:
 1. **Patch Embedding**: Image → 16x16 patches
@@ -250,7 +271,7 @@ Speaker Notes: The final stage converts the rich visual understanding into the s
 
 <!-- Speaker Notes: Unlike LayoutLM's sequential processing, ViTs process the entire document holistically. The self-attention mechanism allows every patch to interact with every other patch, creating global understanding. -->
 
-### Slide 13: Semantic Capture Comparison
+### Slide 14: Semantic Capture Comparison
 
 | Aspect | LayoutLM | Vision Transformer |
 |--------|----------|-------------------|
@@ -266,7 +287,7 @@ Speaker Notes: The final stage converts the rich visual understanding into the s
 
 <!-- Speaker Notes: This isn't an incremental improvement - it's a paradigm shift. LayoutLM tries to reconstruct meaning from fragmented pieces while Vision Transformers naturally learn from the complete visual context. -->
 
-### Slide 14: Self-Attention for Documents
+### Slide 15: Self-Attention for Documents
 **Why This Works So Well**
 
 ![Self-Attention: Hyatt Hotels Invoice](presentation_diagrams/mermaid_exports/Self_Attention_Hyatt_Invoice.png)
@@ -283,7 +304,7 @@ Speaker Notes: The final stage converts the rich visual understanding into the s
 
 <!-- Speaker Notes: Attention mechanisms naturally model document structure. Each patch can attend to every other patch, creating global understanding of relationships. -->
 
-### Slide 15: Semantic Information Flow
+### Slide 16: Semantic Information Flow
 
 ![LayoutLM vs Vision Transformer Architecture](presentation_diagrams/mermaid_exports/LayoutLM_vs_Vision_Transformer_Architecture.png)
 
@@ -297,7 +318,7 @@ Speaker Notes: The final stage converts the rich visual understanding into the s
 Speaker Notes: The architecture determines semantic capture quality. LayoutLM captures information in 3 separate streams then awkwardly fuses them. Vision Transformers capture information holistically from the start. Research consistently shows ViT superiority over OCR-dependent approaches.
 -->
 
-### Slide 16: End-to-End Document Understanding
+### Slide 17: End-to-End Document Understanding
 **From Patches to Extracted Information**
 
 ![Document Understanding Flow](presentation_diagrams/mermaid_exports/Document_Understanding_Flow.png)
@@ -311,7 +332,7 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 
 <!-- Speaker Notes: This diagram shows the complete Vision Transformer pipeline processing our Hyatt Hotels invoice. Notice how the model progresses from analyzing individual patches (header, items, totals, payment) through multiple attention layers that build regional and then global understanding. The semantic understanding phase identifies relationships like "Subtotal + GST → Total", and finally generates all the structured output fields we need. -->
 
-### Slide 17: Case Study - Replacing LayoutLM
+### Slide 18: Case Study - Replacing LayoutLM
 **Proof of Concept Experiment (to date)**
 
 **Context**: Organization using LayoutLM in production
@@ -327,7 +348,7 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 
 **Notes**: Direct comparison on production data in AAP 2.0 is the crucial next step.
 
-### Slide 18: Production Insights
+### Slide 19: Production Insights
 **What We Learned**
 
 **Performance**:
@@ -346,7 +367,7 @@ Speaker Notes: The architecture determines semantic capture quality. LayoutLM ca
 
 **Notes**: Smaller ViT models can match or exceed larger ones for specific tasks.
 
-### Slide 19: Key References
+### Slide 20: Key References
 
 **Foundation Papers**:
 1. Dosovitskiy et al. (2020) "An Image is Worth 16x16 Words" - ICLR 2021
