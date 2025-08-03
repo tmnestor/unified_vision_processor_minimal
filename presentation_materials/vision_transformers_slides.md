@@ -62,6 +62,13 @@ Speaker Notes: This visual shows the actual tax return deductions structure. Eac
 
 ### Slide 5: Industry-Wide Evolution of Document AI
 
+![Document AI Evolution Timeline](presentation_diagrams/mermaid_exports/Document_AI_Evolution_Timeline.png)
+
+**Current Reality**: 
+- Many organizations still use LayoutLM
+- Document AI market transforming rapidly
+
+<!-- Mermaid source code (for reference):
 ```mermaid
 gantt
     title Industry-Wide Evolution of Document AI (Not ATO-specific)
@@ -83,10 +90,7 @@ gantt
     section 2023+
     Vision-Language Models      :active, vlm2023, 2023, 2025
 ```
-
-**Current Reality**: 
-- Many organizations still use LayoutLM
-- Document AI market transforming rapidly
+-->
 
 <!-- 
 Speaker Notes: This evolution reflects global trends. Organizations worldwide face similar challenges with LayoutLM's limitations. Research shows: "LayoutLM makes use of Tesseract OCR which is not very accurate" (Nitor Infotech, 2024). "Training LayoutLM can be computationally intensive" (UBIAI, 2024). 
