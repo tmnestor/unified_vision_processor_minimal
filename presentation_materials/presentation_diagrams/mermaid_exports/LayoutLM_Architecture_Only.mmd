@@ -1,0 +1,25 @@
+graph TD
+    subgraph layoutlm ["LayoutLM Architecture - Fragmented Processing"]
+        L1[Document Image] --> L2A[OCR Engine]
+        L1 --> L2B[CNN Features] 
+        L1 --> L2C[Layout Coords]
+        
+        L2A --> L3A[Text Tokens]
+        L2B --> L3B[Visual Features]
+        L2C --> L3C[Position Embeddings]
+        
+        L3A --> L4[LayoutLM Transformer<br/>Late Fusion]
+        L3B --> L4
+        L3C --> L4
+        
+        L4 --> L5[Extracted Fields]
+        
+        L6[❌ Multiple Failure Points<br/>❌ Information Loss at Fusion<br/>❌ Complex Pipeline]
+    end
+    
+    %% Styling
+    classDef layoutlmNode fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#000
+    classDef issues fill:#fce4ec,stroke:#e91e63,stroke-width:2px,color:#000
+    
+    class L1,L2A,L2B,L2C,L3A,L3B,L3C,L4,L5 layoutlmNode
+    class L6 issues
