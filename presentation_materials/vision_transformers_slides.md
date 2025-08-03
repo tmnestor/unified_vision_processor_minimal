@@ -165,31 +165,7 @@ graph TD
 - ✅ No OCR dependency
 - ✅ End-to-end learning
 
-<!-- Mermaid source (for reference):
-```mermaid
-graph TB
-    subgraph "Input Processing"
-        A[Document Image<br/>e.g., Invoice, Receipt] --> B[Split into 16x16 Patches]
-        B --> C[Linear Projection<br/>Patch Embedding]
-        C --> D[Add Position Encoding<br/>Spatial Relationships]
-    end
-    
-    subgraph "Transformer Encoder Stack"
-        D --> E[Multi-Head Self-Attention<br/>Global Context Understanding]
-        E --> F[Feed Forward Network<br/>Feature Processing]
-        F --> G[Layer Normalization<br/>+ Residual Connection]
-        G --> H{More Layers?}
-        H -->|Yes| E
-        H -->|No| I[Final Layer Output]
-    end
-    
-    subgraph "Language Generation Head"
-        I --> J[Vision-Language Fusion<br/>Semantic Understanding]
-        J --> K[Language Model Head<br/>Text Generation]
-        K --> L[Structured Output<br/>KEY: VALUE pairs]
-    end
-```
--->
+<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/Vision_Transformer_Architecture_v2.mmd -->
 
 <!-- 
 Speaker Notes: The original ViT breakthrough enabled all modern vision-language models. Key innovation: treats image patches like text tokens, applying transformers directly. All semantics (text, visual, spatial) are unified in one model with no information loss. Modern adaptations like InternVL3 and Llama-3.2-Vision build on this foundation for document understanding.
