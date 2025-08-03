@@ -1,8 +1,6 @@
-graph TB
+graph LR
     subgraph language ["Language Generation Head"]
-        A[Final Layer Output<br/>Rich semantic representations<br/>From transformer stack] --> B[Vision-Language Fusion<br/>Semantic Understanding<br/>Connect visual patterns to meaning]
-        B --> C[Language Model Head<br/>Text Generation<br/>Convert understanding to structured text]
-        C --> D[Structured Output<br/>KEY: VALUE pairs<br/>Ready for extraction]
+        A[Final Layer Output<br/>Rich semantic representations] --> B[Vision-Language Fusion<br/>Semantic Understanding] --> C[Language Model Head<br/>Text Generation] --> D[Structured Output<br/>KEY: VALUE pairs]
     end
     
     subgraph example ["Real Example Output"]

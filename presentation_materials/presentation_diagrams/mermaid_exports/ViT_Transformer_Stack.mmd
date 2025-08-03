@@ -1,9 +1,6 @@
-graph TB
+graph LR
     subgraph transformer ["Transformer Encoder Stack"]
-        A[Encoded Patches<br/>with Position Info] --> B[Multi-Head Self-Attention<br/>Global Context Understanding<br/>Each patch sees EVERY other patch]
-        B --> C[Feed Forward Network<br/>Feature Processing<br/>Non-linear transformations]
-        C --> D[Layer Normalization<br/>+ Residual Connection<br/>Stable training]
-        D --> E{More Layers?<br/>Typically 12-24 layers}
+        A[Encoded Patches] --> B[Multi-Head Self-Attention<br/>Global Context Understanding] --> C[Feed Forward Network<br/>Feature Processing] --> D[Layer Normalization<br/>+ Residual Connection] --> E{More Layers?<br/>12-24 layers}
         E -->|Yes| B
         E -->|No| F[Final Layer Output<br/>Rich semantic representations]
     end
@@ -12,12 +9,10 @@ graph TB
         G[Each patch sees<br/>EVERY other patch<br/>simultaneously]
         H[Global context<br/>understanding<br/>No information loss]
         I[No OCR dependency<br/>Direct visual learning]
-        
-        G --> H
-        H --> I
     end
     
     B -.-> G
+    G --> H --> I
     
     %% Styling
     classDef transformerNode fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000

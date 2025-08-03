@@ -1,8 +1,6 @@
-graph TB
+graph LR
     subgraph input ["Input Processing Stage"]
-        A[Document Image<br/>e.g., Invoice, Receipt<br/>Any document type] --> B[Split into 16x16 Patches<br/>Image divided into fixed-size squares]
-        B --> C[Linear Projection<br/>Patch Embedding<br/>Each patch → vector representation]
-        C --> D[Add Position Encoding<br/>Spatial Relationships<br/>Where is each patch located?]
+        A[Document Image<br/>e.g., Invoice, Receipt] --> B[Split into 16x16 Patches<br/>Fixed-size squares] --> C[Linear Projection<br/>Patch Embedding] --> D[Add Position Encoding<br/>Spatial Relationships]
     end
     
     D --> E[Ready for Transformer<br/>Encoded patches with position info]
