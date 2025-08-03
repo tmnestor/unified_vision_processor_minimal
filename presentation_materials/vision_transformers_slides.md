@@ -108,21 +108,82 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 
 ### Slide 8: Vision Transformers - The Solution
 
-![Vision Transformer Architecture](presentation_diagrams/mermaid_exports/Vision_Transformer_Architecture_v2.png)
-
 **Core Innovation**: "An Image is Worth 16x16 Words"
-- Direct transformer on vision tasks
+- Direct transformer application to vision tasks
 - Global self-attention understanding
+- End-to-end document processing
 
 **Key Advantages**:
 - ✅ Unified processing (one model)
 - ✅ No OCR dependency
 - ✅ End-to-end learning
 
-<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/Vision_Transformer_Architecture_v2.mmd -->
+**How It Works**: Three-stage processing
+1. **Input Processing**: Patches → Embeddings → Position encoding
+2. **Transformer Stack**: Self-attention → Feature processing → Layer iteration
+3. **Language Generation**: Vision-language fusion → Text output
 
 <!-- 
-Speaker Notes: The original ViT breakthrough enabled all modern vision-language models. Key innovation: treats image patches like text tokens, applying transformers directly. All semantics (text, visual, spatial) are unified in one model with no information loss. Modern adaptations like InternVL3 and Llama-3.2-Vision build on this foundation for document understanding.
+Speaker Notes: The original ViT breakthrough enabled all modern vision-language models. Key innovation: treats image patches like text tokens, applying transformers directly. All semantics (text, visual, spatial) are unified in one model with no information loss. Modern adaptations like InternVL3 and Llama-3.2-Vision build on this foundation for document understanding. Let's dive into each stage...
+-->
+
+### Slide 8a: Vision Transformers - Input Processing
+
+![ViT Input Processing](presentation_diagrams/mermaid_exports/ViT_Input_Processing.png)
+
+**Stage 1: Converting Images to Tokens**
+1. **Split into 16x16 Patches**: Document divided into fixed-size squares
+2. **Linear Projection**: Each patch becomes a vector representation  
+3. **Position Encoding**: Spatial relationships preserved
+4. **Result**: Ready for transformer processing
+
+**Key Insight**: Images become "sentences" of patch "words"
+
+<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/ViT_Input_Processing.mmd -->
+
+<!-- 
+Speaker Notes: This is where the magic begins. Unlike OCR which tries to extract text first, Vision Transformers treat the entire image as data. A Hyatt Hotels invoice gets split into 16x16 pixel patches - maybe 100-200 patches total. Each patch becomes a mathematical vector, just like a word in a sentence. The position encoding tells the model "this patch is in the top-left corner, this one is bottom-right" - spatial relationships are preserved. The result is a sequence of encoded patches that the transformer can process, with no information lost to OCR failures.
+-->
+
+### Slide 8b: Vision Transformers - Transformer Processing
+
+![ViT Transformer Stack](presentation_diagrams/mermaid_exports/ViT_Transformer_Stack.png)
+
+**Stage 2: Global Understanding Through Attention**
+- **Multi-Head Self-Attention**: Each patch "sees" every other patch
+- **Feed Forward Networks**: Non-linear feature processing
+- **Layer Iteration**: 12-24 layers of progressive understanding
+- **Key Innovation**: Global context from the start
+
+**Real Example**: Header "Hyatt Hotels" connects to total "$31.33" across the page
+
+<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/ViT_Transformer_Stack.mmd -->
+
+<!-- 
+Speaker Notes: This is where Vision Transformers really shine. In traditional approaches, you extract text from one part of the document, then try to connect it to other parts later. Here, every patch of the document can "attend to" every other patch simultaneously. When processing that Hyatt Hotels invoice, the patch containing "TOTAL" can directly connect to patches containing "$31.33", "GST", and line items - all in one step. This happens 12-24 times through the layers, building increasingly sophisticated understanding. No sequential processing, no coordination problems - just direct global understanding.
+-->
+
+### Slide 8c: Vision Transformers - Language Generation
+
+![ViT Language Generation](presentation_diagrams/mermaid_exports/ViT_Language_Generation.png)
+
+**Stage 3: From Understanding to Extraction**
+- **Vision-Language Fusion**: Connect visual patterns to semantic meaning
+- **Language Model Head**: Generate structured text output
+- **Structured Output**: Direct KEY: VALUE format
+
+**Real Output Example**:
+```
+SUPPLIER: Hyatt Hotels
+AMOUNT: $31.33
+GST: $2.85
+DATE: 01/07/2025
+```
+
+<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/ViT_Language_Generation.mmd -->
+
+<!-- 
+Speaker Notes: The final stage converts the rich visual understanding into the structured output we need. The vision-language fusion layer has learned to connect visual patterns - like "$31.33 in large text near the word TOTAL" - to semantic concepts like "this is the document amount". The language model head then generates clean, structured text in exactly the format we specify. No post-processing, no template matching, no coordination between separate models. One unified system that goes from pixels to structured data.
 -->
 
 ### Slide 9: From Prompt to Extraction - Input
