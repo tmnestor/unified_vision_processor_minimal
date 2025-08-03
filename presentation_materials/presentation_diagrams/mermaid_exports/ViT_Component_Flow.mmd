@@ -1,0 +1,32 @@
+graph LR
+    subgraph vit ["Vision Transformer Architecture - Three-Stage Processing"]
+        A[Document Image<br/>Raw pixels] --> B[Input Processing<br/>Stage 1]
+        B --> C[Transformer Stack<br/>Stage 2] 
+        C --> D[Language Generation<br/>Stage 3]
+        D --> E[Structured Output<br/>KEY: VALUE pairs]
+    end
+    
+    subgraph stage1 ["Stage 1: Input Processing"]
+        F[• Split into 16x16 patches<br/>• Linear projection embedding<br/>• Add position encoding<br/>• Result: Encoded patch sequence]
+    end
+    
+    subgraph stage2 ["Stage 2: Transformer Stack"]
+        G[• Multi-head self-attention<br/>• Feed forward networks<br/>• 12-24 layer iterations<br/>• Result: Rich semantic understanding]
+    end
+    
+    subgraph stage3 ["Stage 3: Language Generation"]
+        H[• Vision-language fusion<br/>• Language model head<br/>• Text generation<br/>• Result: Structured extraction]
+    end
+    
+    B -.-> F
+    C -.-> G  
+    D -.-> H
+    
+    %% Styling
+    classDef mainFlow fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#000
+    classDef stageDetail fill:#f8f9fa,stroke:#6c757d,stroke-width:1px,color:#000
+    classDef inputOutput fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    
+    class B,C,D mainFlow
+    class A,E inputOutput
+    class F,G,H stageDetail

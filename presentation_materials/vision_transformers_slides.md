@@ -127,7 +127,24 @@ Important: LayoutLM v1 (2020) used R-CNN for visual features, but v2/v3 (2021-20
 Speaker Notes: The original ViT breakthrough enabled all modern vision-language models. Key innovation: treats image patches like text tokens, applying transformers directly. All semantics (text, visual, spatial) are unified in one model with no information loss. Modern adaptations like InternVL3 and Llama-3.2-Vision build on this foundation for document understanding. Let's dive into each stage...
 -->
 
-### Slide 8a: Vision Transformers - Input Processing
+### Slide 8a: Vision Transformer Architecture - Component Flow
+
+![ViT Component Flow](presentation_diagrams/mermaid_exports/ViT_Component_Flow.png)
+
+**Three-Stage Processing Architecture**
+- **Stage 1**: Input Processing (Image → Encoded patches)
+- **Stage 2**: Transformer Stack (Global understanding)  
+- **Stage 3**: Language Generation (Structured output)
+
+**Key Insight**: Unified end-to-end processing from pixels to structured data
+
+<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/ViT_Component_Flow.mmd -->
+
+<!-- 
+Speaker Notes: Before we dive into details, let's understand the overall architecture. Vision Transformers process documents through three main stages that work together seamlessly. Stage 1 converts the document image into encoded patches that transformers can understand. Stage 2 uses self-attention to build global understanding of the document structure and content. Stage 3 converts this understanding into the structured output we need. Unlike LayoutLM's fragmented approach, this is one unified pipeline where each stage feeds directly into the next. Now let's explore each stage in detail...
+-->
+
+### Slide 8b: Input Processing - Converting Images to Tokens
 
 ![ViT Input Processing](presentation_diagrams/mermaid_exports/ViT_Input_Processing.png)
 
@@ -145,7 +162,7 @@ Speaker Notes: The original ViT breakthrough enabled all modern vision-language 
 Speaker Notes: This is where the magic begins. Unlike OCR which tries to extract text first, Vision Transformers treat the entire image as data. A Hyatt Hotels invoice gets split into 16x16 pixel patches - maybe 100-200 patches total. Each patch becomes a mathematical vector, just like a word in a sentence. The position encoding tells the model "this patch is in the top-left corner, this one is bottom-right" - spatial relationships are preserved. The result is a sequence of encoded patches that the transformer can process, with no information lost to OCR failures.
 -->
 
-### Slide 8b: Vision Transformers - Transformer Processing
+### Slide 8c: Transformer Processing - Global Understanding
 
 ![ViT Transformer Stack](presentation_diagrams/mermaid_exports/ViT_Transformer_Stack.png)
 
@@ -163,7 +180,7 @@ Speaker Notes: This is where the magic begins. Unlike OCR which tries to extract
 Speaker Notes: This is where Vision Transformers really shine. In traditional approaches, you extract text from one part of the document, then try to connect it to other parts later. Here, every patch of the document can "attend to" every other patch simultaneously. When processing that Hyatt Hotels invoice, the patch containing "TOTAL" can directly connect to patches containing "$31.33", "GST", and line items - all in one step. This happens 12-24 times through the layers, building increasingly sophisticated understanding. No sequential processing, no coordination problems - just direct global understanding.
 -->
 
-### Slide 8c: Vision Transformers - Language Generation
+### Slide 8d: Language Generation - From Understanding to Extraction
 
 ![ViT Language Generation](presentation_diagrams/mermaid_exports/ViT_Language_Generation.png)
 
