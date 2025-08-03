@@ -556,29 +556,9 @@ Speaker Notes: This is the critical architectural evolution that makes modern do
 
 **How Modern Vision-Language Models Work**
 
-```
-Document Image + Text Prompt
-            ↓
-    ┌─────────────────┐
-    │  VISION ENCODER │
-    │                 │
-    │  • Image patches│
-    │  • Self-attention│  
-    │  • Visual features│
-    └─────────────────┘
-            ↓
-    Visual Representations
-            ↓
-    ┌─────────────────┐
-    │ LANGUAGE DECODER│
-    │                 │
-    │ • Cross-attention│
-    │ • Text generation│
-    │ • Reasoning     │
-    └─────────────────┘
-            ↓
-    Structured Response
-```
+![Encoder-Decoder Architecture](presentation_diagrams/mermaid_exports/Encoder_Decoder_Architecture.png)
+
+<!-- Mermaid source available in: presentation_diagrams/mermaid_exports/Encoder_Decoder_Architecture.mmd -->
 
 **Key Innovation**: **Cross-Attention** between visual features and language generation
 

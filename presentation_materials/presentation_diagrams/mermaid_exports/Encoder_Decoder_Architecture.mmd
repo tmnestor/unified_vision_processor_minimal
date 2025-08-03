@@ -1,0 +1,28 @@
+graph TD
+    subgraph main ["How Modern Vision-Language Models Work"]
+        A[Document Image + Text Prompt] --> B[VISION ENCODER]
+        
+        subgraph encoder ["VISION ENCODER"]
+            B1[• Image patches<br/>• Self-attention<br/>• Visual features]
+        end
+        
+        B --> C[Visual Representations]
+        C --> D[LANGUAGE DECODER]
+        
+        subgraph decoder ["LANGUAGE DECODER"]
+            D1[• Cross-attention<br/>• Text generation<br/>• Reasoning]
+        end
+        
+        D --> E[Structured Response]
+    end
+    
+    %% Styling
+    classDef inputOutput fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef encoder fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef decoder fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    classDef intermediate fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    
+    class A,E inputOutput
+    class B,B1 encoder
+    class D,D1 decoder
+    class C intermediate
