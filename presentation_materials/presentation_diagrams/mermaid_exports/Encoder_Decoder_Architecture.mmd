@@ -1,20 +1,23 @@
-graph TD
+flowchart LR
     subgraph main ["How Modern Vision-Language Models Work"]
+        direction TB
         A[Document Image + Text Prompt] --> B[VISION ENCODER]
-        
-        subgraph encoder ["VISION ENCODER"]
-            B1[• Image patches<br/>• Self-attention<br/>• Visual features]
-        end
-        
         B --> C[Visual Representations]
         C --> D[LANGUAGE DECODER]
-        
-        subgraph decoder ["LANGUAGE DECODER"]
-            D1[• Cross-attention<br/>• Text generation<br/>• Reasoning]
-        end
-        
         D --> E[Structured Response]
     end
+    
+    subgraph encoder ["VISION ENCODER"]
+        B1[• Image patches<br/>• Self-attention<br/>• Visual features]
+    end
+    
+    subgraph decoder ["LANGUAGE DECODER"]
+        D1[• Cross-attention<br/>• Text generation<br/>• Reasoning]
+    end
+    
+    %% Position detail boxes aligned with main components
+    B -.-> encoder
+    D -.-> decoder
     
     %% Styling
     classDef inputOutput fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
