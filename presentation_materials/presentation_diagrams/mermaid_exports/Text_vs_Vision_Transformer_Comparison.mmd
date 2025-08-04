@@ -1,8 +1,8 @@
 graph LR
     subgraph textside ["Classic Text Transformer (2017) - 'Attention is All You Need'"]
-        T1[Text Input<br/>'The quick brown fox'] --> T2[Tokenization<br/>Split into words/subwords] --> T3[Token Embeddings<br/>Convert words to vectors] --> T4[Position Encoding<br/>Add positional information]
+        T1[Text Input<br/>'This movie was amazing!'] --> T2[Tokenization<br/>Split into words/subwords] --> T3[Token Embeddings<br/>Convert words to vectors] --> T4[Position Encoding<br/>Add positional information]
         T4 --> T5[Encoder Stack<br/>Multi-Head Self-Attention<br/>+ Feed Forward Networks<br/>N layers]
-        T5 --> T6[Text Output<br/>Understanding/Generation]
+        T5 --> T6[Classification Output<br/>Positive or Negative]
     end
     
     subgraph visionside ["Vision Transformer (2020) - 'An Image is Worth 16x16 Words'"]
