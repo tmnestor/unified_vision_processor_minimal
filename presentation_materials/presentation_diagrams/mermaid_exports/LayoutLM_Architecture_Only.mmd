@@ -1,7 +1,7 @@
 graph TD
     subgraph layoutlm ["LayoutLM Architecture - Fragmented Processing"]
         L1[Document Image] --> L2A[OCR Engine]
-        L1 --> L2B[CNN Features] 
+        L1 --> L2B[Image Features] 
         L1 --> L2C[Layout Coords]
         
         L2A --> L3A[Text Tokens]

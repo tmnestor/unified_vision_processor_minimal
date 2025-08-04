@@ -3,7 +3,7 @@ flowchart LR
         direction TB
         L1[Document Image]
         L1 --> L2A[OCR Engine]
-        L1 --> L2B[R-CNN Features]
+        L1 --> L2B[Image Features]
         L1 --> L2C[Layout Coordinates]
         
         L2A --> L3A[Text + Boxes]
@@ -21,10 +21,10 @@ flowchart LR
         L4 --> L5[Extracted Fields]
     end
     
-    subgraph vit ["Vision Transformer Pipeline"]
+    subgraph vit ["Vision-Language Model Pipeline"]
         direction TB  
         V1[Document Image] 
-        V1 --> V2[Vision Transformer<br/>+ Language Model]
+        V1 --> V2[Vision-Language<br/>Model]
         V2 --> V3[Extracted Fields]
         
         V7[✅ End-to-End]

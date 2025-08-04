@@ -1,20 +1,20 @@
-# Vision Transformers for Tax Document Extraction
-## How Vision Transformers Work and Why They're Superior to LayoutLM for Taxpayer Work-Related Expense Claims
+# Vision-Language Models for Tax Document Extraction
+## How Large Multimodal Models Work and Why They're Superior to LayoutLM for Taxpayer Work-Related Expense Claims
 ### 50-Minute Presentation (40 min + 10 min Q&A)
 
 ---
 
 ### Slide 1: Title Slide
 
-**Vision Transformers for Tax Document Extraction**
-*How Vision Transformers Work and Why They're Superior to LayoutLM for Taxpayer Work-Related Expense Claims*
+**Vision-Language Models for Tax Document Extraction**
+*How Large Multimodal Models Work and Why They're Superior to LayoutLM for Taxpayer Work-Related Expense Claims*
 
 **Presenter**: Tod Nestor | August 2025
 **Duration**: 50 minutes (40 min presentation + 10 min Q&A)
 **Context**: SSD-WRE Pipeline Information Extraction
 
 <!-- 
-Speaker Notes: Welcome everyone. Today we're addressing a critical technology decision that could transform how the ATO processes taxpayer expense claim substantiation. During tax time, audit officers must verify thousands of expense claim documents daily - receipts, invoices, and statements that taxpayers submit to support their work-related deductions. Currently, this information extraction is automated using LayoutLM technology, but we're hitting performance and reliability limits that create bottlenecks in the substantiation pipeline. Today's question: Can modern Vision Transformers provide a better solution for tax document processing? This presentation will show you the technical evidence and business case for this technology transition.
+Speaker Notes: Welcome everyone. Today we're addressing a critical technology decision that could transform how the ATO processes taxpayer expense claim substantiation. During tax time, audit officers must verify thousands of expense claim documents daily - receipts, invoices, and statements that taxpayers submit to support their work-related deductions. Currently, this information extraction is automated using LayoutLM technology, but we're hitting performance and reliability limits that create bottlenecks in the substantiation pipeline. Today's question: Can modern Vision-Language Models provide a better solution for tax document processing? This presentation will show you the technical evidence and business case for this technology transition.
 -->
 
 ---
@@ -27,7 +27,7 @@ Speaker Notes: Welcome everyone. Today we're addressing a critical technology de
    - Tax document processing challenge
    - Current LayoutLM limitations
 
-2. **How Vision Transformers Work** (18 min)
+2. **How Vision-Language Models Work** (18 min)
    - Technical architecture deep dive
    - Self-attention mechanisms
 
@@ -42,7 +42,7 @@ Speaker Notes: Welcome everyone. Today we're addressing a critical technology de
 **Q&A Session** (10 min)
 
 <!-- 
-Speaker Notes: We'll build understanding systematically - from the tax-specific business context through technical architecture to concrete evidence. The focus throughout will be on tax document extraction specifically, not general document AI. By the end, you'll have the technical knowledge and business evidence needed to evaluate Vision Transformers as a LayoutLM replacement for our tax document processing pipeline.
+Speaker Notes: We'll build understanding systematically - from the tax-specific business context through technical architecture to concrete evidence. The focus throughout will be on tax document extraction specifically, not general document AI. By the end, you'll have the technical knowledge and business evidence needed to evaluate Vision-Language Models as a LayoutLM replacement for our tax document processing pipeline.
 -->
 
 ---
@@ -83,7 +83,7 @@ Speaker Notes: This slide shows the actual Australian tax return structure focus
 
 **Technical Architecture Problems**:
 1. **OCR Dependency**: Tax receipts often have logos, stamps, handwriting → OCR failures cascade through entire pipeline
-2. **Complex Multi-Model Pipeline**: OCR engine + R-CNN features + LayoutLM transformer = 3+ failure points
+2. **Complex Multi-Model Pipeline**: OCR engine + image features + LayoutLM transformer = 3+ failure points
 3. **Information Loss**: Text extraction → Visual features → Layout coordinates → Late fusion loses semantic connections
 4. **Coordination Issues**: OCR bounding boxes must align with visual features (frequently fails with tax document variety)
 
@@ -104,7 +104,7 @@ Speaker Notes: These aren't minor technical issues - they're fundamental archite
 
 ---
 
-### Slide 5: Vision Transformer Solution - Simple Implementation
+### Slide 5: Vision-Language Model Solution - Simple Implementation
 
 **The Alternative: 15 Lines vs 200+ Lines of LayoutLM Code**
 
@@ -137,8 +137,8 @@ tax_data = processor.decode(output[0])
 
 **Key Contrasts with LayoutLM**:
 - ✅ **No OCR setup** (vs complex Tesseract configuration)
-- ✅ **No coordinate processing** (vs R-CNN feature extraction) 
-- ✅ **No multi-model coordination** (vs OCR + CNN + LayoutLM alignment)
+- ✅ **No coordinate processing** (vs image feature extraction) 
+- ✅ **No multi-model coordination** (vs OCR + image processing + LayoutLM alignment)
 - ✅ **Single end-to-end pipeline** (vs 6+ stage pipeline)
 
 **Result**: Production-ready tax extraction with minimal code complexity
@@ -224,13 +224,42 @@ Speaker Notes: This is the key insight that makes Vision Transformers intuitive 
 
 ---
 
-### Slide 8: Vision Transformer Overview - Core Innovation
+### Slide 8: Evolution to Vision-Language Models
 
-**"An Image is Worth 16x16 Words" Applied to Tax Documents**
+**From Image Classification to Document Understanding**
+
+**Classic Vision Transformer (2020)**:
+- **Architecture**: Encoder-only
+- **Purpose**: Image classification ("cat", "dog", "car")
+- **Output**: Single classification label
+- **Innovation**: Applied transformer attention to image patches
+
+**Modern Vision-Language Models (2024)**:
+- **Architecture**: Encoder-decoder with cross-attention
+- **Purpose**: Document understanding and text generation  
+- **Output**: Natural language responses and structured data
+- **Our Models**: Llama-3.2-Vision, InternVL3
+
+**Key Evolution for Tax Processing**:
+- **Classic ViT**: "This is an invoice" (classification)
+- **Vision-Language Models**: "SUPPLIER: Hyatt Hotels, AMOUNT: $31.33, GST: $2.85..." (structured extraction with reasoning)
+
+**Technical Architecture**: Vision encoder processes document → Language decoder generates tax fields
+
+<!-- 
+Speaker Notes: This is a crucial distinction for technical accuracy. The original Vision Transformer from 2020 was encoder-only and designed for image classification. What we're actually implementing - Llama-3.2-Vision and InternVL3 - are modern Vision-Language Models that combine a vision encoder with a language decoder. This encoder-decoder architecture is what enables them to not just understand documents, but generate structured text responses with reasoning. For tax processing, this evolution from classification to generation is transformative - instead of just identifying "this is a receipt," these models can extract all the tax-relevant fields and provide detailed explanations of their reasoning.
+-->
+
+---
+
+### Slide 9: Large Multimodal Model Overview - Core Innovation
+
+**Encoder-Decoder Architecture for Tax Document Processing**
 
 **Core Architecture**:
-- **Unified Processing**: Single model handles all document understanding
-- **Global Self-Attention**: Every part of receipt "sees" every other part simultaneously  
+- **Vision Encoder**: Processes receipt images using transformer attention on patches
+- **Language Decoder**: Generates structured text responses with reasoning
+- **Cross-Attention**: Links visual understanding to text generation
 - **End-to-End Learning**: Pixels → Structured tax data (no intermediate failures)
 
 **Tax Document Advantages**:
@@ -240,19 +269,19 @@ Speaker Notes: This is the key insight that makes Vision Transformers intuitive 
 - ✅ **Single Pipeline**: One model replaces OCR + feature extraction + LayoutLM
 
 **Three-Stage Tax Document Processing**:
-1. **Input Processing**: Receipt → Patches → Embeddings → Position encoding
-2. **Transformer Stack**: Self-attention → Global understanding → Layer iteration  
-3. **Tax Field Generation**: Vision-language fusion → Structured output (Supplier, ABN, Amount, GST, Date)
+1. **Vision Encoding**: Receipt → Patches → Visual representations → Spatial understanding
+2. **Cross-Attention**: Visual features inform text generation at each step
+3. **Tax Field Generation**: Language decoder → Structured output (Supplier, ABN, Amount, GST, Date)
 
-**Key Breakthrough**: Treats tax receipt patches like text tokens, applying proven transformer architecture
+**Key Innovation**: Combines visual transformer architecture with language generation for document understanding
 
 <!-- 
-Speaker Notes: This overview shows why Vision Transformers are perfectly suited for tax document variety. Traditional OCR-based approaches fail because they assume documents have extractable text. Tax receipts often don't - faded thermal printing, logos, stamps, handwriting. Vision Transformers treat everything as visual data, learning patterns directly from pixels. The global self-attention is crucial for tax documents because field relationships span the entire receipt - supplier header relates to ABN in footer, line items relate to GST calculation, totals relate to payment method. This holistic understanding is impossible with LayoutLM's fragmented processing approach.
+Speaker Notes: This overview shows why Vision-Language Models are perfectly suited for tax document variety. Traditional OCR-based approaches fail because they assume documents have extractable text. Tax receipts often don't - faded thermal printing, logos, stamps, handwriting. Vision-Language Models treat everything as visual data, learning patterns directly from pixels through the vision encoder, then use the language decoder to generate structured responses. The global self-attention in the vision encoder is crucial for tax documents because field relationships span the entire receipt - supplier header relates to ABN in footer, line items relate to GST calculation, totals relate to payment method. The cross-attention mechanism allows the language decoder to focus on relevant visual regions while generating each field. This holistic understanding is impossible with LayoutLM's fragmented processing approach.
 -->
 
 ---
 
-### Slide 9: Stage 1 - Input Processing for Tax Documents
+### Slide 10: Stage 1 - Input Processing for Tax Documents
 
 ![ViT Input Processing](presentation_diagrams/mermaid_exports/ViT_Input_Processing.png)
 
@@ -280,7 +309,7 @@ Speaker Notes: This stage is where Vision Transformers gain their first advantag
 
 ---
 
-### Slide 10: Stage 2 - Transformer Processing for Tax Understanding
+### Slide 11: Stage 2 - Transformer Processing for Tax Understanding
 
 ![ViT Transformer Stack](presentation_diagrams/mermaid_exports/ViT_Transformer_Stack.png)
 
@@ -313,7 +342,7 @@ Speaker Notes: This is where Vision Transformers excel for tax documents. Unlike
 
 ---
 
-### Slide 11: Stage 3 - Tax Field Generation
+### Slide 12: Stage 3 - Tax Field Generation
 
 ![ViT Language Generation](presentation_diagrams/mermaid_exports/ViT_Language_Generation.png)
 
@@ -353,7 +382,7 @@ Speaker Notes: The final stage produces exactly what tax processing systems need
 
 ---
 
-### Slide 12: Self-Attention for Tax Documents
+### Slide 13: Self-Attention for Tax Documents
 
 ![Self-Attention: Hyatt Hotels Invoice](presentation_diagrams/mermaid_exports/Self_Attention_Hyatt_Invoice.png)
 
@@ -386,7 +415,7 @@ Speaker Notes: This slide shows why self-attention is perfect for tax document p
 
 ---
 
-### Slide 13: Encoder-Decoder Architecture for Tax Processing
+### Slide 14: Encoder-Decoder Architecture for Tax Processing
 
 ![Encoder-Decoder Architecture](presentation_diagrams/mermaid_exports/Encoder_Decoder_Architecture.png)
 
@@ -420,7 +449,7 @@ Speaker Notes: This diagram shows the complete architecture powering modern tax 
 
 ---
 
-### Slide 14: Pipeline Comparison - LayoutLM vs Vision Transformers
+### Slide 15: Pipeline Comparison - LayoutLM vs Vision-Language Models
 
 ![LayoutLM vs Vision Transformer Architecture](presentation_diagrams/mermaid_exports/LayoutLM_vs_Vision_Transformer_Architecture.png)
 
@@ -428,42 +457,42 @@ Speaker Notes: This diagram shows the complete architecture powering modern tax 
 
 **LayoutLM Pipeline (6+ stages, multiple failure points)**:
 1. OCR Engine → Text + Bounding boxes (fails on poor receipt quality)
-2. R-CNN Features → Visual representations (limited to local context)  
+2. Image Features → Visual representations (limited to local context)  
 3. Layout Coordinates → 2D positioning (coordination issues)
 4. Late Fusion → Attempt to combine separate streams (information loss)
 5. LayoutLM Transformer → Process fragmented inputs
 6. Field Extraction → Reconstruct from fragments
 
-**Vision Transformer Pipeline (2 stages, end-to-end)**:
-1. Vision Transformer + Language Model → Direct receipt processing
+**Vision-Language Model Pipeline (2 stages, end-to-end)**:
+1. Vision-Language Model → Direct receipt processing
 2. Structured Tax Output → Complete field extraction
 
 **Tax Document Implications**:
 - **LayoutLM**: OCR failures on thermal receipts → Pipeline failure
-- **Vision Transformers**: Direct processing → Robust to receipt quality variations
+- **Vision-Language Models**: Direct processing → Robust to receipt quality variations
 - **LayoutLM**: Complex coordination → Maintenance overhead
-- **Vision Transformers**: Single model → Simplified operations
+- **Vision-Language Models**: Single model → Simplified operations
 
 **Reliability Comparison**:
 - **LayoutLM**: ~85% success rate (OCR failures cascade)
-- **Vision Transformers**: 100% success rate (no preprocessing failures)
+- **Vision-Language Models**: 100% success rate (no preprocessing failures)
 
 <!-- Mermaid source available in: presentation_diagrams/mermaid_exports/LayoutLM_vs_Vision_Transformer_Architecture.mmd -->
 
 <!-- 
-Speaker Notes: This architectural comparison shows why Vision Transformers are superior for tax document processing. LayoutLM's multi-stage pipeline creates multiple failure points - particularly OCR failures on poor-quality receipts that are common in tax submissions. Each stage introduces potential errors that cascade through the system. Vision Transformers process receipts end-to-end with no intermediate failures. For tax processing, this reliability difference is crucial - we can't afford pipeline failures during peak tax season when processing thousands of documents daily.
+Speaker Notes: This architectural comparison shows why Vision-Language Models are superior for tax document processing. LayoutLM's multi-stage pipeline creates multiple failure points - particularly OCR failures on poor-quality receipts that are common in tax submissions. Each stage introduces potential errors that cascade through the system. Vision-Language Models process receipts end-to-end with no intermediate failures. For tax processing, this reliability difference is crucial - we can't afford pipeline failures during peak tax season when processing thousands of documents daily.
 -->
 
 ---
 
-### Slide 15: Semantic Capture Comparison
+### Slide 16: Semantic Capture Comparison
 
 **How Each Approach Handles Tax Document Understanding**
 
-| Aspect | LayoutLM | Vision Transformer |
+| Aspect | LayoutLM | Vision-Language Model |
 |--------|----------|-------------------|
 | **Text Processing** | ❌ OCR tokens (fails on receipts) | ✅ Visual text understanding |
-| **Visual Understanding** | ❌ Shallow CNN features | ✅ Deep attention integration |
+| **Visual Understanding** | ❌ Limited visual features | ✅ Deep attention integration |
 | **Spatial Relationships** | ⚠️ Hard-coded coordinates | ✅ Learned spatial patterns |
 | **Context Integration** | ❌ Late fusion (information loss) | ✅ Unified processing |
 | **Tax-Specific Learning** | ❌ Generic document model | ✅ End-to-end tax optimization |
@@ -472,36 +501,36 @@ Speaker Notes: This architectural comparison shows why Vision Transformers are s
 
 **Receipt Quality Issues**:
 - **LayoutLM**: Faded thermal receipt → OCR fails → No extraction
-- **Vision Transformers**: Processes visual patterns → Successful extraction
+- **Vision-Language Models**: Processes visual patterns → Successful extraction
 
 **Complex Layouts**:
 - **LayoutLM**: Multi-column invoice → Coordinate misalignment → Field confusion
-- **Vision Transformers**: Global attention → Correct field association
+- **Vision-Language Models**: Global attention → Correct field association
 
 **Handwritten Elements**:
 - **LayoutLM**: Handwritten total → OCR failure → Manual fallback required
-- **Vision Transformers**: Visual pattern recognition → Automated processing
+- **Vision-Language Models**: Visual pattern recognition → Automated processing
 
-**Key Difference**: LayoutLM reconstructs understanding from fragments, Vision Transformers learn from complete visual context
+**Key Difference**: LayoutLM reconstructs understanding from fragments, Vision-Language Models learn from complete visual context
 
 <!-- 
-Speaker Notes: This comparison highlights why Vision Transformers are fundamentally better suited for tax document processing. Tax receipts present unique challenges that expose LayoutLM's limitations: poor print quality, non-standard formats, mixed printed/handwritten content, variable layouts. LayoutLM's dependency on OCR text extraction fails precisely when tax documents are most challenging. Vision Transformers treat everything as visual data, learning patterns that work regardless of text quality or format variations. The end-to-end learning optimizes specifically for tax field extraction rather than generic document understanding.
+Speaker Notes: This comparison highlights why Vision-Language Models are fundamentally better suited for tax document processing. Tax receipts present unique challenges that expose LayoutLM's limitations: poor print quality, non-standard formats, mixed printed/handwritten content, variable layouts. LayoutLM's dependency on OCR text extraction fails precisely when tax documents are most challenging. Vision-Language Models treat everything as visual data, learning patterns that work regardless of text quality or format variations. The end-to-end learning optimizes specifically for tax field extraction rather than generic document understanding.
 -->
 
 ---
 
-### Slide 16: Performance Results on Tax Documents
+### Slide 17: Performance Results on Tax Documents
 
 ![Project Results](presentation_diagrams/project_results.png)
 
-**Vision Transformers vs LayoutLM for Tax Document Processing**
+**Vision-Language Models vs LayoutLM for Tax Document Processing**
 
 **Accuracy Comparison**:
-- ✅ **Vision Transformers**: ~59% field accuracy (25% improvement over baseline)
+- ✅ **Vision-Language Models**: ~59% field accuracy (25% improvement over baseline)
 - ❌ **LayoutLM Baseline**: ~47% field accuracy (industry typical)
 
 **Reliability Metrics**:
-- ✅ **Vision Transformers**: 100% document processing success rate
+- ✅ **Vision-Language Models**: 100% document processing success rate
 - ❌ **LayoutLM**: ~85% success rate (OCR failures on poor receipts)
 
 **Resource Efficiency**:
@@ -523,7 +552,7 @@ Speaker Notes: These results demonstrate clear superiority for tax document proc
 
 ---
 
-### Slide 17: Production Insights for Tax Processing
+### Slide 18: Production Insights for Tax Processing
 
 **Operational Benefits for Tax Document Pipeline**
 
@@ -536,7 +565,7 @@ Speaker Notes: These results demonstrate clear superiority for tax document proc
 **Resource Optimization**:
 - **Memory Efficiency**: InternVL3 2.6GB enables multi-model deployment on single V100
 - **Infrastructure Simplification**: Eliminates OCR servers, coordinate processing, multi-model orchestration
-- **Maintenance Reduction**: Single model updates vs. coordinating OCR + CNN + LayoutLM versions
+- **Maintenance Reduction**: Single model updates vs. coordinating OCR + image processing + LayoutLM versions
 
 **Tax Compliance Benefits**:
 - **Audit Trail**: Attention weights show exactly which receipt regions influenced each extracted field
@@ -547,7 +576,7 @@ Speaker Notes: These results demonstrate clear superiority for tax document proc
 **Cost Implications**:
 - **Eliminated**: OCR licensing fees, multi-model infrastructure, specialized maintenance
 - **Reduced**: Manual review requirements, processing delays, system complexity
-- **Added**: Vision Transformer model hosting (significantly lower total cost)
+- **Added**: Vision-Language Model hosting (significantly lower total cost)
 
 <!-- 
 Speaker Notes: These operational insights address the key concerns for production tax document processing. The elimination of pipeline failures is crucial during tax season when volume spikes create system stress. Format independence means taxpayers can submit any receipt type without special handling. The audit trail capability is essential for tax compliance - we can show exactly how the system arrived at each extracted field. Resource optimization enables cost-effective scaling, while infrastructure simplification reduces operational complexity. The cost analysis shows significant savings from eliminating OCR infrastructure and reducing manual review requirements.
@@ -555,7 +584,7 @@ Speaker Notes: These operational insights address the key concerns for productio
 
 ---
 
-### Slide 18: Why Encoder-Decoder Wins for Tax Processing
+### Slide 19: Why Encoder-Decoder Wins for Tax Processing
 
 **Superior Reasoning and Audit Capabilities**
 
@@ -597,14 +626,14 @@ Speaker Notes: This slide demonstrates why encoder-decoder architecture provides
 
 ---
 
-### Slide 19: Tax Document Case Study
+### Slide 20: Tax Document Case Study
 
 **Proof of Concept: Replacing LayoutLM for ATO Document Processing**
 
 **Context**: 
 - **Current System**: LayoutLM-based extraction for taxpayer expense claim verification
 - **Challenge**: Accuracy plateau (~47%), high maintenance costs, OCR infrastructure complexity
-- **Objective**: Evaluate Vision Transformers for production tax document pipeline
+- **Objective**: Evaluate Vision-Language Models for production tax document pipeline
 
 **Experimental Design**:
 - **Models Tested**: InternVL3-2B (efficiency focus) and Llama-3.2-Vision-11B (accuracy focus)
@@ -619,21 +648,21 @@ Speaker Notes: This slide demonstrates why encoder-decoder architecture provides
 4. **Tax Intelligence**: Automatic expense categorization, GST validation, supplier verification
 
 **Production Implications**:
-- **Immediate**: Deploy Vision Transformers for pilot tax document processing
+- **Immediate**: Deploy Vision-Language Models for pilot tax document processing
 - **Phase 2**: Scale to full production during next tax season
 - **Phase 3**: Expand to other ATO document types (BAS, company returns)
 
 **Next Steps**: Validation on production AAP 2.0 data with real taxpayer submissions
 
 <!-- 
-Speaker Notes: This case study demonstrates a systematic approach to replacing LayoutLM with Vision Transformers for tax processing. The experimental design was rigorous, covering both efficiency and accuracy requirements. The results show clear advantages across all critical metrics. Most importantly, the tax-specific intelligence capabilities - automatic expense categorization, GST validation, supplier verification - provide functionality that goes beyond simple field extraction to support actual tax compliance workflows. The production deployment plan provides a measured approach to adopting this technology, starting with pilot implementation and scaling based on results.
+Speaker Notes: This case study demonstrates a systematic approach to replacing LayoutLM with Vision-Language Models for tax processing. The experimental design was rigorous, covering both efficiency and accuracy requirements. The results show clear advantages across all critical metrics. Most importantly, the tax-specific intelligence capabilities - automatic expense categorization, GST validation, supplier verification - provide functionality that goes beyond simple field extraction to support actual tax compliance workflows. The production deployment plan provides a measured approach to adopting this technology, starting with pilot implementation and scaling based on results.
 -->
 
 ---
 
-### Slide 20: Business Impact Summary
+### Slide 21: Business Impact Summary
 
-**Strategic Benefits of Vision Transformers for Tax Document Processing**
+**Strategic Benefits of Vision-Language Models for Tax Document Processing**
 
 **Accuracy & Reliability Improvements**:
 - **25% accuracy increase**: 59% vs. 47% field accuracy (enables automated processing)
@@ -642,7 +671,7 @@ Speaker Notes: This case study demonstrates a systematic approach to replacing L
 
 **Operational Efficiency Gains**:
 - **67% resource reduction**: 2.6GB vs. 8GB+ VRAM (enables multi-model deployment)
-- **Pipeline simplification**: Single model replaces OCR + CNN + LayoutLM infrastructure
+- **Pipeline simplification**: Single model replaces OCR + image processing + LayoutLM infrastructure
 - **Maintenance reduction**: One model update vs. coordinating multiple system components
 
 **Tax Compliance Enhancements**:
@@ -664,27 +693,28 @@ Speaker Notes: This case study demonstrates a systematic approach to replacing L
 **Recommendation**: **Proceed with production pilot deployment for next tax season**
 
 <!-- 
-Speaker Notes: This summary demonstrates clear business justification for Vision Transformer adoption. The 25% accuracy improvement enables automated processing that wasn't possible with LayoutLM, while 100% reliability eliminates the cascade failures that create bottlenecks during tax season. The operational efficiencies provide immediate cost savings through reduced infrastructure and maintenance requirements. The tax compliance enhancements address ATO's core mission - ensuring accurate, auditable tax processing. The 6-month ROI timeline makes this a financially attractive investment. Most importantly, this technology positions ATO as a leader in government AI adoption while providing the foundation for future document processing innovations.
+Speaker Notes: This summary demonstrates clear business justification for Vision-Language Model adoption. The 25% accuracy improvement enables automated processing that wasn't possible with LayoutLM, while 100% reliability eliminates the cascade failures that create bottlenecks during tax season. The operational efficiencies provide immediate cost savings through reduced infrastructure and maintenance requirements. The tax compliance enhancements address ATO's core mission - ensuring accurate, auditable tax processing. The 6-month ROI timeline makes this a financially attractive investment. Most importantly, this technology positions ATO as a leader in government AI adoption while providing the foundation for future document processing innovations.
 -->
 
 ---
 
-### Slide 21: References
+### Slide 22: References
 
 **Technical Foundation & Research Sources**
 
-**Vision Transformer Foundations**:
+**Vision Transformer Foundations (Classic ViT - Encoder-only)**:
 1. Dosovitskiy et al. (2020) "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" - ICLR 2021
 2. Vaswani et al. (2017) "Attention is All You Need" - NIPS 2017
 
-**Document AI Research**:
-3. Xu et al. (2020) "LayoutLM: Pre-training of Text and Layout for Document Image Understanding" - KDD 2020
-4. Kim et al. (2022) "OCR-free Document Understanding Transformer" - ECCV 2022
-5. Li et al. (2021) "LayoutLMv2: Multi-modal Pre-training for Visually-Rich Document Understanding" - ACL 2021
+**Vision-Language Model Evolution (Encoder-Decoder for Text Generation)**:
+3. Chen et al. (2024) "InternVL: Scaling up Vision Foundation Models and Aligning for Generic Visual-Linguistic Tasks" - arXiv:2312.14238
+4. Meta AI (2024) "Llama 3.2: Revolutionizing edge AI and vision with open, customizable models" - Technical Report
+5. Radford et al. (2021) "Learning Transferable Visual Models From Natural Language Supervision" - ICML 2021
 
-**Production Model Sources**:
-6. Chen et al. (2024) "InternVL: Scaling up Vision Foundation Models and Aligning for Generic Visual-Linguistic Tasks" - arXiv:2312.14238
-7. Meta AI (2024) "Llama 3.2: Revolutionizing edge AI and vision with open, customizable models" - Technical Report
+**Document AI Research**:
+6. Xu et al. (2020) "LayoutLM: Pre-training of Text and Layout for Document Image Understanding" - KDD 2020
+7. Kim et al. (2022) "OCR-free Document Understanding Transformer" - ECCV 2022
+8. Li et al. (2021) "LayoutLMv2: Multi-modal Pre-training for Visually-Rich Document Understanding" - ACL 2021
 
 **Industry Analysis & Comparisons**:
 8. UBIAI (2024) "LayoutLMv3 in Document Understanding: Applications and Limitations"
@@ -701,7 +731,7 @@ Speaker Notes: This summary demonstrates clear business justification for Vision
 - Performance benchmarks: Model comparison analysis results
 
 <!-- 
-Speaker Notes: This comprehensive reference list provides the academic and industry foundation supporting our Vision Transformer recommendation. The technical papers establish the theoretical basis, while industry analyses confirm real-world performance advantages. The Australian tax context references ensure our approach aligns with ATO requirements and compliance needs. The implementatio references provide the practical foundation for production deployment. These sources support every technical claim and business justification presented in this presentation.
+Speaker Notes: This comprehensive reference list provides the academic and industry foundation supporting our Vision-Language Model recommendation. The technical papers establish the theoretical basis, while industry analyses confirm real-world performance advantages. The Australian tax context references ensure our approach aligns with ATO requirements and compliance needs. The implementatio references provide the practical foundation for production deployment. These sources support every technical claim and business justification presented in this presentation.
 -->
 
 ---
@@ -710,4 +740,4 @@ Speaker Notes: This comprehensive reference list provides the academic and indus
 
 *Total Slides: 21*
 *Target Audience: ATO Technical Leadership*
-*Focus: Tax Document Processing with Vision Transformers*
+*Focus: Tax Document Processing with Vision-Language Models*
