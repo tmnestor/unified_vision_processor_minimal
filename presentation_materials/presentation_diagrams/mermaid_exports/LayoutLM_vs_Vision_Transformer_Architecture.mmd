@@ -3,17 +3,14 @@ flowchart LR
         direction TB
         L1[Document Image]
         L1 --> L2A[OCR Engine]
-        L1 --> L2B[Image Features]
         L1 --> L2C[Layout Coordinates]
         
         L2A --> L3A[Text + Boxes]
-        L2B --> L3B[Image Features] 
         L2C --> L3C[2D Positions]
         
         L2A -.-> L7[OCR Failures]
         
         L3A --> L4[LayoutLM<br/>Transformer]
-        L3B --> L4
         L3C --> L4
         
         L8[Alignment Issues] -.-> L4
@@ -39,7 +36,7 @@ flowchart LR
     classDef issues fill:#fce4ec,stroke:#e91e63,stroke-width:2px,color:#000
     classDef benefits fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
     
-    class L1,L2A,L2B,L2C,L3A,L3B,L3C,L4,L5 layoutlmNode
+    class L1,L2A,L2C,L3A,L3C,L4,L5 layoutlmNode
     class V1,V2,V3 vitNode
     class L6 issues
     class V4 benefits
