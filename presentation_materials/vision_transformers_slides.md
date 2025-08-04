@@ -623,8 +623,8 @@ Speaker Notes: This summary demonstrates clear business justification for Vision
 **Technical Foundation & Research Sources**
 
 **Vision Transformer Foundations (Classic ViT - Encoder-only)**:
-1. Dosovitskiy et al. (2020) "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" - ICLR 2021
-2. Vaswani et al. (2017) "Attention is All You Need" - NIPS 2017
+1. Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., & Houlsby, N. (2021). "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale." International Conference on Learning Representations (ICLR).
+2. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., & Polosukhin, I. (2017). "Attention is All You Need." Neural Information Processing Systems (NeurIPS).
 
 **Vision-Language Model Evolution (Encoder-Decoder for Text Generation)**:
 3. Chen et al. (2024) "InternVL: Scaling up Vision Foundation Models and Aligning for Generic Visual-Linguistic Tasks" - arXiv:2312.14238
