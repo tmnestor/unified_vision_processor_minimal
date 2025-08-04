@@ -6,9 +6,9 @@ graph LR
     end
     
     subgraph visionside ["Vision Transformer (2020) - 'An Image is Worth 16x16 Words'"]
-        V1[Image Input<br/>Document/Invoice] --> V2[Patch Extraction<br/>Split into 16x16 patches] --> V3[Patch Embeddings<br/>Convert patches to vectors] --> V4[Position Encoding<br/>Add spatial information]
+        V1[Image Input<br/>Picture of your pet] --> V2[Patch Extraction<br/>Split into 16x16 patches] --> V3[Patch Embeddings<br/>Convert patches to vectors] --> V4[Position Encoding<br/>Add spatial information]
         V4 --> V5[Encoder Stack<br/>Multi-Head Self-Attention<br/>+ Feed Forward Networks<br/>SAME ARCHITECTURE!]
-        V5 --> V6[Vision-Language Output<br/>Structured Extraction]
+        V5 --> V6[Classification Output<br/>Dog or Cat]
     end
     
     subgraph breakthrough ["The Breakthrough: Same Core, Different Input"]
