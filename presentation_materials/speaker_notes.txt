@@ -103,11 +103,19 @@ This goes beyond field extraction to provide tax-specific analysis. No post-proc
 
 ## Slide 13: Self-Attention for Tax Documents
 
-This slide shows why self-attention is perfect for tax document processing. 
-Tax compliance requires understanding relationships across the entire document - not just extracting isolated fields. 
-The attention patterns mirror actual audit verification: checking that totals match line items, confirming supplier legitimacy through ABN correlation, validating GST calculations. 
-The model learns these verification patterns automatically from training data. 
-When processing real tax receipts, these attention weights show exactly how the model arrived at its conclusions - providing the audit trail that tax processing requires. 
+This slide shows why self-attention is perfect for tax document processing using the Hyatt Hotels invoice example. 
+The attention diagram shows specific attention weights between document regions:
+
+The "TOTAL $31.33" region strongly attends to:
+- Line items (Milk, Apples, Beef) with 0.9 attention weight
+- Individual prices ($4.80, $11.88...) with 0.9 attention weight  
+- The supplier header "Hyatt Hotels" with 0.8 attention weight
+- GST calculation "$2.85" with 0.7 attention weight
+
+This demonstrates cross-validation - the model automatically verifies that totals match line items and prices, exactly mirroring human audit verification.
+The line items also attend to their corresponding prices (0.8 weight) and GST attends to prices (0.6 weight) for tax calculation validation.
+
+These attention patterns provide the audit trail that tax processing requires - we can see exactly which parts of the document the model considered when extracting each field.
 This relationship understanding is impossible with LayoutLM's fragmented approach.
 
 ## Slide 14: Encoder-Decoder Architecture for Tax Processing
