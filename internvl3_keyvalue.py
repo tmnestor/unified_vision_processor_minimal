@@ -32,19 +32,21 @@ Evaluation Libraries:
 - re: For sophisticated field comparison (numeric, date, string matching)
 """
 
-from pathlib import Path
-import torch
-from PIL import Image
-from transformers import AutoModel, AutoTokenizer
-import torchvision.transforms as T
-import pandas as pd
 import glob
-from datetime import datetime
-import re
 import json
+import re
+from datetime import datetime
+from pathlib import Path
+
+import pandas as pd
+import torch
+import torchvision.transforms as T
 
 # Check transformers version (should be >=4.37.2)
 import transformers
+from PIL import Image
+from transformers import AutoModel, AutoTokenizer
+
 print(f"🔍 Transformers version: {transformers.__version__}")
 
 # Global configuration variables for evaluation
@@ -53,7 +55,7 @@ ground_truth_path = "/home/jovyan/nfs_share/tod/unified_vision_processor_minimal
 model_path = "/home/jovyan/nfs_share/models/InternVL3-2B" 
 output_dir = "/home/jovyan/nfs_share/tod/output"
 
-print(f"🎯 EVALUATION MODE ENABLED")
+print("🎯 EVALUATION MODE ENABLED")
 print(f"📁 Evaluation data directory: {data_dir}")
 print(f"📊 Ground truth file: {ground_truth_path}")
 print(f"📁 Output directory: {output_dir}")
@@ -122,7 +124,6 @@ Key Requirements from Documentation:
 - Memory-safe processing with configurable max_num
 """
 
-import math
 
 # Official ImageNet normalization constants
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
@@ -334,7 +335,7 @@ question = f'<image>\n{extraction_prompt}'
 
 print("📋 Structured key-value extraction prompt configured")
 print(f"📄 Prompt length: {len(extraction_prompt)} characters")
-print(f"🔍 Extracting 25 standardized business document fields")
+print("🔍 Extracting 25 standardized business document fields")
 print("⚙️ Configured for deterministic, structured output")
 
 
@@ -704,7 +705,7 @@ def calculate_field_accuracy(extracted_value, ground_truth_value, field_name):
                 return 0.0
             
             # Calculate item-wise matches
-            matches = sum(1 for e, g in zip(ext_items, gt_items) 
+            matches = sum(1 for e, g in zip(ext_items, gt_items, strict=False) 
                          if e.lower().strip() == g.lower().strip())
             
             return matches / len(gt_items) if gt_items else 0.0
@@ -870,7 +871,7 @@ else:
     if len(image_files) > 5:
         print(f"   ... and {len(image_files) - 5} more files")
     
-    print(f"\n🚀 Starting enhanced batch key-value extraction with corrected metrics...")
+    print("\n🚀 Starting enhanced batch key-value extraction with corrected metrics...")
     start_time = datetime.now()
     
     try:
@@ -913,7 +914,7 @@ else:
         end_time = datetime.now()
         processing_duration = end_time - start_time
         
-        print(f"\n📈 Enhanced Batch Processing Summary:")
+        print("\n📈 Enhanced Batch Processing Summary:")
         print(f"   • Total images processed: {batch_statistics['total_images']}")
         print(f"   • Successful model responses: {batch_statistics['successful_responses']}")
         print(f"   • Processing errors: {batch_statistics['processing_errors']}")
@@ -925,7 +926,7 @@ else:
         overall_response_rate = (batch_statistics['total_fields_returned'] / total_possible_fields) * 100
         overall_content_rate = (batch_statistics['total_fields_with_content'] / batch_statistics['total_fields_returned']) * 100 if batch_statistics['total_fields_returned'] > 0 else 0
         
-        print(f"\n🎯 Corrected Extraction Performance Metrics:")
+        print("\n🎯 Corrected Extraction Performance Metrics:")
         print(f"   • Total possible field extractions: {total_possible_fields:,}")
         print(f"   • Total fields returned by model: {batch_statistics['total_fields_returned']:,}")
         print(f"   • Model response completeness: {overall_response_rate:.1f}% (fields returned)")
@@ -938,7 +939,7 @@ else:
             max_response = metadata_df['_response_completeness'].max()
             min_response = metadata_df['_response_completeness'].min()
             
-            print(f"\n📷 Per-Image Analysis (Corrected Metrics):")
+            print("\n📷 Per-Image Analysis (Corrected Metrics):")
             print(f"   • Average fields returned per image: {avg_response_completeness:.1f}/{len(EXTRACTION_FIELDS)}")
             print(f"   • Average content fields per image: {avg_content_coverage:.1f}")
             print(f"   • Best model response: {max_response}/{len(EXTRACTION_FIELDS)} fields returned")
@@ -956,22 +957,22 @@ else:
         
         # File size information
         csv_size = csv_path.stat().st_size
-        print(f"\n📊 Output File Statistics:")
+        print("\n📊 Output File Statistics:")
         print(f"   • Main CSV file size: {csv_size:,} bytes")
         print(f"   • Images with perfect model response (25/25): {len([r for r in extraction_results if r.get('_response_completeness', 0) == 25])}")
         print(f"   • Images with partial model response (1-24): {len([r for r in extraction_results if 0 < r.get('_response_completeness', 0) < 25])}")
         print(f"   • Images with no model response (0): {len([r for r in extraction_results if r.get('_response_completeness', 0) == 0])}")
         
-        print(f"\n🚀 Enhanced batch processing completed successfully!")
+        print("\n🚀 Enhanced batch processing completed successfully!")
         print(f"📁 Results available at: {csv_path}")
-        print(f"✅ Success metrics now correctly distinguish model response from field content")
+        print("✅ Success metrics now correctly distinguish model response from field content")
         
     except Exception as e:
         print(f"\n❌ Error during batch processing: {e}")
         print(f"🔍 Error type: {type(e).__name__}")
         
         import traceback
-        print(f"\n🔧 Full error traceback:")
+        print("\n🔧 Full error traceback:")
         traceback.print_exc()
 
 
@@ -1019,7 +1020,7 @@ try:
         print(f"✅ CSV loaded successfully: {len(df_analysis)} rows × {len(df_analysis.columns)} columns")
         
         # Basic CSV structure validation
-        print(f"\n🔍 CSV Structure Analysis:")
+        print("\n🔍 CSV Structure Analysis:")
         print(f"   • File size: {csv_path.stat().st_size:,} bytes")
         print(f"   • Number of images processed: {len(df_analysis)}")
         print(f"   • Number of extraction fields: {len(df_analysis.columns) - 1}")  # -1 for image_name column
@@ -1045,7 +1046,7 @@ try:
             print(f"   📈 Metadata loaded from: {latest_metadata.name}")
         
         # Enhanced field-level analysis with corrected metrics
-        print(f"\n📈 Enhanced Field-Level Analysis (Corrected Success Metrics):")
+        print("\n📈 Enhanced Field-Level Analysis (Corrected Success Metrics):")
         
         if metadata_df is not None and len(metadata_df) == len(df_analysis):
             # Use metadata for accurate success tracking
@@ -1055,7 +1056,7 @@ try:
             avg_response_completeness = metadata_df['_response_completeness'].mean()
             avg_content_coverage = metadata_df['_content_coverage'].mean()
             
-            print(f"\n   📊 Overall Model Performance:")
+            print("\n   📊 Overall Model Performance:")
             print(f"      • Average fields returned per image: {avg_response_completeness:.1f}/{len(EXTRACTION_FIELDS)}")
             print(f"      • Model response completeness: {(avg_response_completeness / len(EXTRACTION_FIELDS)) * 100:.1f}%")
             print(f"      • Average content fields per image: {avg_content_coverage:.1f}")
@@ -1066,13 +1067,13 @@ try:
             partial_responses = len(metadata_df[(metadata_df['_response_completeness'] > 0) & (metadata_df['_response_completeness'] < 25)])
             failed_responses = len(metadata_df[metadata_df['_response_completeness'] == 0])
             
-            print(f"\n   📊 Response Completeness Distribution:")
+            print("\n   📊 Response Completeness Distribution:")
             print(f"      • Perfect responses (25/25 fields): {perfect_responses} ({perfect_responses/len(metadata_df)*100:.1f}%)")
             print(f"      • Partial responses (1-24 fields): {partial_responses} ({partial_responses/len(metadata_df)*100:.1f}%)")
             print(f"      • Failed responses (0 fields): {failed_responses} ({failed_responses/len(metadata_df)*100:.1f}%)")
         
         # Field-by-field analysis (traditional method as fallback)
-        print(f"\n   📊 Field-by-Field Content Analysis:")
+        print("\n   📊 Field-by-Field Content Analysis:")
         field_stats = {}
         
         for field in EXTRACTION_FIELDS:
@@ -1101,11 +1102,11 @@ try:
         total_available_content = sum(stats['content_count'] for stats in field_stats.values())
         overall_content_availability = (total_available_content / total_possible_content) * 100
         
-        print(f"\n🎯 Corrected Performance Analysis:")
+        print("\n🎯 Corrected Performance Analysis:")
         print(f"   • Total possible field instances: {total_possible_content:,}")
         print(f"   • Total content available: {total_available_content:,}")
         print(f"   • Overall content availability: {overall_content_availability:.1f}%")
-        print(f"   • Note: This measures document content, not model extraction success")
+        print("   • Note: This measures document content, not model extraction success")
         
         # Enhanced image-level analysis
         image_content_performance = []
@@ -1117,7 +1118,7 @@ try:
         max_content = max(image_content_performance)
         min_content = min(image_content_performance)
         
-        print(f"\n📷 Per-Image Content Analysis:")
+        print("\n📷 Per-Image Content Analysis:")
         print(f"   • Average content fields per image: {avg_content_per_image:.1f}/{len(EXTRACTION_FIELDS)}")
         print(f"   • Richest document: {max_content}/{len(EXTRACTION_FIELDS)} fields with content")
         print(f"   • Sparsest document: {min_content}/{len(EXTRACTION_FIELDS)} fields with content")
@@ -1133,7 +1134,7 @@ try:
         print(f"   • Sparsest document: {sparsest_image['image_name']} ({sparsest_image['content_fields']} fields)")
         
         # Enhanced data quality validation
-        print(f"\n🔧 Enhanced Data Quality Validation:")
+        print("\n🔧 Enhanced Data Quality Validation:")
         
         # Check for completely empty documents (all N/A)
         empty_documents = df_analysis[df_analysis[EXTRACTION_FIELDS].eq('N/A').all(axis=1)]
@@ -1147,7 +1148,7 @@ try:
                 print(f"       ... and {len(empty_documents) - 3} more")
         
         # Integration readiness assessment with corrected understanding
-        print(f"\n🚀 Enhanced Integration Readiness Assessment:")
+        print("\n🚀 Enhanced Integration Readiness Assessment:")
         
         if metadata_df is not None:
             # Use model performance metrics for readiness assessment
@@ -1172,16 +1173,16 @@ try:
             else:
                 print("   ❌ SPARSE - Documents contain limited extractable content")
         
-        print(f"\n📁 Enhanced CSV File Details:")
+        print("\n📁 Enhanced CSV File Details:")
         print(f"   • Main file: {csv_path}")
-        print(f"   • File format: UTF-8 encoded CSV")
-        print(f"   • Column separator: comma (,)")
-        print(f"   • Missing value representation: N/A")
-        print(f"   • Success metrics: Corrected to distinguish model performance from content availability")
-        print(f"   • Ready for: Database import, spreadsheet analysis, API integration")
+        print("   • File format: UTF-8 encoded CSV")
+        print("   • Column separator: comma (,)")
+        print("   • Missing value representation: N/A")
+        print("   • Success metrics: Corrected to distinguish model performance from content availability")
+        print("   • Ready for: Database import, spreadsheet analysis, API integration")
         
-        print(f"\n✅ Enhanced data analysis completed with corrected success metrics!")
-        print(f"📈 Key insight: Success now properly measured by model field return rate, not content availability")
+        print("\n✅ Enhanced data analysis completed with corrected success metrics!")
+        print("📈 Key insight: Success now properly measured by model field return rate, not content availability")
         
 except FileNotFoundError:
     print("❌ CSV file not found for analysis")
@@ -1192,7 +1193,7 @@ except Exception as e:
     print(f"🔍 Error type: {type(e).__name__}")
     
     import traceback
-    print(f"\n🔧 Full error traceback:")
+    print("\n🔧 Full error traceback:")
     traceback.print_exc()
 
 
@@ -1239,7 +1240,7 @@ try:
         print(f"✅ CSV loaded successfully: {len(df_analysis)} rows × {len(df_analysis.columns)} columns")
         
         # Basic CSV structure validation
-        print(f"\n🔍 CSV Structure Analysis:")
+        print("\n🔍 CSV Structure Analysis:")
         print(f"   • File size: {csv_path.stat().st_size:,} bytes")
         print(f"   • Number of images processed: {len(df_analysis)}")
         print(f"   • Number of extraction fields: {len(df_analysis.columns) - 1}")  # -1 for image_name column
@@ -1256,7 +1257,7 @@ try:
             print(f"      Actual: {len(actual_columns)} columns")
         
         # Field-level analysis
-        print(f"\n📈 Field-Level Coverage Analysis:")
+        print("\n📈 Field-Level Coverage Analysis:")
         field_stats = {}
         
         for field in EXTRACTION_FIELDS:
@@ -1285,7 +1286,7 @@ try:
         total_extracted_fields = sum(stats['coverage_count'] for stats in field_stats.values())
         overall_extraction_rate = (total_extracted_fields / total_possible_fields) * 100
         
-        print(f"\n🎯 Overall Extraction Performance:")
+        print("\n🎯 Overall Extraction Performance:")
         print(f"   • Total possible field extractions: {total_possible_fields:,}")
         print(f"   • Total successful field extractions: {total_extracted_fields:,}")
         print(f"   • Overall extraction success rate: {overall_extraction_rate:.1f}%")
@@ -1300,7 +1301,7 @@ try:
         max_fields = max(image_performance)
         min_fields = min(image_performance)
         
-        print(f"\n📷 Per-Image Extraction Analysis:")
+        print("\n📷 Per-Image Extraction Analysis:")
         print(f"   • Average fields extracted per image: {avg_fields_per_image:.1f}/{len(EXTRACTION_FIELDS)}")
         print(f"   • Best performing image: {max_fields}/{len(EXTRACTION_FIELDS)} fields")
         print(f"   • Worst performing image: {min_fields}/{len(EXTRACTION_FIELDS)} fields")
@@ -1316,7 +1317,7 @@ try:
         print(f"   • Worst performing image: {worst_image['image_name']} ({worst_image['extracted_fields']} fields)")
         
         # Data consistency checks
-        print(f"\n🔧 Data Quality Validation:")
+        print("\n🔧 Data Quality Validation:")
         
         # Check for completely empty rows (all N/A except image_name)
         empty_rows = df_analysis[df_analysis[EXTRACTION_FIELDS].eq('N/A').all(axis=1)]
@@ -1330,7 +1331,7 @@ try:
                 print(f"       ... and {len(empty_rows) - 3} more")
         
         # Integration readiness assessment
-        print(f"\n🚀 Integration Readiness Assessment:")
+        print("\n🚀 Integration Readiness Assessment:")
         if overall_extraction_rate >= 80:
             print("   ✅ EXCELLENT - High extraction success rate, ready for production")
         elif overall_extraction_rate >= 60:
@@ -1340,14 +1341,14 @@ try:
         else:
             print("   ❌ POOR - Low extraction rate, requires investigation and improvement")
         
-        print(f"\n📁 CSV File Details:")
+        print("\n📁 CSV File Details:")
         print(f"   • Main file: {csv_path}")
-        print(f"   • File format: UTF-8 encoded CSV")
-        print(f"   • Column separator: comma (,)")
-        print(f"   • Missing value representation: N/A")
-        print(f"   • Ready for: Database import, spreadsheet analysis, API integration")
+        print("   • File format: UTF-8 encoded CSV")
+        print("   • Column separator: comma (,)")
+        print("   • Missing value representation: N/A")
+        print("   • Ready for: Database import, spreadsheet analysis, API integration")
         
-        print(f"\n✅ Data analysis completed successfully!")
+        print("\n✅ Data analysis completed successfully!")
         
 except FileNotFoundError:
     print("❌ CSV file not found for analysis")
@@ -1358,7 +1359,7 @@ except Exception as e:
     print(f"🔍 Error type: {type(e).__name__}")
     
     import traceback
-    print(f"\n🔧 Full error traceback:")
+    print("\n🔧 Full error traceback:")
     traceback.print_exc()
 
 
@@ -1411,7 +1412,7 @@ try:
     with output_path.open("w", encoding="utf-8") as text_file:
         text_file.write(response)
     
-    print(f"✅ Key-value extraction results saved successfully!")
+    print("✅ Key-value extraction results saved successfully!")
     print(f"📄 File location: {output_path}")
     print(f"📊 File size: {output_path.stat().st_size} bytes")
     
@@ -1419,14 +1420,14 @@ try:
     lines = response.split('\n')
     field_lines = [line for line in lines if ':' in line and not line.strip().startswith('<')]
     
-    print(f"\n📈 Detailed Extraction Analysis:")
+    print("\n📈 Detailed Extraction Analysis:")
     print(f"   • Document processed: {document_image}")
     print(f"   • Total response lines: {len(lines)}")
     print(f"   • Structured field lines: {len(field_lines)}")
     print(f"   • Field extraction rate: {len(field_lines)/25*100:.1f}%")
     
     # Field content analysis
-    non_na_fields = [line for line in field_lines if not line.split(':')[1].strip().upper() in ['N/A', 'NA']]
+    non_na_fields = [line for line in field_lines if line.split(':')[1].strip().upper() not in ['N/A', 'NA']]
     print(f"   • Fields with content: {len(non_na_fields)}")
     print(f"   • Content coverage: {len(non_na_fields)/25*100:.1f}%")
     
@@ -1437,7 +1438,7 @@ try:
     else:
         print("⚠️ Output file validation: WARNING (minimal content detected)")
     
-    print(f"\n🔗 Integration ready: Results saved in structured format")
+    print("\n🔗 Integration ready: Results saved in structured format")
     print(f"📁 Output directory: {output_dir}")
     
 except NameError:
@@ -1466,7 +1467,7 @@ except Exception as e:
     print(f"🗂️ Configured output directory: {output_dir}")
     
     import traceback
-    print(f"\n🔧 Full error details:")
+    print("\n🔧 Full error details:")
     traceback.print_exc()
 
 
@@ -1596,7 +1597,7 @@ try:
                     print(f"   🔍 Fields needing attention: {', '.join(problem_fields)}")
             
             # Calculate comprehensive evaluation metrics
-            print(f"\n📈 Calculating Comprehensive Evaluation Metrics...")
+            print("\n📈 Calculating Comprehensive Evaluation Metrics...")
             
             total_images_evaluated = len(evaluation_results)
             overall_accuracy = sum(overall_accuracies) / len(overall_accuracies) if overall_accuracies else 0.0
@@ -1613,11 +1614,11 @@ try:
             poor_documents = sum(1 for acc in overall_accuracies if acc < 0.6)
             
             # Generate comprehensive evaluation report
-            print(f"\n" + "=" * 70)
-            print(f"📊 COMPREHENSIVE GROUND TRUTH EVALUATION RESULTS")
-            print(f"=" * 70)
+            print("\n" + "=" * 70)
+            print("📊 COMPREHENSIVE GROUND TRUTH EVALUATION RESULTS")
+            print("=" * 70)
             
-            print(f"\n🎯 Overall Performance:")
+            print("\n🎯 Overall Performance:")
             print(f"   • Images evaluated: {total_images_evaluated}")
             print(f"   • Average accuracy: {overall_accuracy:.1%}")
             print(f"   • Perfect extractions (≥99%): {perfect_documents} ({perfect_documents/total_images_evaluated*100:.1f}%)")
@@ -1628,11 +1629,11 @@ try:
             # Field-level performance analysis
             sorted_field_accuracies = sorted(field_accuracies.items(), key=lambda x: x[1], reverse=True)
             
-            print(f"\n📈 Top 10 Most Accurate Fields:")
+            print("\n📈 Top 10 Most Accurate Fields:")
             for i, (field, accuracy) in enumerate(sorted_field_accuracies[:10], 1):
                 print(f"   {i:2d}. {field:<20} {accuracy:.1%}")
             
-            print(f"\n📉 Bottom 10 Least Accurate Fields:")
+            print("\n📉 Bottom 10 Least Accurate Fields:")
             for i, (field, accuracy) in enumerate(sorted_field_accuracies[-10:], len(sorted_field_accuracies)-9):
                 print(f"   {i:2d}. {field:<20} {accuracy:.1%}")
             
@@ -1653,7 +1654,7 @@ try:
                         print(f"     Expected:  '{details['ground_truth'][:50]}...' if len(details['ground_truth']) > 50 else details['ground_truth']")
             
             # Export detailed evaluation results to CSV
-            print(f"\n💾 Exporting Detailed Evaluation Results...")
+            print("\n💾 Exporting Detailed Evaluation Results...")
             
             # Create evaluation summary DataFrame
             evaluation_summary_data = []
@@ -1708,7 +1709,7 @@ try:
             
             print(f"📈 Summary statistics saved: {stats_json_path}")
             
-            print(f"\n✅ Ground Truth Evaluation Completed Successfully!")
+            print("\n✅ Ground Truth Evaluation Completed Successfully!")
             print(f"🎯 InternVL3 achieved {overall_accuracy:.1%} average accuracy on the evaluation dataset")
             print(f"📁 Results saved to: {output_dir}")
             
@@ -1720,7 +1721,7 @@ except Exception as e:
     print(f"🔍 Error type: {type(e).__name__}")
     
     import traceback
-    print(f"\n🔧 Full error traceback:")
+    print("\n🔧 Full error traceback:")
     traceback.print_exc()
 
 
@@ -1835,7 +1836,7 @@ try:
 - 🔧 **REQUIRES INVESTIGATION:** Review model configuration and training data
 - 📋 **HUMAN VALIDATION REQUIRED:** Manual review necessary for all extractions"""
         
-        executive_summary += f"""
+        executive_summary += """
 
 ### 📋 Technical Details
 - **Extraction Fields:** 25 structured business document fields
@@ -1861,7 +1862,7 @@ try:
         print(f"\n💾 Comprehensive report saved: {report_path}")
         
         # Generate detailed field analysis
-        print(f"\n🔍 DETAILED FIELD ANALYSIS")
+        print("\n🔍 DETAILED FIELD ANALYSIS")
         print("=" * 50)
         
         # Categorize fields by performance
@@ -1924,21 +1925,21 @@ try:
         with checklist_path.open('w', encoding='utf-8') as f:
             f.write(deployment_checklist)
         
-        print(f"\n📋 DEPLOYMENT CHECKLIST")
+        print("\n📋 DEPLOYMENT CHECKLIST")
         print("=" * 30)
         print(deployment_checklist)
         
         print(f"\n💾 Deployment checklist saved: {checklist_path}")
         
         # Final summary
-        print(f"\n" + "=" * 80)
-        print(f"🎉 COMPREHENSIVE EVALUATION COMPLETED SUCCESSFULLY!")
-        print(f"=" * 80)
+        print("\n" + "=" * 80)
+        print("🎉 COMPREHENSIVE EVALUATION COMPLETED SUCCESSFULLY!")
+        print("=" * 80)
         print(f"📊 InternVL3-2B achieved {summary_stats['overall_accuracy']:.1%} average accuracy")
         print(f"📈 {summary_stats['perfect_documents']} out of {summary_stats['total_images_evaluated']} documents had perfect extraction")
         print(f"🎯 {len(excellent_fields)} out of 25 fields achieved excellent performance (≥95%)")
         print(f"📁 All results saved to: {output_dir}")
-        print(f"\n📋 Generated Files:")
+        print("\n📋 Generated Files:")
         print(f"   • {latest_eval_file.name} - Detailed evaluation results")
         print(f"   • {latest_summary_file.name} - Summary statistics")
         print(f"   • {report_filename} - Executive summary report")
@@ -1949,6 +1950,6 @@ except Exception as e:
     print(f"🔍 Error type: {type(e).__name__}")
     
     import traceback
-    print(f"\n🔧 Full error traceback:")
+    print("\n🔧 Full error traceback:")
     traceback.print_exc()
 
