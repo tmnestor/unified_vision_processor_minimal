@@ -28,11 +28,10 @@ Evaluation Configuration:
 Evaluation Libraries:
 - pandas: For CSV handling and ground truth comparison
 - pathlib: For robust file path handling
-- glob: For image file discovery
+- pathlib.Path.glob: For image file discovery
 - re: For sophisticated field comparison (numeric, date, string matching)
 """
 
-import glob
 import json
 import re
 from datetime import datetime
@@ -391,8 +390,7 @@ def discover_images(directory_path):
     image_files = []
     
     for extension in image_extensions:
-        pattern = str(Path(directory_path) / extension)
-        image_files.extend(glob.glob(pattern))
+        image_files.extend(str(p) for p in Path(directory_path).glob(extension))
     
     # Sort for consistent processing order
     image_files.sort()
@@ -542,21 +540,21 @@ def create_extraction_dataframe(results):
         return pd.DataFrame(columns=columns), pd.DataFrame()
     
     # Create main DataFrame from results
-    df = pd.DataFrame(results)
+    results_df = pd.DataFrame(results)
     
     # Extract metadata columns for separate analysis
     metadata_columns = ['image_name', '_response_completeness', '_content_coverage']
-    metadata_df = df[metadata_columns].copy() if all(col in df.columns for col in metadata_columns) else pd.DataFrame()
+    metadata_df = results_df[metadata_columns].copy() if all(col in results_df.columns for col in metadata_columns) else pd.DataFrame()
     
     # Remove metadata columns from main DataFrame
     main_columns = ['image_name'] + EXTRACTION_FIELDS
-    df = df[main_columns] if all(col in df.columns for col in main_columns) else df
+    main_df = results_df[main_columns] if all(col in results_df.columns for col in main_columns) else results_df
     
     # Ensure proper column ordering: image_name first, then alphabetical fields
     column_order = ['image_name'] + EXTRACTION_FIELDS
-    df = df.reindex(columns=column_order, fill_value='N/A')
+    main_df = main_df.reindex(columns=column_order, fill_value='N/A')
     
-    return df, metadata_df
+    return main_df, metadata_df
 
 print("📋 Enhanced batch processing infrastructure configured with corrected success metrics")
 print(f"🔍 Configured for {len(EXTRACTION_FIELDS)} extraction fields in alphabetical order")
@@ -1142,7 +1140,7 @@ try:
         
         if len(empty_documents) > 0:
             print("     📄 Documents with no extractable content:")
-            for idx, row in empty_documents.head(3).iterrows():
+            for _idx, row in empty_documents.head(3).iterrows():
                 print(f"       - {row['image_name']}")
             if len(empty_documents) > 3:
                 print(f"       ... and {len(empty_documents) - 3} more")
@@ -1325,7 +1323,7 @@ try:
         
         if len(empty_rows) > 0:
             print("     Failed images:")
-            for idx, row in empty_rows.head(3).iterrows():
+            for _idx, row in empty_rows.head(3).iterrows():
                 print(f"       - {row['image_name']}")
             if len(empty_rows) > 3:
                 print(f"       ... and {len(empty_rows) - 3} more")
