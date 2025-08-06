@@ -43,7 +43,7 @@ env/
 *.pt
 
 # Output directories
-output/
+# output/
 results/
 logs/
 # remote_results/
