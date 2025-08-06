@@ -38,12 +38,10 @@ warnings.filterwarnings('ignore')
 # ============================================================================
 # CONFIGURATION AND GLOBAL VARIABLES
 # ============================================================================
-
-# Global configuration for current environment
-data_dir = "/Users/tod/Desktop/vision_comparison"
-model_path = "meta-llama/Llama-3.2-11B-Vision-Instruct"  # Hugging Face model ID
-output_dir = "/Users/tod/Desktop/vision_comparison/output"
-ground_truth_path = "/Users/tod/Desktop/vision_comparison/evaluation_ground_truth.csv"
+data_dir = "/home/jovyan/nfs_share/tod/evaluation_data"  # 20 test images
+ground_truth_path = "/home/jovyan/nfs_share/tod/unified_vision_processor_minimal/evaluation_ground_truth.csv"  # Ground truth CSV
+model_path = "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision-Instruct" 
+output_dir = "/home/jovyan/nfs_share/tod/output"
 
 # 25 extraction fields in alphabetical order for consistency with InternVL3
 EXTRACTION_FIELDS = [
