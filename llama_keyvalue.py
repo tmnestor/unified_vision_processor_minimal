@@ -565,8 +565,8 @@ def evaluate_extraction_results(extraction_results, ground_truth_map):
             continue
         
         # Calculate field-wise accuracies
-        image_evaluation = {'image_name': image_name}
         image_field_accuracies = {}
+        field_data = {}  # Store extracted/ground_truth data separately
         
         for field in EXTRACTION_FIELDS:
             extracted_value = result.get(field, 'N/A')
@@ -576,20 +576,40 @@ def evaluate_extraction_results(extraction_results, ground_truth_map):
             image_field_accuracies[field] = accuracy
             field_accuracies[field].append(accuracy)
             
-            # Store evaluation data
-            image_evaluation[f'{field}_extracted'] = extracted_value
-            image_evaluation[f'{field}_ground_truth'] = gt_value
-            image_evaluation[f'{field}_accuracy'] = accuracy
+            # Store field data for later use
+            field_data[field] = {
+                'extracted': extracted_value,
+                'ground_truth': gt_value,
+                'accuracy': accuracy
+            }
         
-        # Calculate overall accuracy
+        # Calculate overall accuracy and summary metrics
         image_accuracy = sum(image_field_accuracies.values()) / len(image_field_accuracies)
-        image_evaluation['overall_accuracy'] = image_accuracy
         overall_accuracies.append(image_accuracy)
+        
+        # Count correct fields (≥99% accuracy like InternVL)
+        fields_correct = sum(1 for acc in image_field_accuracies.values() if acc >= 0.99)
+        total_fields = len(EXTRACTION_FIELDS)  # Always 25
+        field_accuracy_rate = (fields_correct / total_fields) * 100
+        
+        # Build image_evaluation in EXACT InternVL order
+        image_evaluation = {
+            'image_name': image_name,
+            'overall_accuracy': image_accuracy,
+            'correct_fields': fields_correct,
+            'total_fields': total_fields,
+            'field_accuracy_rate': field_accuracy_rate
+        }
+        
+        # Add field data in InternVL order: accuracy, extracted, ground_truth
+        for field in EXTRACTION_FIELDS:
+            image_evaluation[f'{field}_accuracy'] = field_data[field]['accuracy']
+            image_evaluation[f'{field}_extracted'] = field_data[field]['extracted']
+            image_evaluation[f'{field}_ground_truth'] = field_data[field]['ground_truth']
         
         evaluation_data.append(image_evaluation)
         
         # Progress report
-        fields_correct = sum(1 for acc in image_field_accuracies.values() if acc >= 0.99)
         print(f"   ✅ {fields_correct}/25 fields correct ({image_accuracy:.1%} accuracy)")
     
     # Calculate comprehensive metrics
@@ -804,6 +824,12 @@ def main():
     main_df.to_csv(extraction_csv, index=False)
     print(f"💾 Extraction results saved: {extraction_csv}")
     
+    # Save extraction metadata (to match InternVL3 output structure)
+    if not metadata_df.empty:
+        metadata_csv = output_dir_path / f"llama_extraction_metadata_{timestamp}.csv"
+        metadata_df.to_csv(metadata_csv, index=False)
+        print(f"💾 Extraction metadata saved: {metadata_csv}")
+    
     # Load ground truth
     print(f"\n📊 Loading ground truth from: {ground_truth_path}")
     ground_truth_data = load_ground_truth(ground_truth_path)
@@ -855,6 +881,8 @@ def main():
     print(f"📁 Results Directory: {output_dir_path}")
     print("\n📄 Generated Files:")
     print(f"   • {extraction_csv.name} - Extraction results")
+    if not metadata_df.empty:
+        print(f"   • llama_extraction_metadata_{timestamp}.csv - Extraction metadata")
     print(f"   • {eval_csv.name} - Detailed evaluation")
     print(f"   • {report_paths['executive_summary'].name} - Executive summary")
     print(f"   • {report_paths['deployment_checklist'].name} - Deployment checklist")
