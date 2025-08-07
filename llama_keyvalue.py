@@ -75,35 +75,35 @@ CRITICAL INSTRUCTIONS:
 - Do NOT include any conversation text
 - Do NOT repeat the user's request
 - Do NOT include <image> tokens
-- Start immediately with DOCUMENT_TYPE
-- Stop immediately after DESCRIPTIONS
+- Start immediately with ABN
+- Stop immediately after TOTAL
 
 REQUIRED OUTPUT FORMAT - EXACTLY 25 LINES:
-DOCUMENT_TYPE: [value or N/A]
-SUPPLIER: [value or N/A]
 ABN: [11-digit Australian Business Number or N/A]
-PAYER_NAME: [value or N/A]
-PAYER_ADDRESS: [value or N/A]
-PAYER_PHONE: [value or N/A]
-PAYER_EMAIL: [value or N/A]
-INVOICE_DATE: [value or N/A]
-DUE_DATE: [value or N/A]
-GST: [GST amount in dollars or N/A]
-TOTAL: [total amount in dollars or N/A]
-SUBTOTAL: [subtotal amount in dollars or N/A]
-SUPPLIER_WEBSITE: [value or N/A]
-QUANTITIES: [list of quantities or N/A]
-PRICES: [individual prices in dollars or N/A]
-BUSINESS_ADDRESS: [value or N/A]
-BUSINESS_PHONE: [value or N/A]
+ACCOUNT_HOLDER: [value or N/A]
+BANK_ACCOUNT_NUMBER: [account number from bank statements only or N/A]
 BANK_NAME: [bank name from bank statements only or N/A]
 BSB_NUMBER: [6-digit BSB from bank statements only or N/A]
-BANK_ACCOUNT_NUMBER: [account number from bank statements only or N/A]
-ACCOUNT_HOLDER: [value or N/A]
-STATEMENT_PERIOD: [value or N/A]
-OPENING_BALANCE: [opening balance amount in dollars or N/A]
+BUSINESS_ADDRESS: [value or N/A]
+BUSINESS_PHONE: [value or N/A]
 CLOSING_BALANCE: [closing balance amount in dollars or N/A]
 DESCRIPTIONS: [list of transaction descriptions or N/A]
+DOCUMENT_TYPE: [value or N/A]
+DUE_DATE: [value or N/A]
+GST: [GST amount in dollars or N/A]
+INVOICE_DATE: [value or N/A]
+OPENING_BALANCE: [opening balance amount in dollars or N/A]
+PAYER_ADDRESS: [value or N/A]
+PAYER_EMAIL: [value or N/A]
+PAYER_NAME: [value or N/A]
+PAYER_PHONE: [value or N/A]
+PRICES: [individual prices in dollars or N/A]
+QUANTITIES: [list of quantities or N/A]
+STATEMENT_PERIOD: [value or N/A]
+SUBTOTAL: [subtotal amount in dollars or N/A]
+SUPPLIER: [value or N/A]
+SUPPLIER_WEBSITE: [value or N/A]
+TOTAL: [total amount in dollars or N/A]
 
 FORMAT RULES:
 - Use exactly: KEY: value (colon and space)
@@ -112,7 +112,7 @@ FORMAT RULES:
 - Include ALL 25 keys even if value is N/A
 - Output ONLY these 25 lines, nothing else
 
-STOP after DESCRIPTIONS line. Do not add explanations or comments."""
+STOP after TOTAL line. Do not add explanations or comments."""
 
 # ============================================================================
 # MODEL LOADING AND INITIALIZATION
