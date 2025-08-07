@@ -43,6 +43,21 @@ ground_truth_path = "/home/jovyan/nfs_share/tod/unified_vision_processor_minimal
 model_path = "/home/jovyan/nfs_share/models/Llama-3.2-11B-Vision-Instruct" 
 output_dir = "/home/jovyan/nfs_share/tod/output"
 
+# data_dir = "/efs/share/PoC_data/evaluation_data"  # 20 test images
+# ground_truth_path = "/efs/share/PoC_data/evaluation_ground_truth.csv"  # Ground truth CSV
+# model_path = "/efs/share/PTM/Llama-3.2-11B-Vision-Instruct" 
+# output_dir = "/efs/share/PoC_data/output"
+
+
+print("🦙 Llama Vision Key-Value Extraction with Comprehensive Evaluation")
+print(f"📁 Data directory: {data_dir}")
+print(f"📂 Output directory: {output_dir}")
+print(f"📊 Ground truth: {ground_truth_path}")
+print(f"🔧 Model: {model_path}")
+
+# ============================================================================
+# CONFIGURATION EXTRACTION PROMPT
+# ============================================================================
 # 25 extraction fields in alphabetical order for consistency with InternVL3
 EXTRACTION_FIELDS = [
     'ABN', 'ACCOUNT_HOLDER', 'BANK_ACCOUNT_NUMBER', 'BANK_NAME', 'BSB_NUMBER',
@@ -98,12 +113,6 @@ FORMAT RULES:
 - Output ONLY these 25 lines, nothing else
 
 STOP after DESCRIPTIONS line. Do not add explanations or comments."""
-
-print("🦙 Llama Vision Key-Value Extraction with Comprehensive Evaluation")
-print(f"📁 Data directory: {data_dir}")
-print(f"📂 Output directory: {output_dir}")
-print(f"📊 Ground truth: {ground_truth_path}")
-print(f"🔧 Model: {model_path}")
 
 # ============================================================================
 # MODEL LOADING AND INITIALIZATION
