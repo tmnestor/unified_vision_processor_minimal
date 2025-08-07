@@ -12,7 +12,7 @@ from pathlib import Path
 from .config import (
     DEPLOYMENT_READY_THRESHOLD,
     EXCELLENT_FIELD_THRESHOLD,
-    EXTRACTION_FIELDS,
+    FIELD_COUNT,
     PILOT_READY_THRESHOLD,
 )
 
@@ -50,7 +50,7 @@ def generate_executive_summary(evaluation_summary, model_name, model_full_name):
 ## Key Findings
 
 1. **Document Analysis:** Processed {summary_stats['total_images']} business documents with comprehensive field extraction
-2. **Field Extraction:** Successfully extracts {len([f for f, acc in summary_stats['field_accuracies'].items() if acc >= EXCELLENT_FIELD_THRESHOLD])} out of {len(EXTRACTION_FIELDS)} fields with ≥90% accuracy
+2. **Field Extraction:** Successfully extracts {len([f for f, acc in summary_stats['field_accuracies'].items() if acc >= EXCELLENT_FIELD_THRESHOLD])} out of {FIELD_COUNT} fields with ≥90% accuracy
 3. **Best Performance:** {summary_stats['best_performing_image']} ({summary_stats['best_performance_accuracy']:.1%} accuracy)
 4. **Challenging Cases:** {summary_stats['worst_performing_image']} ({summary_stats['worst_performance_accuracy']:.1%} accuracy)
 
@@ -148,7 +148,7 @@ def generate_deployment_checklist(evaluation_summary, model_name, model_full_nam
 
 ### Performance Metrics
 - [{'x' if summary_stats['overall_accuracy'] >= PILOT_READY_THRESHOLD else ' '}] Overall accuracy ≥80% ({summary_stats['overall_accuracy']:.1%})
-- [{'x' if len(excellent_fields) >= 15 else ' '}] At least 15 fields with ≥90% accuracy ({len(excellent_fields)}/{len(EXTRACTION_FIELDS)})
+- [{'x' if len(excellent_fields) >= max(15, FIELD_COUNT * 0.6) else ' '}] At least {max(15, int(FIELD_COUNT * 0.6))} fields with ≥90% accuracy ({len(excellent_fields)}/{FIELD_COUNT})
 - [{'x' if summary_stats['perfect_documents'] >= summary_stats['total_images'] * 0.3 else ' '}] At least 30% perfect documents ({summary_stats['perfect_documents']}/{summary_stats['total_images']})
 
 ### Quality Assessment

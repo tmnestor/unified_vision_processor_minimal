@@ -13,7 +13,7 @@ import torch
 from PIL import Image
 from transformers import AutoProcessor, MllamaForConditionalGeneration
 
-from common.config import EXTRACTION_FIELDS, LLAMA_MODEL_PATH
+from common.config import EXTRACTION_FIELDS, FIELD_COUNT, LLAMA_MODEL_PATH
 from common.evaluation_utils import parse_extraction_response
 
 warnings.filterwarnings('ignore')
@@ -63,51 +63,49 @@ class LlamaProcessor:
     
     def get_extraction_prompt(self):
         """Get the extraction prompt optimized for Llama Vision."""
-        prompt = """Extract key-value data from this business document image.
+        # Build field-specific instructions dynamically
+        field_instructions = {
+            'ABN': '[11-digit Australian Business Number or N/A]',
+            'BANK_ACCOUNT_NUMBER': '[account number from bank statements only or N/A]',
+            'BANK_NAME': '[bank name from bank statements only or N/A]',
+            'BSB_NUMBER': '[6-digit BSB from bank statements only or N/A]',
+            'CLOSING_BALANCE': '[closing balance amount in dollars or N/A]',
+            'DESCRIPTIONS': '[list of transaction descriptions or N/A]',
+            'GST': '[GST amount in dollars or N/A]',
+            'OPENING_BALANCE': '[opening balance amount in dollars or N/A]',
+            'PRICES': '[individual prices in dollars or N/A]',
+            'QUANTITIES': '[list of quantities or N/A]',
+            'SUBTOTAL': '[subtotal amount in dollars or N/A]',
+            'TOTAL': '[total amount in dollars or N/A]'
+        }
+        
+        prompt = f"""Extract key-value data from this business document image.
 
 CRITICAL INSTRUCTIONS:
 - Output ONLY the structured data below
 - Do NOT include any conversation text
 - Do NOT repeat the user's request
 - Do NOT include <image> tokens
-- Start immediately with ABN
-- Stop immediately after TOTAL
+- Start immediately with {EXTRACTION_FIELDS[0]}
+- Stop immediately after {EXTRACTION_FIELDS[-1]}
 
-REQUIRED OUTPUT FORMAT - EXACTLY 25 LINES:
-ABN: [11-digit Australian Business Number or N/A]
-ACCOUNT_HOLDER: [value or N/A]
-BANK_ACCOUNT_NUMBER: [account number from bank statements only or N/A]
-BANK_NAME: [bank name from bank statements only or N/A]
-BSB_NUMBER: [6-digit BSB from bank statements only or N/A]
-BUSINESS_ADDRESS: [value or N/A]
-BUSINESS_PHONE: [value or N/A]
-CLOSING_BALANCE: [closing balance amount in dollars or N/A]
-DESCRIPTIONS: [list of transaction descriptions or N/A]
-DOCUMENT_TYPE: [value or N/A]
-DUE_DATE: [value or N/A]
-GST: [GST amount in dollars or N/A]
-INVOICE_DATE: [value or N/A]
-OPENING_BALANCE: [opening balance amount in dollars or N/A]
-PAYER_ADDRESS: [value or N/A]
-PAYER_EMAIL: [value or N/A]
-PAYER_NAME: [value or N/A]
-PAYER_PHONE: [value or N/A]
-PRICES: [individual prices in dollars or N/A]
-QUANTITIES: [list of quantities or N/A]
-STATEMENT_PERIOD: [value or N/A]
-SUBTOTAL: [subtotal amount in dollars or N/A]
-SUPPLIER: [value or N/A]
-SUPPLIER_WEBSITE: [value or N/A]
-TOTAL: [total amount in dollars or N/A]
-
+REQUIRED OUTPUT FORMAT - EXACTLY {FIELD_COUNT} LINES:
+"""
+        
+        # Add each field dynamically
+        for field in EXTRACTION_FIELDS:
+            instruction = field_instructions.get(field, '[value or N/A]')
+            prompt += f"{field}: {instruction}\n"
+        
+        prompt += f"""
 FORMAT RULES:
 - Use exactly: KEY: value (colon and space)
 - NEVER use: **KEY:** or **KEY** or *KEY* or any formatting
 - Plain text only - NO markdown, NO bold, NO italic
-- Include ALL 25 keys even if value is N/A
-- Output ONLY these 25 lines, nothing else
+- Include ALL {FIELD_COUNT} keys even if value is N/A
+- Output ONLY these {FIELD_COUNT} lines, nothing else
 
-STOP after TOTAL line. Do not add explanations or comments."""
+STOP after {EXTRACTION_FIELDS[-1]} line. Do not add explanations or comments."""
         
         return prompt
     
@@ -168,7 +166,7 @@ STOP after TOTAL line. Do not add explanations or comments."""
             with torch.no_grad():
                 output = self.model.generate(
                     **inputs,
-                    max_new_tokens=800,    # Adequate for 25 fields
+                    max_new_tokens=max(800, FIELD_COUNT * 40),  # Scale tokens with field count
                     temperature=0.1,       # Near-deterministic
                     do_sample=True,
                     top_p=0.95,
@@ -253,7 +251,7 @@ STOP after TOTAL line. Do not add explanations or comments."""
             
             # Show extraction status
             print(f"   ⏱️ Processing time: {result['processing_time']:.2f}s")
-            print(f"   📊 Fields extracted: {result['extracted_fields_count']}/{len(EXTRACTION_FIELDS)}")
+            print(f"   📊 Fields extracted: {result['extracted_fields_count']}/{FIELD_COUNT}")
             print(f"   ✅ Response completeness: {result['response_completeness']:.1%}")
         
         # Calculate batch statistics

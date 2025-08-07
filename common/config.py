@@ -24,7 +24,8 @@ OUTPUT_DIR = "/home/jovyan/nfs_share/tod/output"
 # EXTRACTION FIELDS
 # ============================================================================
 
-# 25 standardized extraction fields in alphabetical order
+# Production extraction fields - update this list as needed
+# Keep in alphabetical order for consistent column ordering
 EXTRACTION_FIELDS = [
     'ABN',
     'ACCOUNT_HOLDER',
@@ -51,7 +52,14 @@ EXTRACTION_FIELDS = [
     'SUPPLIER',
     'SUPPLIER_WEBSITE',
     'TOTAL'
+    # Add new fields here in alphabetical order:
+    # 'NEW_FIELD_1',
+    # 'NEW_FIELD_2',
+    # etc.
 ]
+
+# Field count - automatically calculated
+FIELD_COUNT = len(EXTRACTION_FIELDS)
 
 # ============================================================================
 # IMAGE PROCESSING CONSTANTS

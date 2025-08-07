@@ -16,6 +16,7 @@ from transformers import AutoModel, AutoTokenizer
 from common.config import (
     DEFAULT_IMAGE_SIZE,
     EXTRACTION_FIELDS,
+    FIELD_COUNT,
     IMAGENET_MEAN,
     IMAGENET_STD,
     INTERNVL3_MODEL_PATH,
@@ -45,7 +46,7 @@ class InternVL3Processor:
         
         # Setup generation config
         self.generation_config = dict(
-            max_new_tokens=1000,  # Adequate tokens for 25 structured fields
+            max_new_tokens=max(1000, FIELD_COUNT * 50),  # Scale tokens with field count
             do_sample=False,  # Deterministic for consistent field extraction
             pad_token_id=self.tokenizer.eos_token_id,  # Prevent pad_token_id warnings
         )
@@ -83,22 +84,23 @@ class InternVL3Processor:
     
     def get_extraction_prompt(self):
         """Get the extraction prompt for InternVL3."""
-        prompt = """Extract data from this business document. 
+        prompt = f"""Extract data from this business document. 
 Output ALL fields below with their exact keys. 
 Use "N/A" if field is not visible or not present.
 
-OUTPUT FORMAT (25 required fields):
+OUTPUT FORMAT ({FIELD_COUNT} required fields):
 """
         # Add all fields with format guidance
         for field in EXTRACTION_FIELDS:
             prompt += f"{field}: [value or N/A]\n"
         
-        prompt += """
+        prompt += f"""
 INSTRUCTIONS:
 - Keep field names EXACTLY as shown above
 - Use "N/A" for any missing/unclear information
 - Do not add explanations or comments
-- Extract actual values from the document image"""
+- Extract actual values from the document image
+- Output exactly {FIELD_COUNT} lines, one for each field"""
         
         return prompt
     
@@ -326,7 +328,7 @@ INSTRUCTIONS:
             
             # Show extraction status
             print(f"   ⏱️ Processing time: {result['processing_time']:.2f}s")
-            print(f"   📊 Fields extracted: {result['extracted_fields_count']}/{len(EXTRACTION_FIELDS)}")
+            print(f"   📊 Fields extracted: {result['extracted_fields_count']}/{FIELD_COUNT}")
             print(f"   ✅ Response completeness: {result['response_completeness']:.1%}")
         
         # Calculate batch statistics
