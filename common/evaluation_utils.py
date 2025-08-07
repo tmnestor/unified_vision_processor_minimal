@@ -160,13 +160,32 @@ def load_ground_truth(csv_path, show_sample=False):
         # Load CSV
         ground_truth_df = pd.read_csv(csv_path)
         
+        print(f"📊 Ground truth CSV loaded with {len(ground_truth_df)} rows and {len(ground_truth_df.columns)} columns")
+        print(f"📋 Available columns: {list(ground_truth_df.columns)}")
+        
+        # Check for image name column (try different variations)
+        image_name_col = None
+        for col_name in ['image_name', 'Image_Name', 'image_file', 'filename', 'file_name', 'IMAGE_NAME', 'IMAGE_FILE']:
+            if col_name in ground_truth_df.columns:
+                image_name_col = col_name
+                break
+        
+        if image_name_col is None:
+            # If no image name column found, use the first column
+            image_name_col = ground_truth_df.columns[0]
+            print(f"⚠️ No 'image_name' column found, using '{image_name_col}' as image identifier")
+        else:
+            print(f"✅ Using '{image_name_col}' as image identifier column")
+        
         # Create mapping from image name to ground truth
         ground_truth_map = {}
         for _, row in ground_truth_df.iterrows():
-            image_name = row['image_name']
+            image_name = str(row[image_name_col]).strip()
             ground_truth = {col: str(row[col]) if pd.notna(row[col]) else "N/A" 
-                          for col in ground_truth_df.columns if col != 'image_name'}
+                          for col in ground_truth_df.columns if col != image_name_col}
             ground_truth_map[image_name] = ground_truth
+        
+        print(f"✅ Ground truth mapping created for {len(ground_truth_map)} images")
         
         # Show sample if requested
         if show_sample and ground_truth_map:
@@ -181,8 +200,15 @@ def load_ground_truth(csv_path, show_sample=False):
         
         return ground_truth_map
         
+    except FileNotFoundError:
+        print(f"❌ Ground truth file not found: {csv_path}")
+        return {}
     except Exception as e:
         print(f"❌ Error loading ground truth: {e}")
+        print("💡 Please check that the CSV file:")
+        print("   - Has a header row with column names")
+        print("   - Contains an image name/filename column")
+        print("   - Is properly formatted CSV")
         return {}
 
 
