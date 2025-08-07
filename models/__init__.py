@@ -1,1 +1,0 @@
-"""Model-specific processors for vision models."""
